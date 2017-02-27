@@ -6,6 +6,5 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/hy.common.base"/>
 	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
 	<classpathentry kind="lib" path="lib/junit-4.11.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/hy.common.db"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
