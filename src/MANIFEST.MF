@@ -1,4 +1,4 @@
-Manifest-Version: 1.0.0
+Manifest-Version: 1.0.1
 Created-By: HY.ZhengWei@qq.com  2012
-Specification-Version: 1.0.0
+Specification-Version: 1.0.1
 SourceCode: https://github.com/HY-ZhengWei/hy.common.file

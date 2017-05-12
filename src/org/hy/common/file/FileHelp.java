@@ -2279,6 +2279,105 @@ public final class FileHelp
             }
         }
     }
+    
+    
+    
+    /**
+     * 创建并写入文件(编码GBK)
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-05-11
+     * @version     v1.0
+     *
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Contents          文件内容
+     * @throws IOException
+     */
+    public void create(String i_SaveFileFullName ,String i_Contents) throws IOException
+    {
+        this.create(i_SaveFileFullName ,i_Contents ,"GBK");
+    }
+    
+    
+    
+    /**
+     * 创建并写入文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-05-11
+     * @version     v1.0
+     *
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Contents          文件内容
+     * @param i_CharEncoding      文件编码
+     * @throws IOException
+     */
+    public void create(String i_SaveFileFullName ,String i_Contents ,String i_CharEncoding) throws IOException
+    {
+        if ( Help.isNull(i_SaveFileFullName) )
+        {
+            throw new NullPointerException("Save full name is null.");
+        }
+        
+        File v_SaveFile = new File(i_SaveFileFullName);
+        if ( v_SaveFile.exists() )
+        {
+            if ( this.isOverWrite )
+            {
+                boolean v_Result = v_SaveFile.delete();
+                
+                if ( !v_Result )
+                {
+                    v_SaveFile = null;
+                    throw new IOException("Delete target file exception.");
+                }
+            }
+            else
+            {
+                v_SaveFile = null;
+                throw new IOException("Target is exists.");
+            }
+        }
+        
+        
+        FileOutputStream   v_SaveOutput = new FileOutputStream(v_SaveFile);
+        OutputStreamWriter v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
+
+        try
+        {
+            v_SaveWriter.write(i_Contents);
+            v_SaveWriter.flush();
+        }
+        catch (Exception exce)
+        {
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                v_SaveWriter.flush();
+                v_SaveWriter.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            try
+            {
+                v_SaveOutput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            v_SaveWriter = null;
+            v_SaveOutput = null;
+            v_SaveFile   = null;
+        }
+    }
 	
 	
 	
