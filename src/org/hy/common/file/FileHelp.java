@@ -751,7 +751,7 @@ public final class FileHelp
             }
         }
         
-        return getContent(new File(v_FileFullName) ,i_CharEncoding);
+        return getContent(new File(v_FileFullName) ,i_CharEncoding ,i_HaveNewLine);
     }
 	
 	
