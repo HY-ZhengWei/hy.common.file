@@ -673,6 +673,92 @@ public final class FileHelp
 	
 	
 	/**
+	 * 删除指定目录下过期的文件
+	 * 
+	 * @author      ZhengWei(HY)
+	 * @createDate  2017-06-21
+	 * @version     v1.0
+	 *
+	 * @param i_Folder       被删除文件所在目录
+	 * @param i_ExpireDays   过期天数（即，只保留多少天的文件）
+	 * @param i_IsDelChilds  是否递归的删除所有子目录中的过期文件
+	 */
+	public void delFiles(String i_Folder ,int i_ExpireDays ,boolean i_IsDelChilds)
+	{
+	    this.delFiles(new File(i_Folder) ,i_ExpireDays ,i_IsDelChilds);
+	}
+	
+	
+	
+	/**
+     * 删除指定目录下过期的文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-06-21
+     * @version     v1.0
+     *
+     * @param i_Folder       被删除文件所在目录
+     * @param i_ExpireDays   过期天数（即，只保留多少天的文件）
+     * @param i_IsDelChilds  是否递归的删除所有子目录中的过期文件
+     */
+	public void delFiles(File i_Folder ,int i_ExpireDays ,boolean i_IsDelChilds)
+	{
+	    Date v_ExpireTime = Date.getNowTime().getDate(Math.abs(i_ExpireDays)  * -1);
+	    
+	    this.delFiles(i_Folder ,v_ExpireTime ,i_IsDelChilds);
+	}
+	
+	
+	
+	/**
+     * 删除指定目录下过期的文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-06-21
+     * @version     v1.0
+     *
+     * @param i_Folder       被删除文件所在目录
+     * @param i_ExpireTime   过期时间。小于此时间点的文件将被删除
+     * @param i_IsDelChilds  是否递归的删除所有子目录中的过期文件
+     */
+	public void delFiles(File i_Folder ,Date i_ExpireTime ,boolean i_IsDelChilds)
+	{
+	    if ( i_Folder == null )
+	    {
+	        return;
+	    }
+	    
+	    if ( !i_Folder.exists() && !i_Folder.isDirectory() )
+	    {
+	        return;
+	    }
+	    
+	    for (File v_File : i_Folder.listFiles())
+        {
+            if ( v_File.isFile() )
+            {
+                if ( v_File.lastModified() < i_ExpireTime.getTime() )
+                {
+                    try
+                    {
+                        v_File.delete();
+                    }
+                    catch (Exception exce)
+                    {
+                        exce.printStackTrace();
+                    }
+                }
+            }
+            else if ( v_File.isDirectory() && i_IsDelChilds )
+            {
+                delFiles(v_File ,i_ExpireTime ,i_IsDelChilds);
+            }
+        }
+	}
+	
+	
+	
+	/**
      * 获取文件内容。
      * 
      * 主要针对小文件。文件内容为正常文字的文件。
