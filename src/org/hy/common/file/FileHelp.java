@@ -752,6 +752,7 @@ public final class FileHelp
             else if ( v_File.isDirectory() && i_IsDelChilds )
             {
                 delFiles(v_File ,i_ExpireTime ,i_IsDelChilds);
+                v_File.delete();
             }
         }
 	}
