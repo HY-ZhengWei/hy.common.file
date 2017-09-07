@@ -55,7 +55,8 @@ import org.hy.common.file.event.UnCompressZipListener;
  *           V2.0  2015-01-21  1.添加 xcopy(...) 系列方法
  *           V2.1  2015-01-22  1.整理优化 getContent(...) 系列方法
  *                             2.添加 getContentByte(...) 系列方法
- *           V2.2  2016-02-20  getContent(...) 系统方法添加：生成的文件内容是否包含 “回车换行” 符功能
+ *           V2.2  2016-02-20  1.getContent(...) 系统方法添加：生成的文件内容是否包含 “回车换行” 符功能
+ *           V2.3  2017-09-07  1.添加追加写入数据的模式 
  */
 public final class FileHelp 
 {
@@ -67,6 +68,9 @@ public final class FileHelp
 	
 	/** 是否覆盖 */
 	private boolean                              isOverWrite   = false;
+	
+	/** 是否追加写入数据 */
+	private boolean                              isAppend      = false;
     
     /** CSV文件数据项加的前缀。如=号，可防止用Excel打开数字乱码 */
     private String                               csvDataPrefix = "=";
@@ -2370,6 +2374,44 @@ public final class FileHelp
     
     
     /**
+     * 追加写入文件(编码GBK)
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-09-07
+     * @version     v1.0
+     *
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Contents          文件内容
+     * @throws IOException
+     */
+    public void append(String i_SaveFileFullName ,String i_Contents) throws IOException
+    {
+        this.append(i_SaveFileFullName ,i_Contents ,"GBK");
+    }
+    
+    
+    
+    /**
+     * 追加写入文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-09-07
+     * @version     v1.0
+     *
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Contents          文件内容
+     * @param i_CharEncoding      文件编码
+     * @throws IOException
+     */
+    public void append(String i_SaveFileFullName ,String i_Contents ,String i_CharEncoding) throws IOException
+    {
+        this.isAppend = true;
+        this.create(i_SaveFileFullName ,i_Contents ,i_CharEncoding);
+    }
+    
+    
+    
+    /**
      * 创建并写入文件(编码GBK)
      * 
      * @author      ZhengWei(HY)
@@ -2409,25 +2451,28 @@ public final class FileHelp
         File v_SaveFile = new File(i_SaveFileFullName);
         if ( v_SaveFile.exists() )
         {
-            if ( this.isOverWrite )
+            if ( !this.isAppend )
             {
-                boolean v_Result = v_SaveFile.delete();
-                
-                if ( !v_Result )
+                if ( this.isOverWrite )
+                {
+                    boolean v_Result = v_SaveFile.delete();
+                    
+                    if ( !v_Result )
+                    {
+                        v_SaveFile = null;
+                        throw new IOException("Delete target file exception.");
+                    }
+                }
+                else
                 {
                     v_SaveFile = null;
-                    throw new IOException("Delete target file exception.");
+                    throw new IOException("Target is exists.");
                 }
-            }
-            else
-            {
-                v_SaveFile = null;
-                throw new IOException("Target is exists.");
             }
         }
         
         
-        FileOutputStream   v_SaveOutput = new FileOutputStream(v_SaveFile);
+        FileOutputStream   v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
         OutputStreamWriter v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
 
         try
@@ -2551,26 +2596,29 @@ public final class FileHelp
 		File v_SaveFile = new File(i_SaveFileFullName);
 		if ( v_SaveFile.exists() )
 		{
-			if ( this.isOverWrite )
-			{
-				boolean v_Result = v_SaveFile.delete();
-				
-				if ( !v_Result )
-				{
-					v_SaveFile = null;
-					throw new IOException("Delete target file exception.");
-				}
-			}
-			else
-			{
-				v_SaveFile = null;
-				throw new IOException("Target is exists.");
-			}
+		    if ( !this.isAppend )
+		    {
+    			if ( this.isOverWrite )
+    			{
+    				boolean v_Result = v_SaveFile.delete();
+    				
+    				if ( !v_Result )
+    				{
+    					v_SaveFile = null;
+    					throw new IOException("Delete target file exception.");
+    				}
+    			}
+    			else
+    			{
+    				v_SaveFile = null;
+    				throw new IOException("Target is exists.");
+    			}
+		    }
 		}
 		
 		
 		long                  v_RowSize    = i_Contents.size();
-		FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile);
+		FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
 		OutputStreamWriter    v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
 		DefaultCreateCSVEvent v_Event      = new DefaultCreateCSVEvent(this ,v_RowSize);
 		boolean               v_IsContinue = true;
@@ -2733,26 +2781,29 @@ public final class FileHelp
 		File v_SaveFile = new File(i_SaveFileFullName);
 		if ( v_SaveFile.exists() )
 		{
-			if ( this.isOverWrite )
-			{
-				boolean v_Result = v_SaveFile.delete();
-				
-				if ( !v_Result )
-				{
-					v_SaveFile = null;
-					throw new IOException("Delete target file exception.");
-				}
-			}
-			else
-			{
-				v_SaveFile = null;
-				throw new IOException("Target is exists.");
-			}
+		    if ( !this.isAppend )
+		    {
+    			if ( this.isOverWrite )
+    			{
+    				boolean v_Result = v_SaveFile.delete();
+    				
+    				if ( !v_Result )
+    				{
+    					v_SaveFile = null;
+    					throw new IOException("Delete target file exception.");
+    				}
+    			}
+    			else
+    			{
+    				v_SaveFile = null;
+    				throw new IOException("Target is exists.");
+    			}
+		    }
 		}
 		
 		
 		long                  v_RowSize    = i_FileBiggerMemory.getRowSize();
-		FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile);
+		FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
 		OutputStreamWriter    v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
 		DefaultCreateCSVEvent v_Event      = new DefaultCreateCSVEvent(this ,v_RowSize);
 		boolean               v_IsContinue = true;
@@ -2923,26 +2974,29 @@ public final class FileHelp
 		File v_SaveFile = new File(i_SaveFileFullName);
 		if ( v_SaveFile.exists() )
 		{
-			if ( this.isOverWrite )
-			{
-				boolean v_Result = v_SaveFile.delete();
-				
-				if ( !v_Result )
-				{
-					v_SaveFile = null;
-					throw new IOException("Delete target file exception.");
-				}
-			}
-			else
-			{
-				v_SaveFile = null;
-				throw new IOException("Target is exists.");
-			}
+		    if ( !this.isAppend )
+		    {
+    			if ( this.isOverWrite )
+    			{
+    				boolean v_Result = v_SaveFile.delete();
+    				
+    				if ( !v_Result )
+    				{
+    					v_SaveFile = null;
+    					throw new IOException("Delete target file exception.");
+    				}
+    			}
+    			else
+    			{
+    				v_SaveFile = null;
+    				throw new IOException("Target is exists.");
+    			}
+		    }
 		}
 		
 		
 		// long                  v_RowSize    = -1;
-		FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile);
+		FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
 		OutputStreamWriter    v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
 		// DefaultCreateCSVEvent v_Event      = new DefaultCreateCSVEvent(this ,v_RowSize);
 		boolean               v_IsContinue = true;
@@ -4133,8 +4187,30 @@ public final class FileHelp
 		this.isOverWrite = isOverWrite;
 	}
 	
+    
 	
-	
+    /**
+     * 获取：是否追加写入数据
+     */
+    public boolean isAppend()
+    {
+        return isAppend;
+    }
+    
+
+    
+    /**
+     * 设置：是否追加写入数据
+     * 
+     * @param isAppend 
+     */
+    public void setAppend(boolean isAppend)
+    {
+        this.isAppend = isAppend;
+    }
+    
+
+
     public String getCsvDataPrefix()
     {
         return Help.NVL(csvDataPrefix ,"");
