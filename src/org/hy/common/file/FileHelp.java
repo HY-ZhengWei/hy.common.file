@@ -57,6 +57,7 @@ import org.hy.common.file.event.UnCompressZipListener;
  *                             2.添加 getContentByte(...) 系列方法
  *           V2.2  2016-02-20  1.getContent(...) 系统方法添加：生成的文件内容是否包含 “回车换行” 符功能
  *           V2.3  2017-09-07  1.添加追加写入数据的模式 
+ *                             2.添加create(byte[])二进制数据的写入
  */
 public final class FileHelp 
 {
@@ -2412,6 +2413,25 @@ public final class FileHelp
     
     
     /**
+     * 追加写入文件（二进制）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-09-07
+     * @version     v1.0
+     *
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Contents          文件内容
+     * @throws IOException
+     */
+    public void append(String i_SaveFileFullName ,byte [] i_Contents) throws IOException
+    {
+        this.isAppend = true;
+        this.create(i_SaveFileFullName ,i_Contents);
+    }
+    
+    
+    
+    /**
      * 创建并写入文件(编码GBK)
      * 
      * @author      ZhengWei(HY)
@@ -2506,6 +2526,77 @@ public final class FileHelp
             }
             
             v_SaveWriter = null;
+            v_SaveOutput = null;
+            v_SaveFile   = null;
+        }
+    }
+    
+    
+    
+    /**
+     * 创建并写入文件（二进制）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-09-07
+     * @version     v1.0
+     *
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Contents          文件内容
+     * @throws IOException
+     */
+    public void create(String i_SaveFileFullName ,byte [] i_Contents) throws IOException
+    {
+        if ( Help.isNull(i_SaveFileFullName) )
+        {
+            throw new NullPointerException("Save full name is null.");
+        }
+        
+        File v_SaveFile = new File(i_SaveFileFullName);
+        if ( v_SaveFile.exists() )
+        {
+            if ( !this.isAppend )
+            {
+                if ( this.isOverWrite )
+                {
+                    boolean v_Result = v_SaveFile.delete();
+                    
+                    if ( !v_Result )
+                    {
+                        v_SaveFile = null;
+                        throw new IOException("Delete target file exception.");
+                    }
+                }
+                else
+                {
+                    v_SaveFile = null;
+                    throw new IOException("Target is exists.");
+                }
+            }
+        }
+        
+        
+        FileOutputStream v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
+
+        try
+        {
+            v_SaveOutput.write(i_Contents);
+            v_SaveOutput.flush();
+        }
+        catch (Exception exce)
+        {
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                v_SaveOutput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
             v_SaveOutput = null;
             v_SaveFile   = null;
         }
