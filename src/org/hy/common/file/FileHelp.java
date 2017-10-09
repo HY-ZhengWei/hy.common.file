@@ -24,6 +24,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -2464,6 +2465,56 @@ public final class FileHelp
         {
             throw exce;
         }
+    }
+    
+    
+    
+    /**
+     * 获取Http Post请求中的数据
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-10-09
+     * @version     v1.0
+     *
+     * @param i_Request
+     * @return
+     */
+    public static String getContent(ServletRequest i_Request)
+    {
+        BufferedReader v_Input = null;
+        try
+        {
+            StringBuilder v_Buffer = new StringBuilder();
+            String        v_Line   = "";
+            v_Input  = new BufferedReader(new InputStreamReader(i_Request.getInputStream()));
+            while ( (v_Line = v_Input.readLine())!= null )
+            {
+                v_Buffer.append(v_Line);
+            }
+            
+            return v_Buffer.toString();
+        }
+        catch (Exception exce)
+        {
+            exce.printStackTrace();
+        }
+        finally
+        {
+            if ( v_Input != null )
+            {
+                try
+                {
+                    v_Input.close();
+                }
+                catch (Exception exce)
+                {
+                    exce.printStackTrace();
+                }
+            }
+            v_Input = null;
+        }
+        
+        return null;
     }
     
     
