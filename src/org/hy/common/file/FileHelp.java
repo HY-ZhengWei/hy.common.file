@@ -59,6 +59,7 @@ import org.hy.common.file.event.UnCompressZipListener;
  *           V2.2  2016-02-20  1.getContent(...) 系统方法添加：生成的文件内容是否包含 “回车换行” 符功能
  *           V2.3  2017-09-07  1.添加追加写入数据的模式 
  *                             2.添加create(byte[])二进制数据的写入
+ *           v3.0  2017-10-09  1.添加断点上传的服务端功能
  */
 public final class FileHelp 
 {
