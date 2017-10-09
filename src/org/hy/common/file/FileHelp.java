@@ -4432,6 +4432,28 @@ public final class FileHelp
     
     
     
+    /**
+     * 获取：数据包的超时时长（单位：秒）
+     */
+    public long getDataPacketTimeOut()
+    {
+        return dataPacketTimeOut;
+    }
+    
+
+    
+    /**
+     * 设置：数据包的超时时长（单位：秒）
+     * 
+     * @param dataPacketTimeOut 
+     */
+    public void setDataPacketTimeOut(long dataPacketTimeOut)
+    {
+        this.dataPacketTimeOut = dataPacketTimeOut;
+    }
+    
+
+
     protected void finalize() throws Throwable 
 	{
 		if ( this.fileCopyListeners != null )
