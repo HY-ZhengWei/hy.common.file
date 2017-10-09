@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.hy.common.ByteHelp;
 import org.hy.common.Date;
+import org.hy.common.ExpireMap;
 import org.hy.common.Help;
 import org.hy.common.file.event.CreateCSVEvent;
 import org.hy.common.file.event.CreateCSVListener;
@@ -61,6 +62,23 @@ import org.hy.common.file.event.UnCompressZipListener;
  */
 public final class FileHelp 
 {
+    
+    /** 上传中 */
+    public  static final int                               $Upload_GoOn   = 0;
+    
+    /** 上传全部完成 */
+    public  static final int                               $Upload_Finish = 1;
+    
+    /** 上传异常 */
+    public  static final int                               $Upload_Error  = -1;
+    
+    
+    
+    /** 临时记录最新一次数据包信息 */
+    private static final ExpireMap<String ,FileDataPacket> $DataPackets   = new ExpireMap<String ,FileDataPacket>();
+    
+    
+    
 	/** 缓存大小 */
 	private int                                  bufferSize    = 128 * 1024;
 	
@@ -75,6 +93,9 @@ public final class FileHelp
     
     /** CSV文件数据项加的前缀。如=号，可防止用Excel打开数字乱码 */
     private String                               csvDataPrefix = "=";
+    
+    /** 数据包的超时时长（单位：秒） */
+    private long                                 dataPacketTimeOut = 10 * 60;
 	
 	/** 自定义事件的监听器集合--文件拷贝 */
 	private Collection<FileCopyListener>         fileCopyListeners;
@@ -2346,6 +2367,101 @@ public final class FileHelp
                 
                 v_Input = null;
             }
+        }
+    }
+    
+    
+    
+    /**
+     * Http 提供上传服务
+     * 
+     * 注：支持断点续传功能
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-10-09
+     * @version     v1.0
+     *
+     * @param i_Dir         保存文件的目录
+     * @param i_DataPacket  数据包
+     * @return              本次数据包上传结果
+     * @throws Exception
+     */
+    public int uploadServer(String i_Dir ,FileDataPacket i_DataPacket) throws Exception
+    {
+        return uploadServer(new File(i_Dir) ,i_DataPacket);
+    }
+    
+    
+    
+    /**
+     * Http 提供上传服务
+     * 
+     * 注：支持断点续传功能
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-10-09
+     * @version     v1.0
+     *
+     * @param i_Dir         保存文件的目录
+     * @param i_DataPacket  数据包
+     * @return              本次数据包上传结果
+     * @throws Exception
+     */
+    public int uploadServer(File i_Dir ,FileDataPacket i_DataPacket) throws Exception
+    {
+        if ( null == i_Dir
+          || null == i_DataPacket
+          || null == i_DataPacket.getDataNo()
+          || null == i_DataPacket.getDataCount()
+          || Help.isNull(i_DataPacket.getName())
+          || Help.isNull(i_DataPacket.getDataByte()) )
+        {
+            return $Upload_Error;
+        }
+        
+        if ( !i_Dir.exists() )
+        {
+            try
+            {
+                i_Dir.mkdirs();
+            }
+            catch (Exception exce)
+            {
+                throw exce;
+            }
+        }
+        else if ( !i_Dir.isDirectory() )
+        {
+            return $Upload_Error;
+        }
+        
+        try
+        {
+            FileDataPacket v_Old = $DataPackets.get(i_DataPacket.getName());
+            if ( v_Old != null )
+            {
+                if ( v_Old.getDataNo().intValue() >= i_DataPacket.getDataNo().intValue() )
+                {
+                    return $Upload_GoOn;
+                }
+            }
+            
+            this.append(i_Dir.getAbsolutePath() + Help.getSysPathSeparator() + i_DataPacket.getName() ,i_DataPacket.getDataByte());
+            
+            if ( i_DataPacket.getDataCount().intValue() == i_DataPacket.getDataNo().intValue() )
+            {
+                $DataPackets.remove(i_DataPacket.getName());
+                return $Upload_Finish;
+            }
+            else
+            {
+                $DataPackets.put(i_DataPacket.getName() ,i_DataPacket ,this.dataPacketTimeOut);
+                return $Upload_GoOn;
+            }
+        }
+        catch (Exception exce)
+        {
+            throw exce;
         }
     }
     
