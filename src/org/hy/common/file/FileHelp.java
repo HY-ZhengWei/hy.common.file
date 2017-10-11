@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.ResultSet;
@@ -25,6 +26,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -61,6 +63,8 @@ import org.hy.common.file.event.UnCompressZipListener;
  *           V2.3  2017-09-07  1.添加追加写入数据的模式 
  *                             2.添加create(byte[])二进制数据的写入
  *           v3.0  2017-10-09  1.添加断点上传的服务端功能
+ *           v3.1  2017-10-11  1.添加：获取Http Post请求中的数据，getContent(...)
+ *                             2.添加：Http Post请求返回数据的写入，writeHttp(...)
  */
 public final class FileHelp 
 {
@@ -2515,6 +2519,61 @@ public final class FileHelp
         }
         
         return null;
+    }
+    
+    
+    
+    /**
+     * Http Post请求返回数据的写入
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-10-11
+     * @version     v1.0
+     *
+     * @param i_Datas              返回的数据
+     * @param i_Response           响应对象
+     */
+    public static void writeHttp(String i_Datas ,ServletResponse i_Response) throws IOException
+    {
+        writeHttp(i_Datas ,i_Response ,"UTF-8" ,"application/json; charset=utf-8");
+    }
+    
+    
+    
+    /**
+     * Http Post请求返回数据的写入
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-10-11
+     * @version     v1.0
+     *
+     * @param i_Datas              返回的数据
+     * @param i_Response           响应对象
+     * @param i_CharacterEncoding  字符编码
+     * @param i_ContentType        内容类型
+     */
+    public static void writeHttp(String i_Datas ,ServletResponse i_Response ,String i_CharacterEncoding ,String i_ContentType) throws IOException
+    {
+        i_Response.setCharacterEncoding(i_CharacterEncoding);
+        i_Response.setContentType(i_ContentType);
+        
+        PrintWriter v_Out = null;
+        try
+        {
+            v_Out = i_Response.getWriter();
+            v_Out.write(i_Datas);
+        }
+        catch (IOException e)
+        {
+            throw e;
+        }
+        finally
+        {
+            if ( v_Out != null )
+            {
+                v_Out.close();
+            }
+        }
     }
     
     
