@@ -2498,6 +2498,7 @@ public final class FileHelp
      * @version     v1.0
      *
      * @param i_Request
+     * @param i_CharacterEncoding
      * @return
      */
     public static String getContent(ServletRequest i_Request ,String i_CharacterEncoding)
