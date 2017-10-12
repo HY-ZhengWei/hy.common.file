@@ -2474,7 +2474,7 @@ public final class FileHelp
     
     
     /**
-     * 获取Http Post请求中的数据
+     * 获取Http Post请求中的数据。默认为:UTF-8
      * 
      * @author      ZhengWei(HY)
      * @createDate  2017-10-09
@@ -2485,12 +2485,29 @@ public final class FileHelp
      */
     public static String getContent(ServletRequest i_Request)
     {
+        return getContent(i_Request ,"UTF-8");
+    }
+    
+    
+    
+    /**
+     * 获取Http Post请求中的数据
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-10-09
+     * @version     v1.0
+     *
+     * @param i_Request
+     * @return
+     */
+    public static String getContent(ServletRequest i_Request ,String i_CharacterEncoding)
+    {
         BufferedReader v_Input = null;
         try
         {
             StringBuilder v_Buffer = new StringBuilder();
             String        v_Line   = "";
-            v_Input  = new BufferedReader(new InputStreamReader(i_Request.getInputStream()));
+            v_Input  = new BufferedReader(new InputStreamReader(i_Request.getInputStream() ,i_CharacterEncoding));
             while ( (v_Line = v_Input.readLine())!= null )
             {
                 v_Buffer.append(v_Line);
