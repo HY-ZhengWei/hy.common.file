@@ -96,6 +96,12 @@ public final class FileHelp
 	
 	/** 是否追加写入数据 */
 	private boolean                              isAppend      = false;
+	
+	/** 编码类型 */
+	private String                               charEncoding  = "UTF-8";
+	
+	/** Http内容类型 */
+	private String                               contentType   = "application/json; charset=utf-8";
     
     /** CSV文件数据项加的前缀。如=号，可防止用Excel打开数字乱码 */
     private String                               csvDataPrefix = "=";
@@ -2551,9 +2557,9 @@ public final class FileHelp
      * @param i_Datas              返回的数据
      * @param i_Response           响应对象
      */
-    public static void writeHttp(String i_Datas ,ServletResponse i_Response) throws IOException
+    public void writeHttp(String i_Datas ,ServletResponse i_Response) throws IOException
     {
-        writeHttp(i_Datas ,i_Response ,"UTF-8" ,"application/json; charset=utf-8");
+        writeHttp(i_Datas ,i_Response ,this.charEncoding ,this.contentType);
     }
     
     
@@ -4582,6 +4588,50 @@ public final class FileHelp
     }
     
 
+    
+    /**
+     * 获取：编码类型
+     */
+    public String getCharEncoding()
+    {
+        return charEncoding;
+    }
+    
+
+    
+    /**
+     * 设置：编码类型
+     * 
+     * @param charEncoding 
+     */
+    public void setCharEncoding(String charEncoding)
+    {
+        this.charEncoding = charEncoding;
+    }
+
+
+    
+    /**
+     * 获取：Http内容类型
+     */
+    public String getContentType()
+    {
+        return contentType;
+    }
+    
+
+    
+    /**
+     * 设置：Http内容类型
+     * 
+     * @param contentType 
+     */
+    public void setContentType(String contentType)
+    {
+        this.contentType = contentType;
+    }
+    
+    
 
     protected void finalize() throws Throwable 
 	{
