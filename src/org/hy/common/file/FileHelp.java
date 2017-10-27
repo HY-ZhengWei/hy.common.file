@@ -34,6 +34,7 @@ import org.hy.common.ByteHelp;
 import org.hy.common.Date;
 import org.hy.common.ExpireMap;
 import org.hy.common.Help;
+import org.hy.common.StringHelp;
 import org.hy.common.file.event.CreateCSVEvent;
 import org.hy.common.file.event.CreateCSVListener;
 import org.hy.common.file.event.CreateZipEvent;
@@ -2115,7 +2116,7 @@ public final class FileHelp
             // 写明要下载的文件的大小
             i_Response.setHeader("Content-Length" ,new Long(i_File.length()).toString());
             // 设置附加文件名。转码是为了防止文件名称中文时乱码的情况
-            i_Response.setHeader("Content-Disposition" ,"attachment;filename=" + new String(Help.NVL(i_FileName ,i_File.getName()).getBytes(i_ContentType) ,"ISO-8859-1"));  
+            i_Response.setHeader("Content-Disposition" ,"attachment;filename=" + StringHelp.toCharEncoding(Help.NVL(i_FileName ,i_File.getName()) ,i_ContentType ,"ISO-8859-1"));  
             i_Response.setStatus(HttpServletResponse.SC_OK);
 
             
@@ -2245,8 +2246,8 @@ public final class FileHelp
             i_Response.reset();
             // 设置编码方式
             i_Response.setContentType(i_ContentType);
-            // 设置附加文件名
-            i_Response.setHeader("Content-Disposition" ,"attachment;filename=" + new String(Help.NVL(i_FileName ,i_File.getName()).getBytes(i_ContentType) ,"ISO-8859-1"));  
+            // 设置附加文件名 
+            i_Response.setHeader("Content-Disposition" ,"attachment;filename=" + StringHelp.toCharEncoding(Help.NVL(i_FileName ,i_File.getName()) ,i_ContentType ,"ISO-8859-1"));  
             
             
             String  v_Range       = i_Request.getHeader("Range");
