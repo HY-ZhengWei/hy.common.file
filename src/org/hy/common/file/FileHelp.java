@@ -772,7 +772,13 @@ public final class FileHelp
 	        return;
 	    }
 	    
-	    for (File v_File : i_Folder.listFiles())
+	    File [] v_Files = i_Folder.listFiles();
+	    if ( Help.isNull(v_Files) )
+	    {
+	        return;
+	    }
+	    
+	    for (File v_File : v_Files)
         {
             if ( v_File.isFile() )
             {
@@ -1666,9 +1672,14 @@ public final class FileHelp
         }
         
         
-        int v_CopyFileCount = 0;
+        int     v_CopyFileCount = 0;
+        File [] v_Files         = i_SourceFolder.listFiles();
+        if ( Help.isNull(v_Files) )
+        {
+            return v_CopyFileCount;
+        }
         
-        for (File v_File : i_SourceFolder.listFiles())
+        for (File v_File : v_Files)
         {
             if ( v_File.isFile() )
             {
@@ -2307,7 +2318,8 @@ public final class FileHelp
                 
                 if ( v_Place_Being > 0 )
                 {
-                    v_InputBuffer.skip(v_Place_Being);
+                    @SuppressWarnings("unused")
+                    long v_Ret = v_InputBuffer.skip(v_Place_Being);
                 }
             }
             
