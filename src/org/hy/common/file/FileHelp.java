@@ -66,6 +66,7 @@ import org.hy.common.file.event.UnCompressZipListener;
  *           v3.0  2017-10-09  1.添加断点上传的服务端功能
  *           v3.1  2017-10-11  1.添加：获取Http Post请求中的数据，getContent(...)
  *                             2.添加：Http Post请求返回数据的写入，writeHttp(...)
+ *           v3.2  2018-01-29  1.添加更加详细的日志内容
  */
 public final class FileHelp 
 {
@@ -935,17 +936,17 @@ public final class FileHelp
         
         if ( !i_SourceFile.exists() )
         {
-            throw new VerifyError("Source file is not exists.");
+            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] is not exists.");
         }
         
         if ( !i_SourceFile.isFile() )
         {
-            throw new VerifyError("Source file is not file.");
+            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] is not file.");
         }
         
         if ( !i_SourceFile.canRead() )
         {
-            throw new VerifyError("Source file can not read.");
+            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] can not read.");
         }
         
         
@@ -1030,20 +1031,17 @@ public final class FileHelp
         }
         if ( !v_SourceFile.exists() )
         {
-            v_SourceFile = null;
-            throw new VerifyError("File is not exists.");
+            throw new VerifyError("File[" + v_SourceFile.toString() + "] is not exists.");
         }
         
         if ( !v_SourceFile.isFile() )
         {
-            v_SourceFile = null;
-            throw new VerifyError("File is not file.");
+            throw new VerifyError("File[" + v_SourceFile.toString() + "] is not file.");
         }
         
         if ( !v_SourceFile.canRead() )
         {
-            v_SourceFile = null;
-            throw new VerifyError("File can not read.");
+            throw new VerifyError("File[" + v_SourceFile.toString() + "] can not read.");
         }
         
         
@@ -1257,17 +1255,17 @@ public final class FileHelp
         
         if ( !i_SourceFile.exists() )
         {
-            throw new VerifyError("Source file is not exists.");
+            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] is not exists.");
         }
         
         if ( !i_SourceFile.isFile() )
         {
-            throw new VerifyError("Source file is not file.");
+            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] is not file.");
         }
         
         if ( !i_SourceFile.canRead() )
         {
-            throw new VerifyError("Source file can not read.");
+            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] can not read.");
         }
         
         
@@ -1318,20 +1316,17 @@ public final class FileHelp
         }
         if ( !v_SourceFile.exists() )
         {
-            v_SourceFile = null;
-            throw new VerifyError("File is not exists.");
+            throw new VerifyError("File[" + v_SourceFile.toString() + "] is not exists.");
         }
         
         if ( !v_SourceFile.isFile() )
         {
-            v_SourceFile = null;
-            throw new VerifyError("File is not file.");
+            throw new VerifyError("File[" + v_SourceFile.toString() + "] is not file.");
         }
         
         if ( !v_SourceFile.canRead() )
         {
-            v_SourceFile = null;
-            throw new VerifyError("File can not read.");
+            throw new VerifyError("File[" + v_SourceFile.toString() + "] can not read.");
         }
         
         
@@ -1646,17 +1641,17 @@ public final class FileHelp
     {
         if ( !i_SourceFolder.exists() )
         {
-            throw new VerifyError("Source folder is not exists.");
+            throw new VerifyError("Source folder[" + i_SourceFolder.toString() + "] is not exists.");
         }
         
         if ( !i_SourceFolder.isDirectory() )
         {
-            throw new VerifyError("Source is not directory.");
+            throw new VerifyError("Source[" + i_SourceFolder.toString() + "] is not directory.");
         }
         
         if ( !i_SourceFolder.canRead() )
         {
-            throw new VerifyError("Source can not read.");
+            throw new VerifyError("Source[" + i_SourceFolder.toString() + "] can not read.");
         }
         
         
@@ -1665,7 +1660,7 @@ public final class FileHelp
         {
             if ( !i_TargetFolder.isDirectory() )
             {
-                throw new VerifyError("Target is not directory.");
+                throw new VerifyError("Target[" + i_TargetFolder.toString() + "] is not directory.");
             }
             
             v_TargetFolderIsExists = true;
@@ -1759,17 +1754,17 @@ public final class FileHelp
 	{
 		if ( !i_SourceFile.exists() )
 		{
-			throw new IOException("Source file is not exists.");
+			throw new IOException("Source file[" + i_SourceFile.toString() + "] is not exists.");
 		}
 		
 		if ( !i_SourceFile.isFile() )
 		{
-			throw new IOException("Source is not file.");
+			throw new IOException("Source[" + i_SourceFile.toString() + "] is not file.");
 		}
 		
 		if ( !i_SourceFile.canRead() )
 		{
-			throw new IOException("Source can not read.");
+			throw new IOException("Source[" + i_SourceFile.toString() + "] can not read.");
 		}
 		
 		if ( i_TargetFile.exists() )
@@ -1780,12 +1775,12 @@ public final class FileHelp
 				
 				if ( !v_Result )
 				{
-					throw new IOException("Delete target file exception.");
+					throw new IOException("Delete target file[" + i_TargetFile.toString() + "] exception.");
 				}
 			}
 			else
 			{
-				throw new IOException("Target is exists.");
+				throw new IOException("Target[" + i_TargetFile.toString() + "] is exists.");
 			}
 		}
 		
@@ -1925,14 +1920,12 @@ public final class FileHelp
 				
 				if ( !v_Result )
 				{
-					v_TargetFile = null;
-					throw new IOException("Delete target file exception.");
+					throw new IOException("Delete target file[" + i_TargetFile.toString() + "] exception.");
 				}
 			}
 			else
 			{
-				v_TargetFile = null;
-				throw new IOException("Target is exists.");
+				throw new IOException("Target[" + i_TargetFile.toString() + "] is exists.");
 			}
 		}
 		
@@ -2744,13 +2737,13 @@ public final class FileHelp
                     if ( !v_Result )
                     {
                         v_SaveFile = null;
-                        throw new IOException("Delete target file exception.");
+                        throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
                     }
                 }
                 else
                 {
                     v_SaveFile = null;
-                    throw new IOException("Target is exists.");
+                    throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
                 }
             }
         }
@@ -2827,13 +2820,13 @@ public final class FileHelp
                     if ( !v_Result )
                     {
                         v_SaveFile = null;
-                        throw new IOException("Delete target file exception.");
+                        throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
                     }
                 }
                 else
                 {
                     v_SaveFile = null;
-                    throw new IOException("Target is exists.");
+                    throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
                 }
             }
         }
@@ -2944,7 +2937,7 @@ public final class FileHelp
 		
 		if ( i_Contents == null || i_Contents.size() <= 0 )
 		{
-			throw new NullPointerException("File contents is null.");
+			throw new NullPointerException("File[" + i_SaveFileFullName + "] contents is null.");
 		}
 		
 		
@@ -2960,13 +2953,13 @@ public final class FileHelp
     				if ( !v_Result )
     				{
     					v_SaveFile = null;
-    					throw new IOException("Delete target file exception.");
+    					throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
     				}
     			}
     			else
     			{
     				v_SaveFile = null;
-    				throw new IOException("Target is exists.");
+    				throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
     			}
 		    }
 		}
@@ -3129,7 +3122,7 @@ public final class FileHelp
 		
 		if ( i_FileBiggerMemory == null || i_FileBiggerMemory.getRowSize() <= 0 )
 		{
-			throw new NullPointerException("File bigger memory is null.");
+			throw new NullPointerException("File[" + i_SaveFileFullName + "] bigger memory is null.");
 		}
 		
 		
@@ -3145,13 +3138,13 @@ public final class FileHelp
     				if ( !v_Result )
     				{
     					v_SaveFile = null;
-    					throw new IOException("Delete target file exception.");
+    					throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
     				}
     			}
     			else
     			{
     				v_SaveFile = null;
-    				throw new IOException("Target is exists.");
+    				throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
     			}
 		    }
 		}
@@ -3322,7 +3315,7 @@ public final class FileHelp
 		
 		if ( i_ResultSet == null )
 		{
-			throw new NullPointerException("File bigger memory is null.");
+			throw new NullPointerException("File[" + i_SaveFileFullName + "] bigger memory is null.");
 		}
 		
 		
@@ -3338,13 +3331,13 @@ public final class FileHelp
     				if ( !v_Result )
     				{
     					v_SaveFile = null;
-    					throw new IOException("Delete target file exception.");
+    					throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
     				}
     			}
     			else
     			{
     				v_SaveFile = null;
-    				throw new IOException("Target is exists.");
+    				throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
     			}
 		    }
 		}
@@ -3640,7 +3633,7 @@ public final class FileHelp
 		
 		if ( i_SourceLists == null || i_SourceLists.size() <= 0 )
 		{
-			throw new NullPointerException("Zip source files list is null.");
+			throw new NullPointerException("Zip source files[" + i_SaveZipFullName + "] list is null.");
 		}
 		
 		
@@ -3654,13 +3647,13 @@ public final class FileHelp
 				if ( !v_Result )
 				{
 					v_SaveZipFile = null;
-					throw new IOException("Delete target file exception.");
+					throw new IOException("Delete target file[" + i_SaveZipFullName + "] exception.");
 				}
 			}
 			else
 			{
 				v_SaveZipFile = null;
-				throw new IOException("Target is exists.");
+				throw new IOException("Target[" + i_SaveZipFullName + "] is exists.");
 			}
 		}
 		
@@ -3840,19 +3833,19 @@ public final class FileHelp
 		if ( !v_ZipFile.exists() )
 		{
 			v_ZipFile = null;
-			throw new IOException("Zip file is not exists.");
+			throw new IOException("Zip file[" + i_ZipFullName + "] is not exists.");
 		}
 		
 		if ( !v_ZipFile.isFile() )
 		{
 			v_ZipFile = null;
-			throw new IOException("Zip is not file.");
+			throw new IOException("Zip[" + i_ZipFullName + "] is not file.");
 		}
 		
 		if ( !v_ZipFile.canRead() )
 		{
 			v_ZipFile = null;
-			throw new IOException("Zip can not read.");
+			throw new IOException("Zip[" + i_ZipFullName + "] can not read.");
 		}
 		
 		
@@ -3864,7 +3857,7 @@ public final class FileHelp
 			if ( !v_Result )
 			{
 				v_SaveDirFile = null;
-				throw new IOException("Create save dir exception.");
+				throw new IOException("Create save dir[" + i_SaveDir + "] exception.");
 			}
 		}
 		
@@ -3899,7 +3892,7 @@ public final class FileHelp
 						{
 							v_Event.setEndTime();
 							this.fireUnCompressZipAfterListener(v_Event);
-							throw new IOException("Delete target file exception.");
+							throw new IOException("Delete target file[" + v_TargetFullName + "] exception.");
 						}
 					}
 				}
@@ -3914,7 +3907,7 @@ public final class FileHelp
 					{
 						v_Event.setEndTime();
 						this.fireUnCompressZipAfterListener(v_Event);
-						throw new IOException("Target file is exists.");
+						throw new IOException("Target file[" + v_TargetFullName + "] is exists.");
 					}
 				}
 			}
@@ -4053,19 +4046,19 @@ public final class FileHelp
 		if ( !v_ZipFile.exists() )
 		{
 			v_ZipFile = null;
-			throw new IOException("Zip file is not exists.");
+			throw new IOException("Zip file[" + i_ZipFile.toString() + "] is not exists.");
 		}
 		
 		if ( !v_ZipFile.isFile() )
 		{
 			v_ZipFile = null;
-			throw new IOException("Zip is not file.");
+			throw new IOException("Zip[" + i_ZipFile.toString() + "] is not file.");
 		}
 		
 		if ( !v_ZipFile.canRead() )
 		{
 			v_ZipFile = null;
-			throw new IOException("Zip can not read.");
+			throw new IOException("Zip[" + i_ZipFile.toString() + "] can not read.");
 		}
 		
 		
@@ -4141,7 +4134,7 @@ public final class FileHelp
         
         if ( i_SourceLists == null || i_SourceLists.size() <= 0 )
         {
-            throw new NullPointerException("source files list is null.");
+            throw new NullPointerException("source files[" + i_SaveXDFullName + "] list is null.");
         }
         
         
@@ -4155,13 +4148,13 @@ public final class FileHelp
                 if ( !v_Result )
                 {
                     v_SaveXDFile = null;
-                    throw new IOException("Delete target file exception.");
+                    throw new IOException("Delete target file[" + i_SaveXDFullName + "] exception.");
                 }
             }
             else
             {
                 v_SaveXDFile = null;
-                throw new IOException("Target is exists.");
+                throw new IOException("Target[" + i_SaveXDFullName + "] is exists.");
             }
         }
         
@@ -4417,19 +4410,19 @@ public final class FileHelp
         if ( !v_XDFile.exists() )
         {
             v_XDFile = null;
-            throw new IOException("XD file is not exists.");
+            throw new IOException("XD file[" + i_XDFile.toString() + "] is not exists.");
         }
         
         if ( !v_XDFile.isFile() )
         {
             v_XDFile = null;
-            throw new IOException("XD is not file.");
+            throw new IOException("XD[" + i_XDFile.toString() + "] is not file.");
         }
         
         if ( !v_XDFile.canRead() )
         {
             v_XDFile = null;
-            throw new IOException("XD can not read.");
+            throw new IOException("XD[" + i_XDFile.toString() + "] can not read.");
         }
         
         
