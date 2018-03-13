@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -66,7 +67,8 @@ import org.hy.common.file.event.UnCompressZipListener;
  *           v3.0  2017-10-09  1.添加断点上传的服务端功能
  *           v3.1  2017-10-11  1.添加：获取Http Post请求中的数据，getContent(...)
  *                             2.添加：Http Post请求返回数据的写入，writeHttp(...)
- *           v3.2  2018-01-29  1.添加更加详细的日志内容
+ *           v3.2  2018-01-29  1.添加：更加详细的日志内容
+ *           v4.0  2018-03-13  1.添加：递归的获取目录所有文件及子目录，getFiles(...)
  */
 public final class FileHelp 
 {
@@ -802,6 +804,53 @@ public final class FileHelp
             }
         }
 	}
+	
+	
+	
+	/**
+	 * 递归的获取目录所有文件及子目录
+	 * 
+	 * @author      ZhengWei(HY)
+	 * @createDate  2018-03-13
+	 * @version     v1.0
+	 *
+	 * @param i_Folder  父目录
+	 * @return
+	 */
+	public List<File> getFiles(File i_Folder)
+    {
+	    List<File> v_Ret = new ArrayList<File>();
+	    
+        if ( i_Folder == null )
+        {
+            return v_Ret;
+        }
+        
+        if ( !i_Folder.exists() && !i_Folder.isDirectory() )
+        {
+            return v_Ret;
+        }
+        
+        File [] v_Files = i_Folder.listFiles();
+        if ( Help.isNull(v_Files) )
+        {
+            return v_Ret;
+        }
+        
+        for (File v_File : v_Files)
+        {
+            if ( v_File.isFile() )
+            {
+                v_Ret.add(v_File);
+            }
+            else if ( v_File.isDirectory() )
+            {
+                v_Ret.addAll(getFiles(v_File));
+            }
+        }
+        
+        return v_Ret;
+    }
 	
 	
 	
