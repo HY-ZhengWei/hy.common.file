@@ -808,7 +808,7 @@ public final class FileHelp
 	
 	
 	/**
-	 * 递归的获取目录所有文件及子目录
+	 * 递归的获取目录所有文件及子目录中的文件
 	 * 
 	 * @author      ZhengWei(HY)
 	 * @createDate  2018-03-13
