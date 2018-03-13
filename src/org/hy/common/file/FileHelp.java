@@ -69,6 +69,7 @@ import org.hy.common.file.event.UnCompressZipListener;
  *                             2.添加：Http Post请求返回数据的写入，writeHttp(...)
  *           v3.2  2018-01-29  1.添加：更加详细的日志内容
  *           v4.0  2018-03-13  1.添加：递归的获取目录所有文件及子目录，getFiles(...)
+ *                             2.修复：UnCompressZip()解压时用出现解压不完整的问题。
  */
 public final class FileHelp 
 {
@@ -3975,31 +3976,23 @@ public final class FileHelp
 				
 				while ( v_IsContinue )
 				{
-					if ( v_WriteIndex + bufferSize <= v_SourceLen )
-					{
-						v_SourceInput.read(  v_ByteBuffer);
-						v_TargetOutput.write(v_ByteBuffer);
-						v_TargetOutput.flush();
-						
-						v_WriteIndex += bufferSize;
-						
-						v_PerSource.setCompleteSize(v_WriteIndex);
-						v_Event.setPerSource(v_PerSource);
-						v_IsContinue = this.fireUnCompressZipListener(v_Event);
-					}
-					else
-					{
-						v_ByteBuffer = new byte[(int)(v_SourceLen - v_WriteIndex)];
-						
-						v_SourceInput.read(  v_ByteBuffer);
-						v_TargetOutput.write(v_ByteBuffer);
-						v_TargetOutput.flush();
-						
-						v_PerSource.setSucceedFinish();
-						v_Event.setPerSource(v_PerSource);
-						v_IsContinue = this.fireUnCompressZipListener(v_Event);
-						break;
-					}
+				    int v_ReadSize = v_SourceInput.read(v_ByteBuffer);
+				    if ( v_ReadSize <= 0  )
+				    {
+				        v_PerSource.setSucceedFinish();
+                        v_Event.setPerSource(v_PerSource);
+                        v_IsContinue = this.fireUnCompressZipListener(v_Event);
+				        break;
+				    }
+				    
+				    v_TargetOutput.write(v_ByteBuffer ,0 ,v_ReadSize);
+                    v_TargetOutput.flush();
+                    
+                    v_WriteIndex += v_ReadSize;
+				    
+                    v_PerSource.setCompleteSize(v_WriteIndex);
+                    v_Event.setPerSource(v_PerSource);
+                    v_IsContinue = this.fireUnCompressZipListener(v_Event);
 				}
 			}
 			catch (Exception exce)
