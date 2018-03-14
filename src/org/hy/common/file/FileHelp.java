@@ -69,7 +69,8 @@ import org.hy.common.file.event.UnCompressZipListener;
  *                             2.添加：Http Post请求返回数据的写入，writeHttp(...)
  *           v3.2  2018-01-29  1.添加：更加详细的日志内容
  *           v4.0  2018-03-13  1.添加：递归的获取目录所有文件及子目录，getFiles(...)
- *                             2.修复：UnCompressZip()解压时用出现解压不完整的问题。
+ *                             2.添加：递归的计算目录所有文件及子目录文件的合计大小。calcSize(...)
+ *                             3.修复：UnCompressZip()解压时用出现解压不完整的问题。
  */
 public final class FileHelp 
 {
@@ -805,6 +806,57 @@ public final class FileHelp
             }
         }
 	}
+	
+	
+	
+	/**
+     * 递归的计算目录所有文件及子目录文件的合计大小。
+     * 
+     * 此方法相对简单，未实现多线程等计算功能。
+     * 
+     * 适用于递归层级及文件不是十分多的情况。
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-03-14
+     * @version     v1.0
+     *
+     * @param i_Folder  父目录
+     * @return          返回合计大小
+     */
+    public long calcSize(File i_Folder)
+    {
+        long v_Size = 0L;
+        
+        if ( i_Folder == null )
+        {
+            return v_Size;
+        }
+        
+        if ( !i_Folder.exists() && !i_Folder.isDirectory() )
+        {
+            return v_Size;
+        }
+        
+        File [] v_Files = i_Folder.listFiles();
+        if ( Help.isNull(v_Files) )
+        {
+            return v_Size;
+        }
+        
+        for (File v_File : v_Files)
+        {
+            if ( v_File.isFile() )
+            {
+                v_Size += v_File.length();
+            }
+            else if ( v_File.isDirectory() )
+            {
+                v_Size += calcSize(v_File);
+            }
+        }
+        
+        return v_Size;
+    }
 	
 	
 	
