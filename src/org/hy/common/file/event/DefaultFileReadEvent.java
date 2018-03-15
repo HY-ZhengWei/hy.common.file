@@ -94,4 +94,28 @@ public class DefaultFileReadEvent extends FileReadEvent
 		this.setCompleteSize(this.getSize());
 	}
 	
+	
+	
+	/**
+     * 设置：读取到的文件内容（部分内容，内容大小与FileHelp.bufferSize有关）
+     * 
+     * @param dataByte 
+     */
+    public void setDataByte(byte [] dataByte)
+    {
+        this.dataByte = dataByte;
+    }
+
+
+    
+    /**
+     * 设置：读取到的文件内容（部分内容，内容大小与FileHelp.bufferSize有关）
+     * 
+     * @param dataString 
+     */
+    public void setDataString(String dataString)
+    {
+        this.dataString = dataString;
+    }
+    
 }

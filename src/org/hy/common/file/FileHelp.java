@@ -75,6 +75,8 @@ import org.hy.common.file.event.UnCompressZipListener;
  *                             2.添加：递归的计算目录所有文件及子目录文件的合计大小。calcSize(...)
  *                             3.修复：UnCompressZip()解压时用出现解压不完整的问题。
  *           v5.0  2018-03-15  1.添加：读取文件内容getContent(...)的事件处理机制
+ *                             2.添加：读取文件内容getContent(...)是否返回读取到文件内容isReturnContent。
+ *                                    可支持超大文件的读取。
  */
 public final class FileHelp 
 {
@@ -118,6 +120,19 @@ public final class FileHelp
     
     /** 数据包的超时时长（单位：秒） */
     private long                                 dataPacketTimeOut = 10 * 60;
+    
+    /** 
+     * 是否返回文件内容。
+     * 
+     * 用于getContent(...)系列方法，当isReturnContent为真时，getContent(...)方法将有返回值，否则返回值为null。
+     * 
+     * 一般isReturnContent为假时，与 readListener 监听器配合使用，可支持超大文件的读取。
+     * 
+     * 此为性能参数
+     */
+    private boolean                              isReturnContent = true;
+    
+    
 	
 	/** 自定义事件的监听器集合--文件拷贝 */
 	private Collection<FileCopyListener>         fileCopyListeners;
@@ -1359,6 +1374,7 @@ public final class FileHelp
      * 执行完成(或异常)后会关闭i_SourceInput输入流
      * 
      * 2018-03-15  添加：事件处理机制
+     *             添加：是否返回文件内容的功能 -- isReturnContent
      * 
      * @param i_SourceInput   文件的输入流
      * @param i_CharEncoding  文件的编码
@@ -1387,24 +1403,52 @@ public final class FileHelp
             
             if ( i_HaveNewLine )
             {
-                while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
+                if ( this.isReturnContent )
                 {
-                    v_Buffer.append(v_LineData).append("\r\n");
-                    
-                    v_ReadIndex += v_LineData.length();
-                    v_Event.setCompleteSize(v_ReadIndex);
-                    v_IsContinue = this.fireReadingListener(v_Event);
+                    while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
+                    {
+                        v_Buffer.append(v_LineData).append("\r\n");
+                        
+                        v_ReadIndex += v_LineData.length();
+                        v_Event.setDataString(v_LineData + "\r\n");
+                        v_Event.setCompleteSize(v_ReadIndex);
+                        v_IsContinue = this.fireReadingListener(v_Event);
+                    }
+                }
+                else
+                {
+                    while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
+                    {
+                        v_ReadIndex += v_LineData.length();
+                        v_Event.setDataString(v_LineData + "\r\n");
+                        v_Event.setCompleteSize(v_ReadIndex);
+                        v_IsContinue = this.fireReadingListener(v_Event);
+                    }
                 }
             }
             else
             {
-                while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
+                if ( this.isReturnContent )
                 {
-                    v_Buffer.append(v_LineData);
-                    
-                    v_ReadIndex += v_LineData.length();
-                    v_Event.setCompleteSize(v_ReadIndex);
-                    v_IsContinue = this.fireReadingListener(v_Event);
+                    while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
+                    {
+                        v_Buffer.append(v_LineData);
+                        
+                        v_ReadIndex += v_LineData.length();
+                        v_Event.setDataString(v_LineData);
+                        v_Event.setCompleteSize(v_ReadIndex);
+                        v_IsContinue = this.fireReadingListener(v_Event);
+                    }
+                }
+                else
+                {
+                    while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
+                    {
+                        v_ReadIndex += v_LineData.length();
+                        v_Event.setDataString(v_LineData);
+                        v_Event.setCompleteSize(v_ReadIndex);
+                        v_IsContinue = this.fireReadingListener(v_Event);
+                    }
                 }
             }
             
@@ -1630,6 +1674,7 @@ public final class FileHelp
      * 执行完成(或异常)后会关闭i_SourceInput输入流
      * 
      * 2018-03-15  添加：事件处理机制
+     *             添加：是否返回文件内容的功能 -- isReturnContent
      * 
      * @param i_SourceInput   文件的输入流
      */
@@ -1651,13 +1696,27 @@ public final class FileHelp
         {
             v_IsContinue = this.fireReadBeforeListener(v_Event);
             
-            while ( v_IsContinue && (v_ReadSize = i_SourceInput.read(v_ReadBuffer ,0 ,this.bufferSize)) > 0 )
+            if ( isReturnContent )
             {
-                v_Output.write(v_ReadBuffer ,0 ,v_ReadSize);
-                
-                v_ReadIndex += v_ReadSize;
-                v_Event.setCompleteSize(v_ReadIndex);
-                v_IsContinue = this.fireReadingListener(v_Event);
+                while ( v_IsContinue && (v_ReadSize = i_SourceInput.read(v_ReadBuffer ,0 ,this.bufferSize)) > 0 )
+                {
+                    v_Output.write(v_ReadBuffer ,0 ,v_ReadSize);
+                    
+                    v_ReadIndex += v_ReadSize;
+                    v_Event.setDataByte(ByteHelp.substr(v_ReadBuffer ,0 ,v_ReadSize));
+                    v_Event.setCompleteSize(v_ReadIndex);
+                    v_IsContinue = this.fireReadingListener(v_Event);
+                }
+            }
+            else
+            {
+                while ( v_IsContinue && (v_ReadSize = i_SourceInput.read(v_ReadBuffer ,0 ,this.bufferSize)) > 0 )
+                {
+                    v_ReadIndex += v_ReadSize;
+                    v_Event.setDataByte(ByteHelp.substr(v_ReadBuffer ,0 ,v_ReadSize));
+                    v_Event.setCompleteSize(v_ReadIndex);
+                    v_IsContinue = this.fireReadingListener(v_Event);
+                }
             }
             
             v_Event.setSucceedFinish();
@@ -4920,6 +4979,40 @@ public final class FileHelp
     }
     
     
+    
+    /**
+     * 获取：是否返回文件内容。
+     * 
+     * 用于getContent(...)系列方法，当isReturnContent为真时，getContent(...)方法将有返回值，否则返回值为null。
+     * 
+     * 一般isReturnContent为假时，与 readListener 监听器配合使用，可支持超大文件的读取。
+     * 
+     * 此为性能参数
+     */
+    public boolean isReturnContent()
+    {
+        return isReturnContent;
+    }
+    
+
+    
+    /**
+     * 设置：是否返回文件内容。
+     * 
+     * 用于getContent(...)系列方法，当isReturnContent为真时，getContent(...)方法将有返回值，否则返回值为null。
+     * 
+     * 一般isReturnContent为假时，与 readListener 监听器配合使用，可支持超大文件的读取。
+     * 
+     * 此为性能参数
+     * 
+     * @param isReturnContent 
+     */
+    public void setReturnContent(boolean isReturnContent)
+    {
+        this.isReturnContent = isReturnContent;
+    }
+    
+
 
     protected void finalize() throws Throwable 
 	{

@@ -21,6 +21,13 @@ public class FileReadEvent extends BaseEvent
 	private static final long serialVersionUID = -471575663529784193L;
 	
 	
+	/** 读取到的文件内容（部分内容，内容大小与FileHelp.bufferSize有关） */
+	protected byte [] dataByte;
+	
+	/** 读取到的文件内容（部分内容，内容大小与FileHelp.bufferSize有关） */
+	protected String  dataString;
+	
+	
 	
 	public FileReadEvent(Object i_Source) 
 	{
@@ -33,5 +40,25 @@ public class FileReadEvent extends BaseEvent
 	{
 		super(i_Source, i_Size);
 	}
+
+
+    
+    /**
+     * 获取：读取到的文件内容（部分内容，内容大小与FileHelp.bufferSize有关）
+     */
+    public byte [] getDataByte()
+    {
+        return dataByte;
+    }
+    
+
+    
+    /**
+     * 获取：读取到的文件内容（部分内容，内容大小与FileHelp.bufferSize有关）
+     */
+    public String getDataString()
+    {
+        return dataString;
+    }
 	
 }
