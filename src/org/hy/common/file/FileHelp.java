@@ -43,9 +43,12 @@ import org.hy.common.file.event.CreateZipListener;
 import org.hy.common.file.event.DefaultCreateCSVEvent;
 import org.hy.common.file.event.DefaultCreateZipEvent;
 import org.hy.common.file.event.DefaultFileCopyEvent;
+import org.hy.common.file.event.DefaultFileReadEvent;
 import org.hy.common.file.event.DefaultUnCompressZipEvent;
 import org.hy.common.file.event.FileCopyEvent;
 import org.hy.common.file.event.FileCopyListener;
+import org.hy.common.file.event.FileReadEvent;
+import org.hy.common.file.event.FileReadListener;
 import org.hy.common.file.event.UnCompressZipEvent;
 import org.hy.common.file.event.UnCompressZipListener;
 
@@ -58,19 +61,20 @@ import org.hy.common.file.event.UnCompressZipListener;
  *
  * @author   ZhengWei(HY)
  * @version  V1.0  2012-04-03
- *           V2.0  2015-01-21  1.添加 xcopy(...) 系列方法
+ *           V2.0  2015-01-21  1.添加：xcopy(...) 系列方法
  *           V2.1  2015-01-22  1.整理优化 getContent(...) 系列方法
- *                             2.添加 getContentByte(...) 系列方法
+ *                             2.添加：getContentByte(...) 系列方法
  *           V2.2  2016-02-20  1.getContent(...) 系统方法添加：生成的文件内容是否包含 “回车换行” 符功能
- *           V2.3  2017-09-07  1.添加追加写入数据的模式 
- *                             2.添加create(byte[])二进制数据的写入
- *           v3.0  2017-10-09  1.添加断点上传的服务端功能
+ *           V2.3  2017-09-07  1.添加：追加写入数据的模式 
+ *                             2.添加：create(byte[])二进制数据的写入
+ *           v3.0  2017-10-09  1.添加：断点上传的服务端功能
  *           v3.1  2017-10-11  1.添加：获取Http Post请求中的数据，getContent(...)
  *                             2.添加：Http Post请求返回数据的写入，writeHttp(...)
  *           v3.2  2018-01-29  1.添加：更加详细的日志内容
  *           v4.0  2018-03-13  1.添加：递归的获取目录所有文件及子目录，getFiles(...)
  *                             2.添加：递归的计算目录所有文件及子目录文件的合计大小。calcSize(...)
  *                             3.修复：UnCompressZip()解压时用出现解压不完整的问题。
+ *           v5.0  2018-03-15  1.添加：读取文件内容getContent(...)的事件处理机制
  */
 public final class FileHelp 
 {
@@ -127,12 +131,160 @@ public final class FileHelp
 	/** 自定义事件的监听器集合--解压缩Zip文件 */
 	private Collection<UnCompressZipListener>    unCompressZipListeners;
 	
+	/** 自定义事件的监听器集合--读取文件内容 */
+	private Collection<FileReadListener>         readListener;
+	
 	
 	
 	public FileHelp()
 	{
 		
 	}
+	
+	
+	
+	/**
+     * 注册读取文件内容事件
+     * 
+     * @param e
+     */
+    public void addReadListener(FileReadListener e)
+    {
+        if ( this.readListener == null )
+        {
+            this.readListener = new HashSet<FileReadListener>();
+        }
+        
+        this.readListener.add(e);
+    }
+    
+    
+    
+    /**
+     * 移除读取文件内容事件
+     * 
+     * @param e
+     */
+    public void removeReadListener(FileReadListener e)
+    {
+        if ( this.readListener == null )
+        {
+            return;
+        }
+        
+        this.readListener.remove(e);
+    }
+    
+    
+    
+    /**
+     * 触发读取文件内容之前的事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireReadBeforeListener(FileReadEvent i_Event)
+    {
+        if ( this.readListener == null )
+        {
+            return true;
+        }
+        
+        return notifyReadBeforeListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发读取文件内容事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireReadingListener(FileReadEvent i_Event)
+    {
+        if ( this.readListener == null )
+        {
+            return true;
+        }
+        
+        return notifyReadingListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发读取文件内容完成之后的事件
+     * 
+     * @param i_Event
+     */
+    protected void fireReadAfterListener(FileReadEvent i_Event)
+    {
+        if ( this.readListener == null )
+        {
+            return;
+        }
+        
+        notifyReadAfterListeners(i_Event);
+    }
+
+    
+    
+    /**
+     * 通知所有注册读取文件内容之前的事件监听的对象
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    private boolean notifyReadBeforeListeners(FileReadEvent i_Event)
+    {
+        Iterator<FileReadListener> v_Iter       = this.readListener.iterator();
+        boolean                    v_IsContinue = true;
+
+        while ( v_IsContinue && v_Iter.hasNext() ) 
+        {
+            v_IsContinue = v_Iter.next().readBefore(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
+    
+    
+    
+    /**
+     * 通知所有注册读取文件内容事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private boolean notifyReadingListeners(FileReadEvent i_Event)
+    {
+        Iterator<FileReadListener> v_Iter       = this.readListener.iterator();
+        boolean                    v_IsContinue = true;
+
+        while ( v_IsContinue && v_Iter.hasNext() ) 
+        {
+            v_IsContinue = v_Iter.next().readProcess(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
+
+    
+    
+    /**
+     * 通知所有注册读取文件内容完成之后的事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private void notifyReadAfterListeners(FileReadEvent i_Event)
+    {
+        Iterator<FileReadListener> v_Iter = this.readListener.iterator();
+
+        while ( v_Iter.hasNext() ) 
+        {
+            v_Iter.next().readAfter(i_Event);
+        }
+    }
 	
 	
 	
@@ -1206,6 +1358,8 @@ public final class FileHelp
      * 
      * 执行完成(或异常)后会关闭i_SourceInput输入流
      * 
+     * 2018-03-15  添加：事件处理机制
+     * 
      * @param i_SourceInput   文件的输入流
      * @param i_CharEncoding  文件的编码
      * @param i_HaveNewLine   生成的文件内容是否包含 “回车换行” 符
@@ -1217,34 +1371,49 @@ public final class FileHelp
             throw new NullPointerException("Source inputstream is null.");
         }
         
-        
-        InputStreamReader v_ReaderIO    = null;
-        BufferedReader    v_Reader      = null;
-        StringBuilder     v_Buffer      = new StringBuilder();
-        String            v_LineData    = null;
+        InputStreamReader    v_ReaderIO   = null;
+        BufferedReader       v_Reader     = null;
+        StringBuilder        v_Buffer     = new StringBuilder();
+        String               v_LineData   = null;
+        long                 v_ReadIndex  = 0;
+        DefaultFileReadEvent v_Event      = new DefaultFileReadEvent(this);
+        boolean              v_IsContinue = true;
         
         try
         {
-            v_ReaderIO    = new InputStreamReader(i_SourceInput ,i_CharEncoding);
-            v_Reader      = new BufferedReader(v_ReaderIO);
+            v_ReaderIO   = new InputStreamReader(i_SourceInput ,i_CharEncoding);
+            v_Reader     = new BufferedReader(v_ReaderIO);
+            v_IsContinue = this.fireReadBeforeListener(v_Event);
             
             if ( i_HaveNewLine )
             {
-                while ( (v_LineData = v_Reader.readLine()) != null )
+                while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
                 {
                     v_Buffer.append(v_LineData).append("\r\n");
+                    
+                    v_ReadIndex += v_LineData.length();
+                    v_Event.setCompleteSize(v_ReadIndex);
+                    v_IsContinue = this.fireReadingListener(v_Event);
                 }
             }
             else
             {
-                while ( (v_LineData = v_Reader.readLine()) != null )
+                while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
                 {
                     v_Buffer.append(v_LineData);
+                    
+                    v_ReadIndex += v_LineData.length();
+                    v_Event.setCompleteSize(v_ReadIndex);
+                    v_IsContinue = this.fireReadingListener(v_Event);
                 }
             }
+            
+            v_Event.setSucceedFinish();
+            this.fireReadingListener(v_Event);
         }
         catch (Exception exce)
         {
+            v_Event.setEndTime();
             throw new IOException(exce.getMessage());
         }
         finally
@@ -1289,6 +1458,8 @@ public final class FileHelp
                 }
             }
             i_SourceInput = null;
+            
+            this.fireReadAfterListener(v_Event);
         }
         
         return v_Buffer.toString();
@@ -1458,6 +1629,8 @@ public final class FileHelp
      * 
      * 执行完成(或异常)后会关闭i_SourceInput输入流
      * 
+     * 2018-03-15  添加：事件处理机制
+     * 
      * @param i_SourceInput   文件的输入流
      */
     public byte [] getContentByte(InputStream i_SourceInput) throws IOException
@@ -1469,17 +1642,30 @@ public final class FileHelp
         
         byte []               v_ReadBuffer = new byte[this.bufferSize];
         int                   v_ReadSize   = 0;
+        long                  v_ReadIndex  = 0;
         ByteArrayOutputStream v_Output     = new ByteArrayOutputStream();
+        DefaultFileReadEvent  v_Event      = new DefaultFileReadEvent(this);
+        boolean               v_IsContinue = true;
         
         try
         {
-            while ( (v_ReadSize = i_SourceInput.read(v_ReadBuffer ,0 ,this.bufferSize)) > 0 )
+            v_IsContinue = this.fireReadBeforeListener(v_Event);
+            
+            while ( v_IsContinue && (v_ReadSize = i_SourceInput.read(v_ReadBuffer ,0 ,this.bufferSize)) > 0 )
             {
                 v_Output.write(v_ReadBuffer ,0 ,v_ReadSize);
+                
+                v_ReadIndex += v_ReadSize;
+                v_Event.setCompleteSize(v_ReadIndex);
+                v_IsContinue = this.fireReadingListener(v_Event);
             }
+            
+            v_Event.setSucceedFinish();
+            this.fireReadingListener(v_Event);
         }
         catch (Exception exce)
         {
+            v_Event.setEndTime();
             throw new IOException(exce.getMessage());
         }
         finally
@@ -1496,6 +1682,8 @@ public final class FileHelp
                 }
             }
             i_SourceInput = null;
+            
+            this.fireReadAfterListener(v_Event);
         }
         
         return v_Output.toByteArray();
