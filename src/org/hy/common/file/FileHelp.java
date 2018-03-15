@@ -4258,6 +4258,19 @@ public final class FileHelp
 					}
 				}
 			}
+			else
+			{
+			    if ( !v_TargetFile.getParentFile().exists() )
+			    {
+			        boolean v_Result = v_TargetFile.getParentFile().mkdirs();
+		            
+		            if ( !v_Result )
+		            {
+		                v_SaveDirFile = null;
+		                throw new IOException("Create save dir[" + v_TargetFile.getParent() + "] exception.");
+		            }
+			    }
+			}
 			
 			InputStream               v_SourceInput  = v_ZipFileObject.getInputStream(v_ZipEntry);
 			OutputStream              v_TargetOutput = new FileOutputStream(v_TargetFile);
