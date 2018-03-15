@@ -1453,7 +1453,6 @@ public final class FileHelp
             }
             
             v_Event.setSucceedFinish();
-            this.fireReadingListener(v_Event);
         }
         catch (Exception exce)
         {
@@ -1720,7 +1719,6 @@ public final class FileHelp
             }
             
             v_Event.setSucceedFinish();
-            this.fireReadingListener(v_Event);
         }
         catch (Exception exce)
         {
