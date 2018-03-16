@@ -77,6 +77,7 @@ import org.hy.common.file.event.UnCompressZipListener;
  *           v5.0  2018-03-15  1.添加：读取文件内容getContent(...)的事件处理机制
  *                             2.添加：读取文件内容getContent(...)是否返回读取到文件内容isReturnContent。
  *                                    可支持超大文件的读取。
+ *           v5.1  2018-03-16  1.修复：UnCompressZip()当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
  */
 public final class FileHelp 
 {
@@ -4158,6 +4159,9 @@ public final class FileHelp
 	/**
 	 * 解压缩
 	 * 
+	 * 2018-03-13  修复：解压时用出现解压不完整的问题。
+	 * 2018-03-16  修复：当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
+	 * 
 	 * @param i_ZipFullName       压缩包文件
 	 * @param i_SaveDir           保存解压目录
 	 * @param i_IgnoreUnZipError  是否忽略解压缩过程中的异常(如解压包中的每个文件已存在在保存目录中: 1.无法删除的情况; 2.不允许重复的情况。)  
@@ -4221,7 +4225,8 @@ public final class FileHelp
 		for ( ;v_IsContinue && v_ZipEntries.hasMoreElements(); )
 		{
 			ZipEntry v_ZipEntry       = (ZipEntry)v_ZipEntries.nextElement();
-			String   v_TargetFullName = v_SaveDirFile.getAbsolutePath() + Help.getSysPathSeparator() + v_ZipEntry.getName();
+			// 2018-03-16  修复：当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
+			String   v_TargetFullName = v_SaveDirFile.getAbsolutePath() + Help.getSysPathSeparator() + StringHelp.replaceAll(v_ZipEntry.getName() ,new String[]{"\\" ,"/"} ,new String[]{Help.getSysPathSeparator()}); 
 			File     v_TargetFile     = new File(v_TargetFullName);
 			
 			if ( v_TargetFile.exists() )
@@ -4286,6 +4291,7 @@ public final class FileHelp
 				
 				while ( v_IsContinue )
 				{
+				    // 2018-03-13 修复：解压时用出现解压不完整的问题。
 				    int v_ReadSize = v_SourceInput.read(v_ByteBuffer);
 				    if ( v_ReadSize <= 0  )
 				    {
