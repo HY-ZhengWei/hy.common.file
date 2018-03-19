@@ -14,6 +14,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1025,6 +1026,24 @@ public final class FileHelp
         
         return v_Size;
     }
+    
+    
+    
+    /**
+     * 递归的获取目录所有文件及子目录中的文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-03-19
+     * @version     v1.0
+     *
+     * @param i_Folder         父目录
+     * @param i_HaveDirectory  是否包括目录
+     * @return
+     */
+    public List<File> getFiles(String i_Folder ,boolean i_HaveDirectory)
+    {
+        return this.getFiles(new File(i_Folder) ,i_HaveDirectory);
+    }
 	
 	
 	
@@ -1035,10 +1054,11 @@ public final class FileHelp
 	 * @createDate  2018-03-13
 	 * @version     v1.0
 	 *
-	 * @param i_Folder  父目录
+	 * @param i_Folder         父目录
+	 * @param i_HaveDirectory  是否包括目录
 	 * @return
 	 */
-	public List<File> getFiles(File i_Folder)
+	public List<File> getFiles(File i_Folder ,boolean i_HaveDirectory)
     {
 	    List<File> v_Ret = new ArrayList<File>();
 	    
@@ -1066,7 +1086,12 @@ public final class FileHelp
             }
             else if ( v_File.isDirectory() )
             {
-                v_Ret.addAll(getFiles(v_File));
+                if ( i_HaveDirectory )
+                {
+                    v_Ret.add(v_File);
+                }
+                
+                v_Ret.addAll(getFiles(v_File ,i_HaveDirectory));
             }
         }
         
@@ -3958,7 +3983,7 @@ public final class FileHelp
      */
     public void createZip(String i_SaveZipFullName ,String i_ZipRootPath ,Collection<?> i_SourceLists) throws IOException
     {
-        this.createZip(i_SaveZipFullName ,null ,i_SourceLists ,false);
+        this.createZip(i_SaveZipFullName ,i_ZipRootPath ,i_SourceLists ,false);
     }
 	
 	
@@ -4006,8 +4031,9 @@ public final class FileHelp
 		}
 		
 		
+		FileInputStream       v_SourceInput = null;
 		FileOutputStream      v_ZipOutput   = new FileOutputStream(v_SaveZipFile);
-		ZipOutputStream       v_ZipWriter   = new ZipOutputStream(v_ZipOutput);
+		ZipOutputStream       v_ZipWriter   = new ZipOutputStream(v_ZipOutput ,Charset.forName("UTF-8"));
 		Iterator<?>           v_IterSources = i_SourceLists.iterator();
 		DefaultCreateZipEvent v_Event       = new DefaultCreateZipEvent(this ,i_SourceLists.size());
 		boolean               v_IsContinue  = true;
@@ -4017,7 +4043,7 @@ public final class FileHelp
         {
             v_ZipRootPath = v_ZipRootPath + Help.getSysPathSeparator();
         }
-		
+        
 		try
 		{
 			v_IsContinue = this.fireCreateZipBeforeListener(v_Event);
@@ -4057,75 +4083,79 @@ public final class FileHelp
 				
 				
 				// 压缩某一个具体文件
-				FileInputStream       v_SourceInput = new FileInputStream(v_SourceFile);
 				long                  v_SourceLen   = v_SourceFile.length();
 				long                  v_WriteIndex  = 0;
 				byte []               v_ByteBuffer  = new byte[bufferSize];
 				DefaultCreateZipEvent v_PerSource   = new DefaultCreateZipEvent(this ,v_SourceLen);
+				ZipEntry              v_ZipEntry    = null;
 				
 				v_Event.setPerSource(v_PerSource);
 				v_IsContinue = this.fireCreatingZipListener(v_Event);
 				
                 if ( Help.isNull(i_ZipRootPath) )
                 {
-                    v_ZipWriter.putNextEntry(new ZipEntry(v_SourceFile.getName()));
+                    v_ZipEntry = new ZipEntry(v_SourceFile.getName());
                 }
                 else
                 {
                     String v_LowerFullName = v_SourceFile.getAbsolutePath().toLowerCase();
                     if ( v_LowerFullName.startsWith(v_ZipRootPath) )
                     {
-                        v_ZipWriter.putNextEntry(new ZipEntry(v_SourceFile.getAbsolutePath().substring(v_ZipRootPath.length())));
+                        v_ZipEntry = new ZipEntry(v_SourceFile.getAbsolutePath().substring(v_ZipRootPath.length()));
                     }
                     else
                     {
-                        v_ZipWriter.putNextEntry(new ZipEntry(v_SourceFile.getAbsolutePath()));
+                        v_ZipEntry = new ZipEntry(v_SourceFile.getAbsolutePath());
                     }
                 }
                 
-				while ( v_IsContinue )
-				{
-					if ( v_WriteIndex + bufferSize <= v_SourceLen )
-					{
-						v_SourceInput.read(  v_ByteBuffer);
-						v_ZipWriter.write(v_ByteBuffer);
-						v_ZipWriter.flush();
-						
-						v_WriteIndex += bufferSize;
-						
-						v_PerSource.setCompleteSize(v_WriteIndex);
-						v_Event.setPerSource(v_PerSource);
-						v_IsContinue = this.fireCreatingZipListener(v_Event);
-					}
-					else
-					{
-						v_ByteBuffer = new byte[(int)(v_SourceLen - v_WriteIndex)];
-						
-						v_SourceInput.read(  v_ByteBuffer);
-						v_ZipWriter.write(v_ByteBuffer);
-						v_ZipWriter.flush();
-						
-						v_PerSource.setSucceedFinish();
-						v_Event.setPerSource(v_PerSource);
-						v_IsContinue = this.fireCreatingZipListener(v_Event);
-						break;
-					}
-				}
-				
-				
-				// 释放每个压缩过的资源
-				try
-				{
-					v_SourceInput.close();
-				}
-				catch (Exception exce)
-				{
-					// Nothing.
-				}
-				
-				v_SourceInput = null;
+                v_ZipEntry.setTime(v_SourceFile.lastModified()); // 保留文件或目录的修改时间
+                v_ZipWriter.putNextEntry(v_ZipEntry);
+                
+                while ( v_IsContinue && !v_SourceFile.isDirectory() )
+                {
+                    v_SourceInput = new FileInputStream(v_SourceFile);
+                    
+                    if ( v_WriteIndex + bufferSize <= v_SourceLen )
+                    {
+                        v_SourceInput.read(v_ByteBuffer);
+                        v_ZipWriter.write( v_ByteBuffer);
+                        v_ZipWriter.flush();
+                        
+                        v_WriteIndex += bufferSize;
+                        
+                        v_PerSource.setCompleteSize(v_WriteIndex);
+                        v_Event.setPerSource(v_PerSource);
+                        v_IsContinue = this.fireCreatingZipListener(v_Event);
+                    }
+                    else
+                    {
+                        v_ByteBuffer = new byte[(int)(v_SourceLen - v_WriteIndex)];
+                        
+                        v_SourceInput.read(v_ByteBuffer);
+                        v_ZipWriter.write( v_ByteBuffer);
+                        v_ZipWriter.flush();
+                        
+                        v_PerSource.setSucceedFinish();
+                        v_Event.setPerSource(v_PerSource);
+                        v_IsContinue = this.fireCreatingZipListener(v_Event);
+                        break;
+                    }
+                    
+                    // 释放每个压缩过的资源
+                    try
+                    {
+                        v_SourceInput.close();
+                    }
+                    catch (Exception exce)
+                    {
+                        // Nothing.
+                    }
+                    
+                    v_SourceInput = null;
+                }
+                
 				v_SourceFile  = null;
-			
 			}
 			
 			v_Event.setSucceedFinish();
@@ -4137,18 +4167,48 @@ public final class FileHelp
 		}
 		finally
 		{
-			try
-			{
-				v_ZipWriter.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			v_ZipWriter = null;
-			v_ZipOutput = null;
-			
+		    if ( v_SourceInput != null )
+            {
+    		    try
+                {
+                    v_SourceInput.close();
+                }
+                catch (Exception exce)
+                {
+                    // Nothing.
+                }
+                
+                v_SourceInput = null;
+            }
+            
+		    if ( v_ZipWriter != null )
+		    {
+    			try
+    			{
+    				v_ZipWriter.close();
+    			}
+    			catch (Exception exce)
+    			{
+    				// Nothing.
+    			}
+    			
+    			v_ZipWriter = null;
+		    }
+		    
+		    if ( v_ZipOutput != null )
+            {
+                try
+                {
+                    v_ZipOutput.close();
+                }
+                catch (Exception exce)
+                {
+                    // Nothing.
+                }
+                
+                v_ZipOutput = null;
+            }
+		    
 			this.fireCreateZipAfterListener(v_Event);
 		}
 
@@ -4265,15 +4325,33 @@ public final class FileHelp
 			}
 			else
 			{
-			    if ( !v_TargetFile.getParentFile().exists() )
+			    if ( v_ZipEntry.isDirectory() )
 			    {
-			        boolean v_Result = v_TargetFile.getParentFile().mkdirs();
-		            
-		            if ( !v_Result )
-		            {
-		                v_SaveDirFile = null;
-		                throw new IOException("Create save dir[" + v_TargetFile.getParent() + "] exception.");
-		            }
+			        if ( !v_TargetFile.exists() )
+                    {
+                        boolean v_Result = v_TargetFile.mkdirs();
+                        
+                        if ( !v_Result )
+                        {
+                            v_SaveDirFile = null;
+                            throw new IOException("Create save dir[" + v_TargetFile.toString() + "] exception.");
+                        }
+                    }
+			        
+			        continue;
+			    }
+			    else
+			    {
+    			    if ( !v_TargetFile.getParentFile().exists() )
+    			    {
+    			        boolean v_Result = v_TargetFile.getParentFile().mkdirs();
+    		            
+    		            if ( !v_Result )
+    		            {
+    		                v_SaveDirFile = null;
+    		                throw new IOException("Create save dir[" + v_TargetFile.getParent() + "] exception.");
+    		            }
+    			    }
 			    }
 			}
 			

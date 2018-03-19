@@ -2,6 +2,7 @@ package org.hy.common.file.junit;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.net.URL;
 
 import org.junit.Test;
@@ -20,8 +21,17 @@ import org.hy.common.file.FileHelp;
  */
 public class UnCompressZipTest 
 {
+    
+    @Test
+    public void test_001() throws IOException
+    {
+        FileHelp v_FileHelp = new FileHelp();
+        
+        v_FileHelp.UnCompressZip("D:\\apache-tomcat-7.0.47\\webapps\\1.zip" ,"E:\\" ,true);
+    }
 
-	@Test
+    
+	
 	public void testUnCompressZipURLString() 
 	{
 		FileHelp v_FileHelp = new FileHelp();
