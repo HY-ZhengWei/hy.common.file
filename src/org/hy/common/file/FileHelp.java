@@ -4038,6 +4038,7 @@ public final class FileHelp
 		DefaultCreateZipEvent v_Event       = new DefaultCreateZipEvent(this ,i_SourceLists.size());
 		boolean               v_IsContinue  = true;
         String                v_ZipRootPath = Help.NVL(i_ZipRootPath).trim().toLowerCase();
+        int                   v_ReadIndex   = 0;
         
         if ( !v_ZipRootPath.endsWith(Help.getSysPathSeparator()) )
         {
@@ -4112,34 +4113,22 @@ public final class FileHelp
                 v_ZipEntry.setTime(v_SourceFile.lastModified()); // 保留文件或目录的修改时间
                 v_ZipWriter.putNextEntry(v_ZipEntry);
                 
-                while ( v_IsContinue && !v_SourceFile.isDirectory() )
+                if ( !v_SourceFile.isDirectory() )
                 {
                     v_SourceInput = new FileInputStream(v_SourceFile);
+                    v_ReadIndex   = v_SourceInput.read(v_ByteBuffer);
                     
-                    if ( v_WriteIndex + bufferSize <= v_SourceLen )
+                    while ( v_IsContinue && v_ReadIndex >= 1 )
                     {
-                        v_SourceInput.read(v_ByteBuffer);
-                        v_ZipWriter.write( v_ByteBuffer);
+                        v_ZipWriter.write(v_ByteBuffer ,0 ,v_ReadIndex);
                         v_ZipWriter.flush();
                         
-                        v_WriteIndex += bufferSize;
+                        v_WriteIndex += v_ReadIndex;
                         
                         v_PerSource.setCompleteSize(v_WriteIndex);
                         v_Event.setPerSource(v_PerSource);
                         v_IsContinue = this.fireCreatingZipListener(v_Event);
-                    }
-                    else
-                    {
-                        v_ByteBuffer = new byte[(int)(v_SourceLen - v_WriteIndex)];
-                        
-                        v_SourceInput.read(v_ByteBuffer);
-                        v_ZipWriter.write( v_ByteBuffer);
-                        v_ZipWriter.flush();
-                        
-                        v_PerSource.setSucceedFinish();
-                        v_Event.setPerSource(v_PerSource);
-                        v_IsContinue = this.fireCreatingZipListener(v_Event);
-                        break;
+                        v_ReadIndex  = v_SourceInput.read(v_ByteBuffer);
                     }
                     
                     // 释放每个压缩过的资源
@@ -4153,9 +4142,8 @@ public final class FileHelp
                     }
                     
                     v_SourceInput = null;
+    				v_SourceFile  = null;
                 }
-                
-				v_SourceFile  = null;
 			}
 			
 			v_Event.setSucceedFinish();

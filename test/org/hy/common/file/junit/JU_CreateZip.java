@@ -25,14 +25,13 @@ public class JU_CreateZip
     @Test
     public void test_Zip() throws IOException
     {
-        File       v_RootFile = new File("D:\\apache-tomcat-7.0.47\\webapps\\1");
+        File       v_RootFile = new File("D:\\apache-tomcat-7.0.47\\webapps\\calc");
         FileHelp   v_FileHelp = new FileHelp();
         List<File> v_Files    = new ArrayList<File>();
         
-        v_Files.add(v_RootFile);
-        v_Files.addAll(v_FileHelp.getFiles(v_RootFile ,true));
+        v_Files.addAll(v_FileHelp.getFiles(v_RootFile ,false));
         
-        v_FileHelp.createZip("D:\\apache-tomcat-7.0.47\\webapps\\1-Test.zip" ,v_RootFile.getParent() ,v_Files);
+        v_FileHelp.createZip("D:\\apache-tomcat-7.0.47\\webapps\\calc-Test.zip" ,v_RootFile.getParent() ,v_Files);
     }
     
 }
