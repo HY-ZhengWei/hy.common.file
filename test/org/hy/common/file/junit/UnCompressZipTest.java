@@ -2,6 +2,7 @@ package org.hy.common.file.junit;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
@@ -22,12 +23,23 @@ import org.hy.common.file.FileHelp;
 public class UnCompressZipTest 
 {
     
-    @Test
+    
     public void test_001() throws IOException
     {
         FileHelp v_FileHelp = new FileHelp();
         
-        v_FileHelp.UnCompressZip("D:\\apache-tomcat-7.0.47\\webapps\\1.zip" ,"E:\\" ,true);
+        v_FileHelp.UnCompressZip("D:\\apache-tomcat-7.0.47\\webapps\\calc-Test.zip" ,"E:\\" ,true);
+    }
+    
+    
+    
+    @Test
+    public void test_002() throws IOException 
+    {
+        FileHelp v_FileHelp = new FileHelp();
+        File     v_ZipFile  = new File("D:\\apache-tomcat-7.0.47\\webapps\\calc-Test.zip");
+        
+        v_FileHelp.UnCompressZip4j(v_ZipFile ,"D:\\apache-tomcat-7.0.47\\webapps\\zip4j" ,"hy");
     }
 
     

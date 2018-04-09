@@ -53,6 +53,9 @@ import org.hy.common.file.event.FileReadListener;
 import org.hy.common.file.event.UnCompressZipEvent;
 import org.hy.common.file.event.UnCompressZipListener;
 
+import net.lingala.zip4j.model.ZipParameters;
+import net.lingala.zip4j.util.Zip4jConstants;
+
 
 
 
@@ -79,6 +82,7 @@ import org.hy.common.file.event.UnCompressZipListener;
  *                             2.添加：读取文件内容getContent(...)是否返回读取到文件内容isReturnContent。
  *                                    可支持超大文件的读取。
  *           v5.1  2018-03-16  1.修复：UnCompressZip()当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
+ *           v6.0  2018-04-09  1.添加：Zip4j技术的压缩及解压的功能，支持加密功能。
  */
 public final class FileHelp 
 {
@@ -4033,7 +4037,7 @@ public final class FileHelp
 		
 		FileInputStream       v_SourceInput = null;
 		FileOutputStream      v_ZipOutput   = new FileOutputStream(v_SaveZipFile);
-		ZipOutputStream       v_ZipWriter   = new ZipOutputStream(v_ZipOutput ,Charset.forName("UTF-8"));
+		ZipOutputStream       v_ZipWriter   = new ZipOutputStream(v_ZipOutput ,Charset.forName(this.charEncoding));
 		Iterator<?>           v_IterSources = i_SourceLists.iterator();
 		DefaultCreateZipEvent v_Event       = new DefaultCreateZipEvent(this ,i_SourceLists.size());
 		boolean               v_IsContinue  = true;
@@ -4089,24 +4093,25 @@ public final class FileHelp
 				byte []               v_ByteBuffer  = new byte[bufferSize];
 				DefaultCreateZipEvent v_PerSource   = new DefaultCreateZipEvent(this ,v_SourceLen);
 				ZipEntry              v_ZipEntry    = null;
+				String                v_DirFlag     = v_SourceFile.isDirectory() ? "/" : "";
 				
 				v_Event.setPerSource(v_PerSource);
 				v_IsContinue = this.fireCreatingZipListener(v_Event);
 				
                 if ( Help.isNull(i_ZipRootPath) )
                 {
-                    v_ZipEntry = new ZipEntry(v_SourceFile.getName());
+                    v_ZipEntry = new ZipEntry(v_SourceFile.getName() + v_DirFlag);
                 }
                 else
                 {
                     String v_LowerFullName = v_SourceFile.getAbsolutePath().toLowerCase();
                     if ( v_LowerFullName.startsWith(v_ZipRootPath) )
                     {
-                        v_ZipEntry = new ZipEntry(v_SourceFile.getAbsolutePath().substring(v_ZipRootPath.length()));
+                        v_ZipEntry = new ZipEntry(v_SourceFile.getAbsolutePath().substring(v_ZipRootPath.length()) + v_DirFlag);
                     }
                     else
                     {
-                        v_ZipEntry = new ZipEntry(v_SourceFile.getAbsolutePath());
+                        v_ZipEntry = new ZipEntry(v_SourceFile.getAbsolutePath() + v_DirFlag);
                     }
                 }
                 
@@ -4143,6 +4148,10 @@ public final class FileHelp
                     
                     v_SourceInput = null;
     				v_SourceFile  = null;
+                }
+                else
+                {
+                    v_ZipWriter.closeEntry();
                 }
 			}
 			
@@ -4201,14 +4210,16 @@ public final class FileHelp
 		}
 
 	}
-    
-    
+	
+	
+	
 	
 	/**
 	 * 解压缩
 	 * 
 	 * 2018-03-13  修复：解压时用出现解压不完整的问题。
 	 * 2018-03-16  修复：当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
+	 * 2018-04-09  添加：从压缩包中读取文件的最后修改时间
 	 * 
 	 * @param i_ZipFullName       压缩包文件
 	 * @param i_SaveDir           保存解压目录
@@ -4402,6 +4413,8 @@ public final class FileHelp
 					// Nothing.
 				}
 				
+				// 设置文件最后时间
+				v_TargetFile.setLastModified(v_ZipEntry.getTime());
 				v_SourceInput  = null;
 				v_TargetOutput = null;
 				v_TargetFile   = null;
@@ -4535,6 +4548,394 @@ public final class FileHelp
 		
 		return v_Buffer.toString();
 	}
+	
+	
+	
+	
+	/**
+     * 创建Zip的压缩文件 (压缩级别为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @throws IOException
+     */
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile) throws IOException
+    {
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,true);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件 (压缩级别为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @param i_HaveRootName           是否须要根目录节点
+     * @throws IOException
+     */
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName) throws IOException
+    {
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,i_HaveRootName ,null ,Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件 (压缩级别为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @param i_Password               加密密码
+     * @throws IOException
+     */
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,String i_Password) throws IOException
+    {
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,true ,i_Password);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件 (压缩级别为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @param i_HaveRootName           是否须要根目录节点
+     * @param i_Password               加密密码
+     * @throws IOException
+     */
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName ,String i_Password) throws IOException
+    {
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,i_HaveRootName ,i_Password ,Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件 
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @throws IOException
+     */
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,int i_CompressionLevel) throws IOException
+    {
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,true ,i_CompressionLevel);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @param i_HaveRootName           是否须要根目录节点
+     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @throws IOException
+     */
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName ,int i_CompressionLevel) throws IOException
+    {
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,i_HaveRootName ,null ,i_CompressionLevel);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @param i_Password               加密密码
+     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @throws IOException
+     */
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,String i_Password ,int i_CompressionLevel) throws IOException
+    {
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,true ,i_Password ,i_CompressionLevel);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @param i_HaveRootName           是否须要根目录节点
+     * @param i_Password               加密密码
+     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @throws IOException
+     */
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName ,String i_Password ,int i_CompressionLevel) throws IOException
+    {
+        if ( Help.isNull(i_ZipFile) )
+        {
+            throw new NullPointerException("ZipFile is null.");
+        }
+        
+        if ( Help.isNull(i_SaveZipFullName) )
+        {
+            throw new NullPointerException("Save full name is null.");
+        }
+        
+        this.createZip4j(new File(i_SaveZipFullName) ,new File(i_ZipFile) ,i_HaveRootName ,i_Password ,i_CompressionLevel);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFile            保存Zip压缩文件
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @param i_HaveRootName           是否须要根目录节点
+     * @param i_Password               加密密码
+     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @throws IOException
+     */
+    public void createZip4j(File i_SaveZipFile ,File i_ZipFile ,boolean i_HaveRootName ,String i_Password ,int i_CompressionLevel) throws IOException
+    {
+        if ( !i_ZipFile.exists() )
+        {
+            throw new IOException("ZipFile[" + i_ZipFile + "] is not exists.");
+        }
+        
+        if ( i_SaveZipFile.exists() )
+        {
+            if ( this.isOverWrite )
+            {
+                boolean v_Result = i_SaveZipFile.delete();
+                
+                if ( !v_Result )
+                {
+                    throw new IOException("Delete target file[" + i_SaveZipFile.toString() + "] exception.");
+                }
+            }
+            else
+            {
+                throw new IOException("Target[" + i_SaveZipFile.toString() + "] is exists.");
+            }
+        }
+        
+        
+        ZipParameters v_ZipParams = new ZipParameters(); 
+        v_ZipParams.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);           // 压缩方式  
+        v_ZipParams.setCompressionLevel( i_CompressionLevel);                    // 压缩级别  
+        if ( i_Password != null && !"".equals(i_Password) ) 
+        {  
+            v_ZipParams.setEncryptFiles(true);  
+            v_ZipParams.setEncryptionMethod(Zip4jConstants.ENC_METHOD_STANDARD); // 加密方式  
+            v_ZipParams.setPassword(i_Password.toCharArray());  
+        }
+        
+        
+        try
+        {
+            net.lingala.zip4j.core.ZipFile v_ZipWriter = new net.lingala.zip4j.core.ZipFile(i_SaveZipFile);  
+            v_ZipWriter.setFileNameCharset(this.charEncoding.toUpperCase().replace("UTF-8" ,"UTF8"));
+            
+            if ( i_ZipFile.isDirectory() )
+            {
+                if ( i_HaveRootName )
+                {
+                    v_ZipWriter.addFolder(i_ZipFile ,v_ZipParams);
+                }
+                else
+                {
+                    File [] v_ChildFiles = i_ZipFile.listFiles();
+                    if ( !Help.isNull(v_ChildFiles) )
+                    {
+                        for (File v_ChildFile : v_ChildFiles)
+                        {
+                            if ( v_ChildFile.isDirectory() )
+                            {
+                                v_ZipWriter.addFolder(v_ChildFile ,v_ZipParams);
+                            }
+                            else
+                            {
+                                v_ZipWriter.addFile  (v_ChildFile ,v_ZipParams);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                v_ZipWriter.addFile(  i_ZipFile ,v_ZipParams);
+            }
+        }
+        catch (Exception exce)
+        {
+            throw new IOException(exce.getMessage());
+        }
+    }
+    
+    
+    
+    /**
+     * 解压缩
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     *
+     * @param i_ZipFile        压缩包文件
+     * @param i_UnCompressDir  解压目录。当不存在时，自动创建
+     * @throws IOException
+     */
+    public void UnCompressZip4j(String i_ZipFile ,String i_UnCompressDir) throws IOException 
+    {
+        this.UnCompressZip4j(i_ZipFile ,i_UnCompressDir ,null);
+    }
+    
+    
+    
+    /**
+     * 解压缩
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     *
+     * @param i_ZipFile        压缩包文件
+     * @param i_UnCompressDir  解压目录。当不存在时，自动创建
+     * @param i_Passwd         加密密码
+     * @throws IOException
+     */
+    public void UnCompressZip4j(String i_ZipFile ,String i_UnCompressDir ,String i_Passwd) throws IOException 
+    {
+        if ( Help.isNull(i_ZipFile) )
+        {
+            throw new NullPointerException("ZipFile is null.");
+        }
+        
+        this.UnCompressZip4j(new File(i_ZipFile) ,i_UnCompressDir ,i_Passwd);
+    }
+    
+    
+    
+    /**
+     * 解压缩
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     *
+     * @param i_ZipFile        压缩包文件
+     * @param i_UnCompressDir  解压目录。当不存在时，自动创建
+     * @throws IOException
+     */
+    public void UnCompressZip4j(File i_ZipFile ,String i_UnCompressDir) throws IOException 
+    {
+        this.UnCompressZip4j(i_ZipFile ,i_UnCompressDir ,null);
+    }
+    
+    
+    
+    /**
+     * 解压缩
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     *
+     * @param i_ZipFile        压缩包文件
+     * @param i_UnCompressDir  解压目录。当不存在时，自动创建
+     * @param i_Passwd         加密密码
+     * @throws IOException
+     */
+    public void UnCompressZip4j(File i_ZipFile ,String i_UnCompressDir ,String i_Passwd) throws IOException 
+    {
+        if ( Help.isNull(i_UnCompressDir) )
+        {
+            throw new NullPointerException("UnCompressDir is null.");
+        }
+        
+        File v_UnCompressDir = new File(i_UnCompressDir.trim());
+        if ( !v_UnCompressDir.exists() || !v_UnCompressDir.isDirectory() ) 
+        {    
+            v_UnCompressDir.mkdirs();    
+        }
+        
+        
+        net.lingala.zip4j.core.ZipFile v_ZipFile = null;
+        try
+        {
+            v_ZipFile = new net.lingala.zip4j.core.ZipFile(i_ZipFile); 
+            v_ZipFile.setFileNameCharset(this.charEncoding.toUpperCase().replace("UTF-8" ,"UTF8"));
+        }
+        catch (Exception exce)
+        {
+            throw new IOException(exce.getMessage());
+        }
+        
+        if (!v_ZipFile.isValidZipFile() ) 
+        {   
+            // 验证文件是否合法，是否存在、是否为zip文件、是否被损坏等    
+            throw new IOException("ZipFile[" + i_ZipFile.toString() + "] is not valid ,may be damage.");
+        }
+        
+        try
+        {
+            if ( v_ZipFile.isEncrypted() ) 
+            {    
+                if ( i_Passwd == null || "".equals(i_Passwd) )
+                {
+                    throw new IOException("ZipFile[" + i_ZipFile.toString() + "] is the password required for encryption.");
+                }
+                else
+                {
+                    // 设置密码    
+                    v_ZipFile.setPassword(i_Passwd.toCharArray());  
+                }
+            }
+            
+            v_ZipFile.extractAll(i_UnCompressDir.trim()); 
+        }
+        catch (Exception exce)
+        {
+            throw new IOException(exce.getMessage());
+        }
+    }
     
     
     

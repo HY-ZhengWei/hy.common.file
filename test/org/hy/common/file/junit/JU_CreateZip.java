@@ -22,16 +22,31 @@ import org.junit.Test;
 public class JU_CreateZip
 {
     
-    @Test
     public void test_Zip() throws IOException
     {
         File       v_RootFile = new File("D:\\apache-tomcat-7.0.47\\webapps\\calc");
+        File       v_ZipFile  = new File("D:\\apache-tomcat-7.0.47\\webapps\\calc-Test.zip");
         FileHelp   v_FileHelp = new FileHelp();
         List<File> v_Files    = new ArrayList<File>();
         
-        v_Files.addAll(v_FileHelp.getFiles(v_RootFile ,false));
+        v_Files.add(new File("D:\\apache-tomcat-7.0.47\\webapps\\calc"));
+        v_Files.addAll(v_FileHelp.getFiles(v_RootFile ,true));
         
-        v_FileHelp.createZip("D:\\apache-tomcat-7.0.47\\webapps\\calc-Test.zip" ,v_RootFile.getParent() ,v_Files);
+        v_ZipFile.delete();
+        v_FileHelp.createZip(v_ZipFile.toString() ,v_RootFile.getParent() ,v_Files);
+    }
+    
+    
+    
+    @Test
+    public void test_Zip4j() throws IOException
+    {
+        File       v_RootFile = new File("D:\\apache-tomcat-7.0.47\\webapps\\calc");
+        File       v_ZipFile  = new File("D:\\apache-tomcat-7.0.47\\webapps\\calc-Test.zip");
+        FileHelp   v_FileHelp = new FileHelp();
+        
+        v_ZipFile.delete();
+        v_FileHelp.createZip4j(v_ZipFile.toString() ,v_RootFile.toString() ,true ,"hy");
     }
     
 }
