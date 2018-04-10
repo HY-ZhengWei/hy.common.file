@@ -53,6 +53,7 @@ import org.hy.common.file.event.FileReadListener;
 import org.hy.common.file.event.UnCompressZipEvent;
 import org.hy.common.file.event.UnCompressZipListener;
 
+import net.lingala.zip4j.model.UnzipParameters;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.util.Zip4jConstants;
 
@@ -4929,7 +4930,16 @@ public final class FileHelp
                 }
             }
             
-            v_ZipFile.extractAll(i_UnCompressDir.trim()); 
+            UnzipParameters v_UnzipParameters = new UnzipParameters();
+            
+            v_UnzipParameters.setIgnoreAllFileAttributes(    false);
+            v_UnzipParameters.setIgnoreDateTimeAttributes(   false);
+            v_UnzipParameters.setIgnoreArchiveFileAttribute( false);
+            v_UnzipParameters.setIgnoreHiddenFileAttribute(  false);
+            v_UnzipParameters.setIgnoreReadOnlyFileAttribute(false);
+            v_UnzipParameters.setIgnoreSystemFileAttribute(  false);
+            
+            v_ZipFile.extractAll(i_UnCompressDir.trim() ,v_UnzipParameters); 
         }
         catch (Exception exce)
         {
