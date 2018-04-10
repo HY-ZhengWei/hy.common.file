@@ -2809,8 +2809,7 @@ public final class FileHelp
           || null == i_DataPacket
           || null == i_DataPacket.getDataNo()
           || null == i_DataPacket.getDataCount()
-          || Help.isNull(i_DataPacket.getName())
-          || Help.isNull(i_DataPacket.getDataByte()) )
+          || Help.isNull(i_DataPacket.getName()) )
         {
             return $Upload_Error;
         }
@@ -3214,7 +3213,7 @@ public final class FileHelp
 
         try
         {
-            v_SaveOutput.write(i_Contents);
+            v_SaveOutput.write(i_Contents == null ? new byte[0] : i_Contents);
             v_SaveOutput.flush();
         }
         catch (Exception exce)
