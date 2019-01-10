@@ -1,5 +1,8 @@
 package org.hy.common.file;
 
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -27,6 +30,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import javax.imageio.ImageIO;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
@@ -84,6 +88,8 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *                                    可支持超大文件的读取。
  *           v5.1  2018-03-16  1.修复：UnCompressZip()当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
  *           v6.0  2018-04-09  1.添加：Zip4j技术的压缩及解压的功能，支持加密功能。
+ *           v7.0  2019-01-10  1.添加：缩放图片（限制最大宽度或最大高度）
+ *                             2.添加：缩放图片（按实际大小）
  */
 public final class FileHelp 
 {
@@ -887,6 +893,244 @@ public final class FileHelp
 			v_Iter.next().unCompressZipAfter(i_Event);
 		}
 	}
+	
+	
+	
+	/**
+     * 缩放图片（限制最大宽度或最大高度）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_MaxWidth   最大宽度（小于0，表示不限制）
+     * @param i_MaxHeight  最大高度（小于0，表示不限制）
+     * @param i_IsScale    当图片被缩小时，是否保持高宽等比缩放
+     * @return
+     */
+    public BufferedImage resizeImageByMax(String i_File ,boolean i_IsScale ,int i_MaxWidth ,int i_MaxHeight) throws IOException
+    {
+        if ( i_File.startsWith("file:") )
+        {
+            return resizeImageByMax(new URL(i_File) ,i_IsScale ,i_MaxWidth ,i_MaxHeight);
+        }
+        else
+        {
+            return resizeImageByMax(new File(i_File) ,i_IsScale ,i_MaxWidth ,i_MaxHeight);
+        }
+    }
+    
+    
+    
+    
+    /**
+     * 缩放图片（限制最大宽度或最大高度）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_MaxWidth   最大宽度（小于0，表示不限制）
+     * @param i_MaxHeight  最大高度（小于0，表示不限制）
+     * @param i_IsScale    当图片被缩小时，是否保持高宽等比缩放
+     * @return
+     */
+    public BufferedImage resizeImageByMax(URL i_File ,boolean i_IsScale ,int i_MaxWidth ,int i_MaxHeight) throws IOException
+    {
+        return resizeImageByMax(ImageIO.read(i_File) ,i_IsScale ,i_MaxWidth ,i_MaxHeight);
+    }
+    
+    
+    
+    /**
+     * 缩放图片（限制最大宽度或最大高度）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_MaxWidth   最大宽度（小于0，表示不限制）
+     * @param i_MaxHeight  最大高度（小于0，表示不限制）
+     * @param i_IsScale    当图片被缩小时，是否保持高宽等比缩放
+     * @return
+     */
+    public BufferedImage resizeImageByMax(File i_File ,boolean i_IsScale ,int i_MaxWidth ,int i_MaxHeight) throws IOException
+    {
+        return resizeImageByMax(ImageIO.read(i_File) ,i_IsScale ,i_MaxWidth ,i_MaxHeight);
+    }
+    
+    
+    
+    /**
+     * 缩放图片（限制最大宽度或最大高度）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_MaxWidth   最大宽度（小于0，表示不限制）
+     * @param i_MaxHeight  最大高度（小于0，表示不限制）
+     * @param i_IsScale    当图片被缩小时，是否保持高宽等比缩放
+     * @return
+     */
+    public BufferedImage resizeImageByMax(BufferedImage i_Image ,boolean i_IsScale ,int i_MaxWidth ,int i_MaxHeight)
+    {
+        if ( i_MaxWidth <= 0 && i_MaxHeight <= 0 )
+        {
+            return i_Image;
+        }
+        
+        int     v_NewWidth  = i_Image.getWidth();
+        int     v_NewHeight = i_Image.getHeight();
+        boolean v_IsResize  = false;
+        
+        // 计算高宽等比缩放的情况
+        if ( i_IsScale )
+        {
+            double v_WidthZoomRate  = 1;
+            double v_HeightZoomRate = 1;
+            
+            if ( i_MaxWidth > 0 && v_NewWidth > i_MaxWidth )
+            {
+                v_WidthZoomRate = Help.division(i_MaxWidth ,v_NewWidth);
+                v_IsResize      = true;
+            }
+            
+            if ( i_MaxHeight > 0 && v_NewHeight > i_MaxHeight )
+            {
+                v_HeightZoomRate = Help.division(i_MaxHeight ,v_NewHeight);
+                v_IsResize       = true;
+            }
+            
+            if ( v_IsResize )
+            {
+                double v_ZoomRate = Help.min(v_WidthZoomRate ,v_HeightZoomRate);
+                v_NewWidth  = (int)Math.floor(Help.multiply(v_NewWidth  ,v_ZoomRate));
+                v_NewHeight = (int)Math.floor(Help.multiply(v_NewHeight ,v_ZoomRate));
+            }
+        }
+        // 计算非等比缩放的情况
+        else
+        {
+            if ( i_MaxWidth > 0 && v_NewWidth > i_MaxWidth )
+            {
+                v_NewWidth = i_MaxWidth;
+                v_IsResize = true;
+            }
+            
+            if ( i_MaxHeight > 0 && v_NewHeight > i_MaxHeight )
+            {
+                v_NewHeight = i_MaxHeight;
+                v_IsResize  = true;
+            }
+        }
+        
+        if ( v_IsResize )
+        {
+            return resizeImage(i_Image ,v_NewWidth ,v_NewHeight);
+        }
+        else
+        {
+            return i_Image;
+        }
+    }
+	
+	
+	
+	
+	/**
+     * 缩放图片
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_NewWidth   新的宽度
+     * @param i_NewHeight  新的高度
+     * @return
+     */
+    public BufferedImage resizeImage(String i_File ,int i_NewWidth ,int i_NewHeight) throws IOException
+    {
+        if ( i_File.startsWith("file:") )
+        {
+            return resizeImage(new URL(i_File) ,i_NewWidth ,i_NewHeight);
+        }
+        else
+        {
+            return resizeImage(new File(i_File) ,i_NewWidth ,i_NewHeight);
+        }
+    }
+	
+	
+	
+	
+	/**
+     * 缩放图片
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_NewWidth   新的宽度
+     * @param i_NewHeight  新的高度
+     * @return
+     */
+	public BufferedImage resizeImage(URL i_File ,int i_NewWidth ,int i_NewHeight) throws IOException
+	{
+	    return resizeImage(ImageIO.read(i_File) ,i_NewWidth ,i_NewHeight);
+	}
+	
+	
+	
+	/**
+     * 缩放图片
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_NewWidth   新的宽度
+     * @param i_NewHeight  新的高度
+     * @return
+     */
+	public BufferedImage resizeImage(File i_File ,int i_NewWidth ,int i_NewHeight) throws IOException
+    {
+        return resizeImage(ImageIO.read(i_File) ,i_NewWidth ,i_NewHeight);
+    }
+	
+	
+	
+	/**
+     * 缩放图片
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_NewWidth   新的宽度
+     * @param i_NewHeight  新的高度
+     * @return
+     */
+    public BufferedImage resizeImage(BufferedImage i_Image ,int i_NewWidth ,int i_NewHeight)
+    {
+        Image         v_ScaleImage = i_Image.getScaledInstance(i_NewWidth ,i_NewHeight ,Image.SCALE_SMOOTH);
+        BufferedImage v_NewImage   = new BufferedImage(i_NewWidth ,i_NewHeight, i_Image.getType());
+        Graphics2D    v_Graphics   = v_NewImage.createGraphics();
+        
+        // 从原图上取颜色绘制新图
+        v_Graphics.drawImage(v_ScaleImage ,0 ,0 ,i_NewWidth ,i_NewHeight ,null);
+        v_Graphics.dispose();
+        
+        return v_NewImage;
+    }
 	
 	
 	
