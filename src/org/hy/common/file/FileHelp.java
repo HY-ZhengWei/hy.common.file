@@ -89,7 +89,8 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *           v5.1  2018-03-16  1.修复：UnCompressZip()当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
  *           v6.0  2018-04-09  1.添加：Zip4j技术的压缩及解压的功能，支持加密功能。
  *           v7.0  2019-01-10  1.添加：缩放图片（限制最大宽度或最大高度）
- *                             2.添加：缩放图片（按实际大小）
+ *                             2.添加：缩放图片（限制最小宽度或最小高度）
+ *                             3.添加：缩放图片（按实际大小）
  */
 public final class FileHelp 
 {
@@ -893,6 +894,151 @@ public final class FileHelp
 			v_Iter.next().unCompressZipAfter(i_Event);
 		}
 	}
+	
+	
+	
+	/**
+     * 缩放图片（限制最小宽度或最小高度）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_MinWidth   最小宽度（小于0，表示不限制）
+     * @param i_MinHeight  最小高度（小于0，表示不限制）
+     * @param i_IsScale    当图片被缩小时，是否保持高宽等比缩放
+     * @return
+     */
+    public BufferedImage resizeImageByMin(String i_File ,boolean i_IsScale ,int i_MinWidth ,int i_MinHeight) throws IOException
+    {
+        if ( i_File.startsWith("file:") )
+        {
+            return resizeImageByMin(new URL(i_File) ,i_IsScale ,i_MinWidth ,i_MinHeight);
+        }
+        else
+        {
+            return resizeImageByMin(new File(i_File) ,i_IsScale ,i_MinWidth ,i_MinHeight);
+        }
+    }
+    
+    
+    
+    
+    /**
+     * 缩放图片（限制最小宽度或最小高度）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_MinWidth   最小宽度（小于0，表示不限制）
+     * @param i_MinHeight  最小高度（小于0，表示不限制）
+     * @param i_IsScale    当图片被缩小时，是否保持高宽等比缩放
+     * @return
+     */
+    public BufferedImage resizeImageByMin(URL i_File ,boolean i_IsScale ,int i_MinWidth ,int i_MinHeight) throws IOException
+    {
+        return resizeImageByMin(ImageIO.read(i_File) ,i_IsScale ,i_MinWidth ,i_MinHeight);
+    }
+    
+    
+    
+    /**
+     * 缩放图片（限制最小宽度或最小高度）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_MinWidth   最小宽度（小于0，表示不限制）
+     * @param i_MinHeight  最小高度（小于0，表示不限制）
+     * @param i_IsScale    当图片被缩小时，是否保持高宽等比缩放
+     * @return
+     */
+    public BufferedImage resizeImageByMin(File i_File ,boolean i_IsScale ,int i_MinWidth ,int i_MinHeight) throws IOException
+    {
+        return resizeImageByMin(ImageIO.read(i_File) ,i_IsScale ,i_MinWidth ,i_MinHeight);
+    }
+    
+    
+    
+    /**
+     * 缩放图片（限制最小宽度或最小高度）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_MinWidth   最小宽度（小于0，表示不限制）
+     * @param i_MinHeight  最小高度（小于0，表示不限制）
+     * @param i_IsScale    当图片被缩小时，是否保持高宽等比缩放
+     * @return
+     */
+    public BufferedImage resizeImageByMin(BufferedImage i_Image ,boolean i_IsScale ,int i_MinWidth ,int i_MinHeight)
+    {
+        if ( i_MinWidth <= 0 && i_MinHeight <= 0 )
+        {
+            return i_Image;
+        }
+        
+        int     v_NewWidth  = i_Image.getWidth();
+        int     v_NewHeight = i_Image.getHeight();
+        boolean v_IsResize  = false;
+        
+        // 计算高宽等比缩放的情况
+        if ( i_IsScale )
+        {
+            double v_WidthZoomRate  = 1;
+            double v_HeightZoomRate = 1;
+            
+            if ( i_MinWidth > 0 && v_NewWidth < i_MinWidth )
+            {
+                v_WidthZoomRate = Help.division(i_MinWidth ,v_NewWidth);
+                v_IsResize      = true;
+            }
+            
+            if ( i_MinHeight > 0 && v_NewHeight < i_MinHeight )
+            {
+                v_HeightZoomRate = Help.division(i_MinHeight ,v_NewHeight);
+                v_IsResize       = true;
+            }
+            
+            if ( v_IsResize )
+            {
+                double v_ZoomRate = Help.max(v_WidthZoomRate ,v_HeightZoomRate);
+                v_NewWidth  = (int)Math.floor(Help.multiply(v_NewWidth  ,v_ZoomRate));
+                v_NewHeight = (int)Math.floor(Help.multiply(v_NewHeight ,v_ZoomRate));
+            }
+        }
+        // 计算非等比缩放的情况
+        else
+        {
+            if ( i_MinWidth > 0 && v_NewWidth < i_MinWidth )
+            {
+                v_NewWidth = i_MinWidth;
+                v_IsResize = true;
+            }
+            
+            if ( i_MinHeight > 0 && v_NewHeight < i_MinHeight )
+            {
+                v_NewHeight = i_MinHeight;
+                v_IsResize  = true;
+            }
+        }
+        
+        if ( v_IsResize )
+        {
+            return resizeImage(i_Image ,v_NewWidth ,v_NewHeight);
+        }
+        else
+        {
+            return i_Image;
+        }
+    }
 	
 	
 	
