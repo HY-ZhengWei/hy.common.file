@@ -25,6 +25,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -91,6 +93,8 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *           v7.0  2019-01-10  1.添加：缩放图片（限制最大宽度或最大高度）
  *                             2.添加：缩放图片（限制最小宽度或最小高度）
  *                             3.添加：缩放图片（按实际大小）
+ *           v8.0  2019-02-08  1.添加：读取外部Jar包中的文件内容的方法getContent(JarFile ...)
+ *                             2.修改：所有getContent()方法的默认文件编码读取方式由GBK改为UTF-8
  */
 public final class FileHelp 
 {
@@ -1496,6 +1500,93 @@ public final class FileHelp
 	
 	
 	/**
+     * 读取外部Jar包中的文件内容
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-02-08
+     * @version     v1.0
+     *
+     * @param i_Jar           Jar包文件的对象。
+     *                            方法内部不会做关闭动作JarFile.close()，请在外部自行关。
+     *                            不再内部自动关闭的好处是：外部方法可以多次调用此方法读取不同的文件内容。
+     * @param i_FileName      要读取Jar包里的文件的名称。
+     *                            1. 可以是全路径的(/为路径分隔符)。
+     *                            2. 也可以只是文件名称 或 部分路径加文件名称
+     * @return                为匹配到文件时，返回null
+     * @throws IOException    读取异常时，抛异常
+     */
+    public String getContent(JarFile i_Jar ,String i_FileName) throws IOException
+    {
+        return this.getContent(i_Jar ,i_FileName ,this.charEncoding ,false);
+    }
+    
+    
+    
+    /**
+     * 读取外部Jar包中的文件内容
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-02-08
+     * @version     v1.0
+     *
+     * @param i_Jar           Jar包文件的对象。
+     *                            方法内部不会做关闭动作JarFile.close()，请在外部自行关。
+     *                            不再内部自动关闭的好处是：外部方法可以多次调用此方法读取不同的文件内容。
+     * @param i_FileName      要读取Jar包里的文件的名称。
+     *                            1. 可以是全路径的(/为路径分隔符)。
+     *                            2. 也可以只是文件名称 或 部分路径加文件名称
+     * @param i_CharEncoding  文件的编码
+     * @return                为匹配到文件时，返回null
+     * @throws IOException    读取异常时，抛异常
+     */
+    public String getContent(JarFile i_Jar ,String i_FileName ,String i_CharEncoding) throws IOException
+    {
+        return this.getContent(i_Jar ,i_FileName ,i_CharEncoding ,false);
+    }
+	
+	
+	
+	/**
+	 * 读取外部Jar包中的文件内容
+	 * 
+	 * @author      ZhengWei(HY)
+	 * @createDate  2019-02-08
+	 * @version     v1.0
+	 *
+	 * @param i_Jar           Jar包文件的对象。
+	 *                            方法内部不会做关闭动作JarFile.close()，请在外部自行关。
+	 *                            不再内部自动关闭的好处是：外部方法可以多次调用此方法读取不同的文件内容。
+	 * @param i_FileName      要读取Jar包里的文件的名称。
+	 *                            1. 可以是全路径的(/为路径分隔符)。
+	 *                            2. 也可以只是文件名称 或 部分路径加文件名称
+	 * @param i_CharEncoding  文件的编码
+     * @param i_HaveNewLine   生成的文件内容是否包含 “回车换行” 符
+	 * @return                为匹配到文件时，返回null
+	 * @throws IOException    读取异常时，抛异常
+	 */
+	public String getContent(JarFile i_Jar ,String i_FileName ,String i_CharEncoding ,boolean i_HaveNewLine) throws IOException
+	{
+	    String                v_Content = null;
+	    Enumeration<JarEntry> v_Entries = i_Jar.entries();
+	    
+        while ( v_Entries.hasMoreElements() )
+        {
+            JarEntry v_JarEntry = v_Entries.nextElement();
+            String   v_Name     = v_JarEntry.getName();
+            
+            if ( v_Name.endsWith(i_FileName) )
+            {
+                v_Content = this.getContent(i_Jar.getInputStream(v_JarEntry) ,i_CharEncoding ,i_HaveNewLine);
+                break;
+            }
+        }
+        
+	    return v_Content;
+	}
+	
+	
+	
+	/**
      * 获取文件内容。
      * 
      * 主要针对小文件。文件内容为正常文字的文件。
@@ -1506,7 +1597,7 @@ public final class FileHelp
      */
     public String getContent(String i_FileFullName) throws IOException, ClassNotFoundException
     {
-        return this.getContent(i_FileFullName ,"GBK");
+        return this.getContent(i_FileFullName ,this.charEncoding);
     }
     
     
@@ -1588,7 +1679,7 @@ public final class FileHelp
 	 */
 	public String getContent(File i_SourceFile) throws IOException
 	{
-		return this.getContent(i_SourceFile ,"GBK");
+		return this.getContent(i_SourceFile ,this.charEncoding);
 	}
 	
 	
@@ -1670,7 +1761,7 @@ public final class FileHelp
      */
     public String getContent(URL i_FileURL) throws IOException
     {
-        return this.getContent(i_FileURL ,"GBK");
+        return this.getContent(i_FileURL ,this.charEncoding);
     }
     
     
@@ -1765,7 +1856,7 @@ public final class FileHelp
      */
     public String getContent(InputStream i_SourceInput) throws IOException
     {
-        return getContent(i_SourceInput ,"GBK");
+        return getContent(i_SourceInput ,this.charEncoding);
     }
     
     
@@ -3399,7 +3490,7 @@ public final class FileHelp
     
     
     /**
-     * 追加写入文件(编码GBK)
+     * 追加写入文件(编码UTF-8)
      * 
      * @author      ZhengWei(HY)
      * @createDate  2017-09-07
@@ -3411,7 +3502,7 @@ public final class FileHelp
      */
     public void append(String i_SaveFileFullName ,String i_Contents) throws IOException
     {
-        this.append(i_SaveFileFullName ,i_Contents ,"GBK");
+        this.append(i_SaveFileFullName ,i_Contents ,this.charEncoding);
     }
     
     
@@ -3456,7 +3547,7 @@ public final class FileHelp
     
     
     /**
-     * 创建并写入文件(编码GBK)
+     * 创建并写入文件(编码UTF-8)
      * 
      * @author      ZhengWei(HY)
      * @createDate  2017-05-11
@@ -3468,7 +3559,7 @@ public final class FileHelp
      */
     public void create(String i_SaveFileFullName ,String i_Contents) throws IOException
     {
-        this.create(i_SaveFileFullName ,i_Contents ,"GBK");
+        this.create(i_SaveFileFullName ,i_Contents ,this.charEncoding);
     }
     
     
@@ -3629,7 +3720,7 @@ public final class FileHelp
 	
 	
 	/**
-	 * 创建CSV格式的文件(编码GBK)
+	 * 创建CSV格式的文件(编码UTF-8)
 	 * 
 	 * @param i_SaveFileFullName  保存文件的全名称
 	 * @param i_Contents          文件内容。集合元素须实现 com.huoyu.common.file.FileSerializable 接口
@@ -3637,13 +3728,13 @@ public final class FileHelp
 	 */
 	public void createCSV(String i_SaveFileFullName ,List<?> i_Contents) throws IOException
 	{
-		this.createCSV(i_SaveFileFullName ,null ,i_Contents ,"GBK");
+		this.createCSV(i_SaveFileFullName ,null ,i_Contents ,this.charEncoding);
 	}
 	
 	
 	
 	/**
-	 * 创建CSV格式的文件(编码GBK)
+	 * 创建CSV格式的文件(编码UTF-8)
 	 * 
 	 * @param i_SaveFileFullName  保存文件的全名称
 	 * @param i_Titles            标题信息
@@ -3652,13 +3743,13 @@ public final class FileHelp
 	 */
 	public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,List<?> i_Contents) throws IOException
 	{
-		this.createCSV(i_SaveFileFullName ,i_Titles ,i_Contents ,"GBK");
+		this.createCSV(i_SaveFileFullName ,i_Titles ,i_Contents ,this.charEncoding);
 	}
 	
 	
 	
 	/**
-	 * 创建CSV格式的文件(编码GBK) -- 支持超大数据源。
+	 * 创建CSV格式的文件(编码UTF-8) -- 支持超大数据源。
 	 * 
 	 * @param i_SaveFileFullName  保存文件的全名称
 	 * @param i_FileBiggerMemory  超大数据源存储器 com.huoyu.common.file.FileBiggerMemory 接口
@@ -3666,13 +3757,13 @@ public final class FileHelp
 	 */
 	public void createCSV(String i_SaveFileFullName ,FileBiggerMemory i_FileBiggerMemory) throws IOException
 	{
-		this.createCSV(i_SaveFileFullName ,null ,i_FileBiggerMemory ,"GBK");
+		this.createCSV(i_SaveFileFullName ,null ,i_FileBiggerMemory ,this.charEncoding);
 	}
 	
 	
 	
 	/**
-	 * 创建CSV格式的文件(编码GBK) -- 支持超大数据源。
+	 * 创建CSV格式的文件(编码UTF-8) -- 支持超大数据源。
 	 * 
 	 * @param i_SaveFileFullName  保存文件的全名称
 	 * @param i_Titles            标题信息
@@ -3681,7 +3772,7 @@ public final class FileHelp
 	 */
 	public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,FileBiggerMemory i_FileBiggerMemory) throws IOException
 	{
-		this.createCSV(i_SaveFileFullName ,i_Titles ,i_FileBiggerMemory ,"GBK");
+		this.createCSV(i_SaveFileFullName ,i_Titles ,i_FileBiggerMemory ,this.charEncoding);
 	}
 	
 	
