@@ -7,5 +7,6 @@
 	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
 	<classpathentry kind="lib" path="lib/junit-4.11.jar"/>
 	<classpathentry kind="lib" path="lib/zip4j_1.3.2.jar" sourcepath="lib/zip4j_src_1.3.2.zip"/>
+	<classpathentry kind="lib" path="lib/rt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
