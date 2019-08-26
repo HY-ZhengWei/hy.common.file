@@ -95,18 +95,22 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *                             3.添加：缩放图片（按实际大小）
  *           v8.0  2019-02-08  1.添加：读取外部Jar包中的文件内容的方法getContent(JarFile ...)
  *                             2.修改：所有getContent()方法的默认文件编码读取方式由GBK改为UTF-8
+ *           v9.0  2019-08-26  1.添加：文件上传完成后，在返回前做一次文件大小的检查。
  */
 public final class FileHelp 
 {
     
     /** 上传中 */
-    public  static final int                               $Upload_GoOn   = 0;
+    public  static final int                               $Upload_GoOn       = 0;
     
     /** 上传全部完成 */
-    public  static final int                               $Upload_Finish = 1;
+    public  static final int                               $Upload_Finish     = 1;
     
     /** 上传异常 */
-    public  static final int                               $Upload_Error  = -1;
+    public  static final int                               $Upload_Error      = -1;
+    
+    /** 上传完成后，在返回 $Upload_Finish 前，做文件检查时，发现文件大小不一致等异常 */
+    public  static final int                               $Upload_ErrorCheck = -2;
     
     
     
@@ -3257,6 +3261,7 @@ public final class FileHelp
      * @author      ZhengWei(HY)
      * @createDate  2017-10-09
      * @version     v1.0
+     *              v2.0  2019-08-26  添加：文件上传完成后，在返回前做文件大小的检查。
      *
      * @param i_Dir         保存文件的目录
      * @param i_DataPacket  数据包
@@ -3278,6 +3283,7 @@ public final class FileHelp
      * @author      ZhengWei(HY)
      * @createDate  2017-10-09
      * @version     v1.0
+     *              v2.0  2019-08-26  添加：文件上传完成后，在返回前做文件大小的检查。
      *
      * @param i_Dir         保存文件的目录
      * @param i_DataPacket  数据包
@@ -3322,12 +3328,24 @@ public final class FileHelp
                 }
             }
             
-            this.append(i_Dir.getAbsolutePath() + Help.getSysPathSeparator() + i_DataPacket.getName() ,i_DataPacket.getDataByte());
+            String v_FileFullName = i_Dir.getAbsolutePath() + Help.getSysPathSeparator() + i_DataPacket.getName();
+            this.append(v_FileFullName ,i_DataPacket.getDataByte());
             
             if ( i_DataPacket.getDataCount().intValue() == i_DataPacket.getDataNo().intValue() )
             {
                 $DataPackets.remove(i_DataPacket.getName());
-                return $Upload_Finish;
+                
+                File v_UploadFile = new File(v_FileFullName);
+                if ( v_UploadFile.exists() )
+                {
+                    // 当外界没有提供上传文件的总大小时，不做文件大小的核对检查
+                    if ( i_DataPacket.getSize() == null || i_DataPacket.getSize().equals(v_UploadFile.length()) )
+                    {
+                        return $Upload_Finish;
+                    }
+                }
+                
+                return $Upload_ErrorCheck;
             }
             else
             {

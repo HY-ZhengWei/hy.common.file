@@ -12,6 +12,7 @@ import java.io.Serializable;
  * @author      ZhengWei(HY)
  * @createDate  2017-10-09
  * @version     v1.0
+ *              v2.0  2019-08-26  修正：size改成Long类型
  */
 public class FileDataPacket implements Serializable
 {
@@ -25,7 +26,7 @@ public class FileDataPacket implements Serializable
     private String  name;
     
     /** 文件的总大小 */
-    private Integer size;
+    private Long    size;
     
     /** 数据包的总数量 */
     private Integer dataCount;
@@ -88,7 +89,7 @@ public class FileDataPacket implements Serializable
     /**
      * 获取：文件的总大小
      */
-    public Integer getSize()
+    public Long getSize()
     {
         return size;
     }
@@ -100,7 +101,7 @@ public class FileDataPacket implements Serializable
      * 
      * @param size 
      */
-    public void setSize(Integer size)
+    public void setSize(Long size)
     {
         this.size = size;
     }
