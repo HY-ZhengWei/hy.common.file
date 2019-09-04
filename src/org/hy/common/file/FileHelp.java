@@ -16,6 +16,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.sql.ResultSet;
@@ -96,6 +97,7 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *           v8.0  2019-02-08  1.添加：读取外部Jar包中的文件内容的方法getContent(JarFile ...)
  *                             2.修改：所有getContent()方法的默认文件编码读取方式由GBK改为UTF-8
  *           v9.0  2019-08-26  1.添加：文件上传完成后，在返回前做一次文件大小的检查。
+ *           v10.0 2019-09-04  1.添加：create(URL)系列创建文件的方法 
  */
 public final class FileHelp 
 {
@@ -3565,6 +3567,50 @@ public final class FileHelp
     
     
     /**
+     * 创建并写入文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-09-04
+     * @version     v1.0
+     *
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Contents          文件内容（数组中每个元素均是文件的一行数据）
+     * @throws IOException
+     */
+    public void create(String i_SaveFileFullName ,String [] i_Contents) throws IOException
+    {
+        this.create(i_SaveFileFullName ,i_Contents ,this.charEncoding);
+    }
+    
+    
+    
+    /**
+     * 创建并写入文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-09-04
+     * @version     v1.0
+     *
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Contents          文件内容（数组中每个元素均是文件的一行数据）
+     * @param i_CharEncoding      文件编码
+     * @throws IOException
+     */
+    public void create(String i_SaveFileFullName ,String [] i_Contents ,String i_CharEncoding) throws IOException
+    {
+        StringBuilder v_Buffer = new StringBuilder();
+        
+        for (String v_Row : i_Contents)
+        {
+            v_Buffer.append(v_Row).append("\r\n");
+        }
+        
+        this.create(i_SaveFileFullName ,v_Buffer.toString() ,i_CharEncoding);
+    }
+    
+    
+    
+    /**
      * 创建并写入文件(编码UTF-8)
      * 
      * @author      ZhengWei(HY)
@@ -3620,6 +3666,156 @@ public final class FileHelp
                 {
                     v_SaveFile = null;
                     throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
+                }
+            }
+        }
+        
+        
+        FileOutputStream   v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
+        OutputStreamWriter v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
+
+        try
+        {
+            v_SaveWriter.write(i_Contents);
+            v_SaveWriter.flush();
+        }
+        catch (Exception exce)
+        {
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                v_SaveWriter.flush();
+                v_SaveWriter.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            try
+            {
+                v_SaveOutput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            v_SaveWriter = null;
+            v_SaveOutput = null;
+            v_SaveFile   = null;
+        }
+    }
+    
+    
+    
+    /**
+     * 创建并写入文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-08-04
+     * @version     v1.0
+     *
+     * @param i_SaveFile          保存文件的全名称
+     * @param i_Contents          文件内容（数组中每个元素均是文件的一行数据）
+     * @throws IOException
+     * @throws URISyntaxException 
+     */
+    public void create(URL i_SaveFile ,String [] i_Contents) throws IOException, URISyntaxException
+    {
+        this.create(i_SaveFile ,i_Contents ,this.charEncoding);
+    }
+    
+    
+    
+    /**
+     * 创建并写入文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-08-04
+     * @version     v1.0
+     *
+     * @param i_SaveFile          保存文件的全名称
+     * @param i_Contents          文件内容（数组中每个元素均是文件的一行数据）
+     * @param i_CharEncoding      文件编码
+     * @throws IOException
+     * @throws URISyntaxException 
+     */
+    public void create(URL i_SaveFile ,String [] i_Contents ,String i_CharEncoding) throws IOException, URISyntaxException
+    {
+        StringBuilder v_Buffer = new StringBuilder();
+        
+        for (String v_Row : i_Contents)
+        {
+            v_Buffer.append(v_Row).append("\r\n");
+        }
+        
+        this.create(i_SaveFile ,v_Buffer.toString() ,i_CharEncoding);
+    }
+    
+    
+    
+    /**
+     * 创建并写入文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-09-04
+     * @version     v1.0
+     *
+     * @param i_SaveFile          保存文件的全名称
+     * @param i_Contents          文件内容
+     * @throws IOException
+     * @throws URISyntaxException 
+     */
+    public void create(URL i_SaveFile ,String i_Contents) throws IOException, URISyntaxException
+    {
+        this.create(i_SaveFile ,i_Contents ,this.charEncoding);
+    }
+    
+    
+    
+    /**
+     * 创建并写入文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-09-04
+     * @version     v1.0
+     *
+     * @param i_SaveFile          保存文件的全名称
+     * @param i_Contents          文件内容
+     * @param i_CharEncoding      文件编码
+     * @throws IOException
+     * @throws URISyntaxException 
+     */
+    public void create(URL i_SaveFile ,String i_Contents ,String i_CharEncoding) throws IOException, URISyntaxException
+    {
+        if ( i_SaveFile == null )
+        {
+            throw new NullPointerException("Save full file is null.");
+        }
+        
+        File v_SaveFile = new File(i_SaveFile.toURI());
+        if ( v_SaveFile.exists() )
+        {
+            if ( !this.isAppend )
+            {
+                if ( this.isOverWrite )
+                {
+                    boolean v_Result = v_SaveFile.delete();
+                    
+                    if ( !v_Result )
+                    {
+                        v_SaveFile = null;
+                        throw new IOException("Delete target file[" + i_SaveFile.toString() + "] exception.");
+                    }
+                }
+                else
+                {
+                    v_SaveFile = null;
+                    throw new IOException("Target[" + i_SaveFile.toString() + "] is exists.");
                 }
             }
         }

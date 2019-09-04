@@ -1,5 +1,5 @@
-Manifest-Version: 1.1.8
+Manifest-Version: 1.1.9
 Created-By: HY.ZhengWei@qq.com  2012
-Specification-Version: 1.1.8  2019-08-26
+Specification-Version: 1.1.9  2019-09-04
 SourceCode: https://github.com/HY-ZhengWei/hy.common.file
 Build-JDK: 1.6
