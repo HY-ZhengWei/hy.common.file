@@ -98,6 +98,7 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *                             2.修改：所有getContent()方法的默认文件编码读取方式由GBK改为UTF-8
  *           v9.0  2019-08-26  1.添加：文件上传完成后，在返回前做一次文件大小的检查。
  *           v10.0 2019-09-04  1.添加：create(URL)系列创建文件的方法 
+ *           v11.0 2019-12-18  1.添加：递归计算目录大小，并且排除某些文件或目录的方法calcSize(...)
  */
 public final class FileHelp 
 {
@@ -1426,6 +1427,94 @@ public final class FileHelp
             else if ( v_File.isDirectory() )
             {
                 v_Size += calcSize(v_File);
+            }
+        }
+        
+        return v_Size;
+    }
+    
+    
+    
+    /**
+     * 递归的计算目录所有文件及子目录文件的合计大小。
+     * 
+     * 此方法相对简单，未实现多线程等计算功能。
+     * 
+     * 适用于递归层级及文件不是十分多的情况。
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-12-18
+     * @version     v1.0
+     *
+     * @param i_Folder          父目录
+     * @param i_ExcludeFiles    排除在外的文件是哪些，格式如："|文件名称|"。为NULL时表示不排除
+     * @return                  返回合计大小
+     */
+    public long calcSize(File i_Folder ,String i_ExcludeFiles)
+    {
+        return calcSize(i_Folder ,i_ExcludeFiles ,null);
+    }
+    
+    
+    
+    /**
+     * 递归的计算目录所有文件及子目录文件的合计大小。
+     * 
+     * 此方法相对简单，未实现多线程等计算功能。
+     * 
+     * 适用于递归层级及文件不是十分多的情况。
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-12-18
+     * @version     v1.0
+     *
+     * @param i_Folder          父目录
+     * @param i_ExcludeFiles    排除在外的文件是哪些，格式如："|文件名称|"。为NULL时表示不排除
+     * @param i_ExcludeFolders  排除在外的目录是哪些，格式如："|目录名称|"。为NULL时表示不排除
+     * @return                  返回合计大小
+     */
+    public long calcSize(File i_Folder ,String i_ExcludeFiles ,String i_ExcludeFolders)
+    {
+        long v_Size = 0L;
+        
+        if ( i_Folder == null )
+        {
+            return v_Size;
+        }
+        
+        if ( !i_Folder.exists() && !i_Folder.isDirectory() )
+        {
+            return v_Size;
+        }
+        
+        File [] v_Files = i_Folder.listFiles();
+        if ( Help.isNull(v_Files) )
+        {
+            return v_Size;
+        }
+        
+        String v_ExcludeFiles   = Help.NVL(i_ExcludeFiles)  .toLowerCase();
+        String v_ExcludeFolders = Help.NVL(i_ExcludeFolders).toLowerCase();
+        
+        for (File v_File : v_Files)
+        {
+            if ( v_File.isFile() )
+            {
+                if ( !Help.isNull(v_ExcludeFiles) && v_ExcludeFiles.indexOf("|" + v_File.getName().toLowerCase() + "|") >= 0 )
+                {
+                    continue;
+                }
+                
+                v_Size += v_File.length();
+            }
+            else if ( v_File.isDirectory() )
+            {
+                if ( !Help.isNull(v_ExcludeFolders) && v_ExcludeFolders.indexOf("|" + v_File.getName().toLowerCase() + "|") >= 0 )
+                {
+                    continue;
+                }
+                
+                v_Size += calcSize(v_File ,v_ExcludeFiles ,v_ExcludeFolders);
             }
         }
         
