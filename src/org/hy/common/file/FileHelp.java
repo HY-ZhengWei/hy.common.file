@@ -1812,17 +1812,17 @@ public final class FileHelp
         
         if ( !i_SourceFile.exists() )
         {
-            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] is not exists.");
+            throw new RuntimeException("Source file[" + i_SourceFile.toString() + "] is not exists.");
         }
         
         if ( !i_SourceFile.isFile() )
         {
-            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] is not file.");
+            throw new RuntimeException("Source file[" + i_SourceFile.toString() + "] is not file.");
         }
         
         if ( !i_SourceFile.canRead() )
         {
-            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] can not read.");
+            throw new RuntimeException("Source file[" + i_SourceFile.toString() + "] can not read.");
         }
         
         
@@ -1907,17 +1907,17 @@ public final class FileHelp
         }
         if ( !v_SourceFile.exists() )
         {
-            throw new VerifyError("File[" + v_SourceFile.toString() + "] is not exists.");
+            throw new RuntimeException("File[" + v_SourceFile.toString() + "] is not exists.");
         }
         
         if ( !v_SourceFile.isFile() )
         {
-            throw new VerifyError("File[" + v_SourceFile.toString() + "] is not file.");
+            throw new RuntimeException("File[" + v_SourceFile.toString() + "] is not file.");
         }
         
         if ( !v_SourceFile.canRead() )
         {
-            throw new VerifyError("File[" + v_SourceFile.toString() + "] can not read.");
+            throw new RuntimeException("File[" + v_SourceFile.toString() + "] can not read.");
         }
         
         
@@ -2178,17 +2178,17 @@ public final class FileHelp
         
         if ( !i_SourceFile.exists() )
         {
-            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] is not exists.");
+            throw new RuntimeException("Source file[" + i_SourceFile.toString() + "] is not exists.");
         }
         
         if ( !i_SourceFile.isFile() )
         {
-            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] is not file.");
+            throw new RuntimeException("Source file[" + i_SourceFile.toString() + "] is not file.");
         }
         
         if ( !i_SourceFile.canRead() )
         {
-            throw new VerifyError("Source file[" + i_SourceFile.toString() + "] can not read.");
+            throw new RuntimeException("Source file[" + i_SourceFile.toString() + "] can not read.");
         }
         
         
@@ -2239,17 +2239,17 @@ public final class FileHelp
         }
         if ( !v_SourceFile.exists() )
         {
-            throw new VerifyError("File[" + v_SourceFile.toString() + "] is not exists.");
+            throw new RuntimeException("File[" + v_SourceFile.toString() + "] is not exists.");
         }
         
         if ( !v_SourceFile.isFile() )
         {
-            throw new VerifyError("File[" + v_SourceFile.toString() + "] is not file.");
+            throw new RuntimeException("File[" + v_SourceFile.toString() + "] is not file.");
         }
         
         if ( !v_SourceFile.canRead() )
         {
-            throw new VerifyError("File[" + v_SourceFile.toString() + "] can not read.");
+            throw new RuntimeException("File[" + v_SourceFile.toString() + "] can not read.");
         }
         
         
@@ -2595,17 +2595,17 @@ public final class FileHelp
     {
         if ( !i_SourceFolder.exists() )
         {
-            throw new VerifyError("Source folder[" + i_SourceFolder.toString() + "] is not exists.");
+            throw new RuntimeException("Source folder[" + i_SourceFolder.toString() + "] is not exists.");
         }
         
         if ( !i_SourceFolder.isDirectory() )
         {
-            throw new VerifyError("Source[" + i_SourceFolder.toString() + "] is not directory.");
+            throw new RuntimeException("Source[" + i_SourceFolder.toString() + "] is not directory.");
         }
         
         if ( !i_SourceFolder.canRead() )
         {
-            throw new VerifyError("Source[" + i_SourceFolder.toString() + "] can not read.");
+            throw new RuntimeException("Source[" + i_SourceFolder.toString() + "] can not read.");
         }
         
         
@@ -2614,7 +2614,7 @@ public final class FileHelp
         {
             if ( !i_TargetFolder.isDirectory() )
             {
-                throw new VerifyError("Target[" + i_TargetFolder.toString() + "] is not directory.");
+                throw new RuntimeException("Target[" + i_TargetFolder.toString() + "] is not directory.");
             }
             
             v_TargetFolderIsExists = true;
@@ -4846,7 +4846,7 @@ public final class FileHelp
 				{
 					if ( !i_IgnoreSourceFileError )
 					{
-						throw new VerifyError(v_SourceFileFullName + " is not exists.");
+						throw new RuntimeException(v_SourceFileFullName + " is not exists.");
 					}
 					else
 					{
@@ -4860,7 +4860,7 @@ public final class FileHelp
 				{
 					if ( !i_IgnoreSourceFileError )
 					{
-						throw new VerifyError(v_SourceFileFullName + " can not read.");
+						throw new RuntimeException(v_SourceFileFullName + " can not read.");
 					}
 					else
 					{
@@ -5798,7 +5798,7 @@ public final class FileHelp
                 {
                     if ( !i_IgnoreSourceFileError )
                     {
-                        throw new VerifyError(v_SourceFileFullName + " is not exists.");
+                        throw new RuntimeException(v_SourceFileFullName + " is not exists.");
                     }
                     else
                     {
@@ -5811,7 +5811,7 @@ public final class FileHelp
                 {
                     if ( !i_IgnoreSourceFileError )
                     {
-                        throw new VerifyError(v_SourceFileFullName + " can not read.");
+                        throw new RuntimeException(v_SourceFileFullName + " can not read.");
                     }
                     else
                     {
