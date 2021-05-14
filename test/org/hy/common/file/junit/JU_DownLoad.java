@@ -1,6 +1,7 @@
 package org.hy.common.file.junit;
 
 import java.util.Properties;
+
 import org.hy.common.file.FileHelp;
 
 
@@ -19,7 +20,7 @@ public class JU_DownLoad
     public static void main(String [] args)
     {
         // 代理服务器的IP
-        String v_HttpProxy     = "133.64.81.235";
+        String v_HttpProxy     = "127.0.0.1";
         // 代理服务器的端口
         String v_HttpProxyPort = "8080";
     
