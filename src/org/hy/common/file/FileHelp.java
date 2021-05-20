@@ -1,5 +1,6 @@
 package org.hy.common.file;
 
+import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -16,6 +17,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -43,6 +45,7 @@ import org.hy.common.ByteHelp;
 import org.hy.common.Date;
 import org.hy.common.ExpireMap;
 import org.hy.common.Help;
+import org.hy.common.Return;
 import org.hy.common.StringHelp;
 import org.hy.common.file.event.CreateCSVEvent;
 import org.hy.common.file.event.CreateCSVListener;
@@ -77,7 +80,7 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *           V2.1  2015-01-22  1.整理优化 getContent(...) 系列方法
  *                             2.添加：getContentByte(...) 系列方法
  *           V2.2  2016-02-20  1.getContent(...) 系统方法添加：生成的文件内容是否包含 “回车换行” 符功能
- *           V2.3  2017-09-07  1.添加：追加写入数据的模式 
+ *           V2.3  2017-09-07  1.添加：追加写入数据的模式
  *                             2.添加：create(byte[])二进制数据的写入
  *           v3.0  2017-10-09  1.添加：断点上传的服务端功能
  *           v3.1  2017-10-11  1.添加：获取Http Post请求中的数据，getContent(...)
@@ -97,10 +100,14 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *           v8.0  2019-02-08  1.添加：读取外部Jar包中的文件内容的方法getContent(JarFile ...)
  *                             2.修改：所有getContent()方法的默认文件编码读取方式由GBK改为UTF-8
  *           v9.0  2019-08-26  1.添加：文件上传完成后，在返回前做一次文件大小的检查。
- *           v10.0 2019-09-04  1.添加：create(URL)系列创建文件的方法 
+ *           v10.0 2019-09-04  1.添加：create(URL)系列创建文件的方法
  *           v11.0 2019-12-18  1.添加：递归计算目录大小，并且排除某些文件或目录的方法calcSize(...)
+ *           v12.0 2021-05-20  1.添加：加载图片内容
+ *                             2.添加：获取图片的轮廓
+ *                             3.添加：按小图的选定轮廓，从大图中剪切出一部分小图
+ *                             4.添加：将前景图透明处理后，覆盖在背景图的上图
  */
-public final class FileHelp 
+public final class FileHelp
 {
     
     /** 上传中 */
@@ -146,7 +153,7 @@ public final class FileHelp
     /** 数据包的超时时长（单位：秒） */
     private long                                 dataPacketTimeOut = 10 * 60;
     
-    /** 
+    /**
      * 是否返回文件内容。
      * 
      * 用于getContent(...)系列方法，当isReturnContent为真时，getContent(...)方法将有返回值，否则返回值为null。
@@ -158,32 +165,32 @@ public final class FileHelp
     private boolean                              isReturnContent = true;
     
     
-	
-	/** 自定义事件的监听器集合--文件拷贝 */
-	private Collection<FileCopyListener>         fileCopyListeners;
-	
-	/** 自定义事件的监听器集合--创建CSV文件 */
-	private Collection<CreateCSVListener>        createCSVListeners;
-	
-	/** 自定义事件的监听器集合--创建Zip文件 */
-	private Collection<CreateZipListener>        createZipListeners;
-	
-	/** 自定义事件的监听器集合--解压缩Zip文件 */
-	private Collection<UnCompressZipListener>    unCompressZipListeners;
-	
-	/** 自定义事件的监听器集合--读取文件内容 */
-	private Collection<FileReadListener>         readListener;
-	
-	
-	
-	public FileHelp()
-	{
-		
-	}
-	
-	
-	
-	/**
+    
+    /** 自定义事件的监听器集合--文件拷贝 */
+    private Collection<FileCopyListener>         fileCopyListeners;
+    
+    /** 自定义事件的监听器集合--创建CSV文件 */
+    private Collection<CreateCSVListener>        createCSVListeners;
+    
+    /** 自定义事件的监听器集合--创建Zip文件 */
+    private Collection<CreateZipListener>        createZipListeners;
+    
+    /** 自定义事件的监听器集合--解压缩Zip文件 */
+    private Collection<UnCompressZipListener>    unCompressZipListeners;
+    
+    /** 自定义事件的监听器集合--读取文件内容 */
+    private Collection<FileReadListener>         readListener;
+    
+    
+    
+    public FileHelp()
+    {
+        
+    }
+    
+    
+    
+    /**
      * 注册读取文件内容事件
      * 
      * @param e
@@ -281,7 +288,7 @@ public final class FileHelp
         Iterator<FileReadListener> v_Iter       = this.readListener.iterator();
         boolean                    v_IsContinue = true;
 
-        while ( v_IsContinue && v_Iter.hasNext() ) 
+        while ( v_IsContinue && v_Iter.hasNext() )
         {
             v_IsContinue = v_Iter.next().readBefore(i_Event);
         }
@@ -301,7 +308,7 @@ public final class FileHelp
         Iterator<FileReadListener> v_Iter       = this.readListener.iterator();
         boolean                    v_IsContinue = true;
 
-        while ( v_IsContinue && v_Iter.hasNext() ) 
+        while ( v_IsContinue && v_Iter.hasNext() )
         {
             v_IsContinue = v_Iter.next().readProcess(i_Event);
         }
@@ -320,7 +327,7 @@ public final class FileHelp
     {
         Iterator<FileReadListener> v_Iter = this.readListener.iterator();
 
-        while ( v_Iter.hasNext() ) 
+        while ( v_Iter.hasNext() )
         {
             v_Iter.next().readAfter(i_Event);
         }
@@ -426,7 +433,7 @@ public final class FileHelp
 		Iterator<FileCopyListener> v_Iter       = this.fileCopyListeners.iterator();
 		boolean                    v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() ) 
+		while ( v_IsContinue && v_Iter.hasNext() )
 		{
 			v_IsContinue = v_Iter.next().copyBefore(i_Event);
 		}
@@ -446,7 +453,7 @@ public final class FileHelp
 		Iterator<FileCopyListener> v_Iter       = this.fileCopyListeners.iterator();
 		boolean                    v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() ) 
+		while ( v_IsContinue && v_Iter.hasNext() )
 		{
 			v_IsContinue = v_Iter.next().copyProcess(i_Event);
 		}
@@ -465,7 +472,7 @@ public final class FileHelp
 	{
 		Iterator<FileCopyListener> v_Iter = this.fileCopyListeners.iterator();
 
-		while ( v_Iter.hasNext() ) 
+		while ( v_Iter.hasNext() )
 		{
 			v_Iter.next().copyAfter(i_Event);
 		}
@@ -571,7 +578,7 @@ public final class FileHelp
 		Iterator<CreateCSVListener> v_Iter       = this.createCSVListeners.iterator();
 		boolean                     v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() ) 
+		while ( v_IsContinue && v_Iter.hasNext() )
 		{
 			v_IsContinue = v_Iter.next().createCSVBefore(i_Event);
 		}
@@ -591,7 +598,7 @@ public final class FileHelp
 		Iterator<CreateCSVListener> v_Iter       = this.createCSVListeners.iterator();
 		boolean                     v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() ) 
+		while ( v_IsContinue && v_Iter.hasNext() )
 		{
 			v_IsContinue = v_Iter.next().createCSVProcess(i_Event);
 		}
@@ -610,7 +617,7 @@ public final class FileHelp
 	{
 		Iterator<CreateCSVListener> v_Iter = this.createCSVListeners.iterator();
 
-		while ( v_Iter.hasNext() ) 
+		while ( v_Iter.hasNext() )
 		{
 			v_Iter.next().createCSVAfter(i_Event);
 		}
@@ -716,7 +723,7 @@ public final class FileHelp
 		Iterator<CreateZipListener> v_Iter       = this.createZipListeners.iterator();
 		boolean                     v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() ) 
+		while ( v_IsContinue && v_Iter.hasNext() )
 		{
 			v_IsContinue = v_Iter.next().createZipBefore(i_Event);
 		}
@@ -736,7 +743,7 @@ public final class FileHelp
 		Iterator<CreateZipListener> v_Iter       = this.createZipListeners.iterator();
 		boolean                     v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() ) 
+		while ( v_IsContinue && v_Iter.hasNext() )
 		{
 			v_IsContinue = v_Iter.next().createZipProcess(i_Event);
 		}
@@ -755,7 +762,7 @@ public final class FileHelp
 	{
 		Iterator<CreateZipListener> v_Iter = this.createZipListeners.iterator();
 
-		while ( v_Iter.hasNext() ) 
+		while ( v_Iter.hasNext() )
 		{
 			v_Iter.next().createZipAfter(i_Event);
 		}
@@ -861,7 +868,7 @@ public final class FileHelp
 		Iterator<UnCompressZipListener> v_Iter       = this.unCompressZipListeners.iterator();
 		boolean                         v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() ) 
+		while ( v_IsContinue && v_Iter.hasNext() )
 		{
 			v_IsContinue = v_Iter.next().unCompressZipBefore(i_Event);
 		}
@@ -881,7 +888,7 @@ public final class FileHelp
 		Iterator<UnCompressZipListener> v_Iter       = this.unCompressZipListeners.iterator();
 		boolean                         v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() ) 
+		while ( v_IsContinue && v_Iter.hasNext() )
 		{
 			v_IsContinue = v_Iter.next().unCompressZipProcess(i_Event);
 		}
@@ -900,7 +907,7 @@ public final class FileHelp
 	{
 		Iterator<UnCompressZipListener> v_Iter = this.unCompressZipListeners.iterator();
 
-		while ( v_Iter.hasNext() ) 
+		while ( v_Iter.hasNext() )
 		{
 			v_Iter.next().unCompressZipAfter(i_Event);
 		}
@@ -1195,11 +1202,11 @@ public final class FileHelp
             return i_Image;
         }
     }
-	
-	
-	
-	
-	/**
+    
+    
+    
+    
+    /**
      * 缩放图片
      * 
      * @author      ZhengWei(HY)
@@ -1222,11 +1229,11 @@ public final class FileHelp
             return resizeImage(new File(i_File) ,i_NewWidth ,i_NewHeight);
         }
     }
-	
-	
-	
-	
-	/**
+    
+    
+    
+    
+    /**
      * 缩放图片
      * 
      * @author      ZhengWei(HY)
@@ -1238,33 +1245,33 @@ public final class FileHelp
      * @param i_NewHeight  新的高度
      * @return
      */
-	public BufferedImage resizeImage(URL i_File ,int i_NewWidth ,int i_NewHeight) throws IOException
-	{
-	    return resizeImage(ImageIO.read(i_File) ,i_NewWidth ,i_NewHeight);
-	}
-	
-	
-	
-	/**
-     * 缩放图片
-     * 
-     * @author      ZhengWei(HY)
-     * @createDate  2019-01-10
-     * @version     v1.0
-     *
-     * @param i_Image
-     * @param i_NewWidth   新的宽度
-     * @param i_NewHeight  新的高度
-     * @return
-     */
-	public BufferedImage resizeImage(File i_File ,int i_NewWidth ,int i_NewHeight) throws IOException
+    public BufferedImage resizeImage(URL i_File ,int i_NewWidth ,int i_NewHeight) throws IOException
     {
         return resizeImage(ImageIO.read(i_File) ,i_NewWidth ,i_NewHeight);
     }
-	
-	
-	
-	/**
+    
+    
+    
+    /**
+     * 缩放图片
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-01-10
+     * @version     v1.0
+     *
+     * @param i_Image
+     * @param i_NewWidth   新的宽度
+     * @param i_NewHeight  新的高度
+     * @return
+     */
+    public BufferedImage resizeImage(File i_File ,int i_NewWidth ,int i_NewHeight) throws IOException
+    {
+        return resizeImage(ImageIO.read(i_File) ,i_NewWidth ,i_NewHeight);
+    }
+    
+    
+    
+    /**
      * 缩放图片
      * 
      * @author      ZhengWei(HY)
@@ -1288,28 +1295,10 @@ public final class FileHelp
         
         return v_NewImage;
     }
-	
-	
-	
-	/**
-	 * 删除指定目录下过期的文件
-	 * 
-	 * @author      ZhengWei(HY)
-	 * @createDate  2017-06-21
-	 * @version     v1.0
-	 *
-	 * @param i_Folder       被删除文件所在目录
-	 * @param i_ExpireDays   过期天数（即，只保留多少天的文件）
-	 * @param i_IsDelChilds  是否递归的删除所有子目录中的过期文件
-	 */
-	public void delFiles(String i_Folder ,int i_ExpireDays ,boolean i_IsDelChilds)
-	{
-	    this.delFiles(new File(i_Folder) ,i_ExpireDays ,i_IsDelChilds);
-	}
-	
-	
-	
-	/**
+    
+    
+    
+    /**
      * 删除指定目录下过期的文件
      * 
      * @author      ZhengWei(HY)
@@ -1320,16 +1309,34 @@ public final class FileHelp
      * @param i_ExpireDays   过期天数（即，只保留多少天的文件）
      * @param i_IsDelChilds  是否递归的删除所有子目录中的过期文件
      */
-	public void delFiles(File i_Folder ,int i_ExpireDays ,boolean i_IsDelChilds)
-	{
-	    Date v_ExpireTime = Date.getNowTime().getDate(Math.abs(i_ExpireDays)  * -1);
-	    
-	    this.delFiles(i_Folder ,v_ExpireTime ,i_IsDelChilds);
-	}
-	
-	
-	
-	/**
+    public void delFiles(String i_Folder ,int i_ExpireDays ,boolean i_IsDelChilds)
+    {
+        this.delFiles(new File(i_Folder) ,i_ExpireDays ,i_IsDelChilds);
+    }
+    
+    
+    
+    /**
+     * 删除指定目录下过期的文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-06-21
+     * @version     v1.0
+     *
+     * @param i_Folder       被删除文件所在目录
+     * @param i_ExpireDays   过期天数（即，只保留多少天的文件）
+     * @param i_IsDelChilds  是否递归的删除所有子目录中的过期文件
+     */
+    public void delFiles(File i_Folder ,int i_ExpireDays ,boolean i_IsDelChilds)
+    {
+        Date v_ExpireTime = Date.getNowTime().getDate(Math.abs(i_ExpireDays)  * -1);
+        
+        this.delFiles(i_Folder ,v_ExpireTime ,i_IsDelChilds);
+    }
+    
+    
+    
+    /**
      * 删除指定目录下过期的文件
      * 
      * @author      ZhengWei(HY)
@@ -1340,25 +1347,25 @@ public final class FileHelp
      * @param i_ExpireTime   过期时间。小于此时间点的文件将被删除
      * @param i_IsDelChilds  是否递归的删除所有子目录中的过期文件
      */
-	public void delFiles(File i_Folder ,Date i_ExpireTime ,boolean i_IsDelChilds)
-	{
-	    if ( i_Folder == null )
-	    {
-	        return;
-	    }
-	    
-	    if ( !i_Folder.exists() && !i_Folder.isDirectory() )
-	    {
-	        return;
-	    }
-	    
-	    File [] v_Files = i_Folder.listFiles();
-	    if ( Help.isNull(v_Files) )
-	    {
-	        return;
-	    }
-	    
-	    for (File v_File : v_Files)
+    public void delFiles(File i_Folder ,Date i_ExpireTime ,boolean i_IsDelChilds)
+    {
+        if ( i_Folder == null )
+        {
+            return;
+        }
+        
+        if ( !i_Folder.exists() && !i_Folder.isDirectory() )
+        {
+            return;
+        }
+        
+        File [] v_Files = i_Folder.listFiles();
+        if ( Help.isNull(v_Files) )
+        {
+            return;
+        }
+        
+        for (File v_File : v_Files)
         {
             if ( v_File.isFile() )
             {
@@ -1380,11 +1387,11 @@ public final class FileHelp
                 v_File.delete();
             }
         }
-	}
-	
-	
-	
-	/**
+    }
+    
+    
+    
+    /**
      * 递归的计算目录所有文件及子目录文件的合计大小。
      * 
      * 此方法相对简单，未实现多线程等计算功能。
@@ -1688,7 +1695,7 @@ public final class FileHelp
      * 
      * @param i_FileFullName  文件的全路径名称
      * @return
-     * @throws ClassNotFoundException 
+     * @throws ClassNotFoundException
      */
     public String getContent(String i_FileFullName) throws IOException, ClassNotFoundException
     {
@@ -1709,7 +1716,7 @@ public final class FileHelp
      * @param i_FileName      文件的名称(可动态的、可相对的)
      * @param i_CharEncoding  文件的编码
      * @return
-     * @throws ClassNotFoundException 
+     * @throws ClassNotFoundException
      */
     public String getContent(String i_FileName ,String i_CharEncoding) throws IOException, ClassNotFoundException
     {
@@ -1731,7 +1738,7 @@ public final class FileHelp
      * @param i_CharEncoding  文件的编码
      * @param i_HaveNewLine   生成的文件内容是否包含 “回车换行” 符
      * @return
-     * @throws ClassNotFoundException 
+     * @throws ClassNotFoundException
      */
     public String getContent(String i_FileName ,String i_CharEncoding ,boolean i_HaveNewLine) throws IOException, ClassNotFoundException
     {
@@ -2128,7 +2135,7 @@ public final class FileHelp
      * 
      * @param i_FileName      文件的名称(可动态的、可相对的)
      * @return
-     * @throws ClassNotFoundException 
+     * @throws ClassNotFoundException
      */
     public byte [] getContentByte(String i_FileName) throws IOException, ClassNotFoundException
     {
@@ -2352,7 +2359,148 @@ public final class FileHelp
         
         return v_Output.toByteArray();
     }
-	
+    
+    
+    
+    /**
+     * 加载图片内容。
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-18
+     * @version     v1.0
+     * 
+     * @param i_ImageUrl  图片路径
+     * @return
+     * @throws MalformedURLException
+     * @throws IOException
+     */
+    public static BufferedImage getContentImage(String i_ImageUrl) throws MalformedURLException, IOException
+    {
+        BufferedImage v_Image = null;
+        
+        if ( i_ImageUrl.startsWith("file:") )
+        {
+            v_Image = ImageIO.read(new URL(i_ImageUrl));
+        }
+        else
+        {
+            v_Image = ImageIO.read(new File(i_ImageUrl));
+        }
+        
+        return v_Image;
+    }
+    
+    
+    
+    /**
+     * 获取图片的轮廓
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-17
+     * @version     v1.0
+     * 
+     * @param i_Image             图片的资源
+     * @param i_TransparentColor  透明色
+     * @return
+     * @throws MalformedURLException
+     * @throws IOException
+     */
+    public static Return<?>[][] getImageOutline(BufferedImage i_Image ,int i_TransparentColor) throws MalformedURLException, IOException
+    {
+        int           v_Width  = i_Image.getWidth();
+        int           v_Height = i_Image.getHeight();
+        Return<?>[][] v_Datas  = new Return<?>[v_Width][v_Height];
+        
+        for (int y=0; y<v_Height; y++)
+        {
+            for (int x=0; x<v_Width; x++)
+            {
+                int v_Color = i_Image.getRGB(x ,y);
+                if ( v_Color == i_TransparentColor )
+                {
+                    v_Datas[x][y] = new Return<Object>(false);
+                }
+                else
+                {
+                    v_Datas[x][y] = new Return<Object>(true).setParamInt(v_Color);
+                }
+            }
+        }
+        
+        return v_Datas;
+    }
+    
+    
+    
+    /**
+     * 按小图的选定轮廓，从大图中剪切出一部分小图
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-17
+     * @version     v1.0
+     * 
+     * @param i_OrgImage    原始大图
+     * @param io_NewImage   剪切出的小图
+     * @param i_CutOutline  选定的轮廓
+     * @param i_CutX        剪切的左上角X位置
+     * @param i_CutY        剪切的左上角Y位置
+     */
+    public static void cutImage(BufferedImage i_OrgImage ,BufferedImage io_NewImage ,Return<?>[][] i_CutOutline ,int i_CutX ,int i_CutY)
+    {
+        int v_MaxWidth  = Help.min(i_OrgImage.getWidth()  ,i_CutOutline   .length + i_CutX);
+        int v_MaxHeight = Help.min(i_OrgImage.getHeight() ,i_CutOutline[0].length + i_CutY);
+        
+        for (int y=i_CutY ,v_NewY=0; y<v_MaxHeight; y++ ,v_NewY++)
+        {
+            for (int x=i_CutX ,v_NewX=0; x<v_MaxWidth; x++ ,v_NewX++)
+            {
+                Return<?> v_IsCut  = i_CutOutline[v_NewX][v_NewY];
+                int       v_OrgRGB = i_OrgImage.getRGB(x, y);
+                
+                if ( v_IsCut.booleanValue() )
+                {
+                    // 抠图复制对应颜色值
+                    io_NewImage.setRGB(v_NewX ,v_NewY ,v_OrgRGB);
+                }
+                else
+                {
+                    // 背景设为透明
+                    io_NewImage.setRGB(v_NewX ,v_NewY ,0x00FFFFFF);
+                }
+            }
+        }
+    }
+    
+    
+    
+    /**
+     * 将前景图透明处理后，覆盖在背景图的上图。
+     * 
+     * 注：前景图将会被修改
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-17
+     * @version     v1.0
+     * 
+     * @param io_Background  背景图
+     * @param i_Frontgroud   前景图
+     * @param i_FrontX       前景图覆盖在背景图的坐标X
+     * @param i_FrontY       前景图覆盖在背景图的坐标Y
+     * @param i_Alpha        透明度（0 ~ 1）
+     */
+    public static void overAlphaImage(BufferedImage io_Background ,BufferedImage i_Frontgroud ,int i_FrontX ,int i_FrontY ,float i_Alpha)
+    {
+        // 写入背景图片
+        Graphics2D g = io_Background.createGraphics();
+
+        // 设置为透明覆盖
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, i_Alpha));
+        // 在背景图片上透明图层
+        g.drawImage(i_Frontgroud, i_FrontX, i_FrontY, i_Frontgroud.getWidth(), i_Frontgroud.getHeight(), null);
+
+        g.dispose();
+    }
+    
     
     
     /**
@@ -2658,8 +2806,8 @@ public final class FileHelp
             }
             else if ( v_File.isDirectory() )
             {
-                v_CopyFileCount += this.xcopy(v_File 
-                                             ,new File(i_TargetFolder.getAbsolutePath() + Help.getSysPathSeparator() + v_File.getName()) 
+                v_CopyFileCount += this.xcopy(v_File
+                                             ,new File(i_TargetFolder.getAbsolutePath() + Help.getSysPathSeparator() + v_File.getName())
                                              ,i_ModifiedTime
                                              ,i_Exclusion
                                              ,i_Accept);
@@ -2970,11 +3118,11 @@ public final class FileHelp
             v_Conn.connect();
             
             this.copyFile(v_Conn.getInputStream() ,i_SaveFile);
-        } 
-        catch (Exception e) 
+        }
+        catch (Exception e)
         {
             e.printStackTrace();
-        } 
+        }
     }
     
     
@@ -3018,11 +3166,11 @@ public final class FileHelp
             v_Conn.connect();
             
             this.copyFile(v_Conn.getInputStream() ,i_SaveFile);
-        } 
-        catch (Exception e) 
+        }
+        catch (Exception e)
         {
             e.printStackTrace();
-        } 
+        }
     }
     
     
@@ -3034,10 +3182,10 @@ public final class FileHelp
      * 
      * 未判断入参的合法性
      * 
-     * @param i_Response    
+     * @param i_Response
      * @param i_ContentType  编码方式
      * @param i_File         提供下载的文件
-     * @throws Exception 
+     * @throws Exception
      */
     public void downloadServer(HttpServletResponse i_Response ,String i_ContentType ,File i_File) throws Exception
     {
@@ -3053,11 +3201,11 @@ public final class FileHelp
      * 
      * 未判断入参的合法性
      * 
-     * @param i_Response    
+     * @param i_Response
      * @param i_ContentType  编码方式
      * @param i_File         提供下载的文件
      * @param i_FileName     显示的文件名称（为空则取i_File.getName()的值）
-     * @throws Exception 
+     * @throws Exception
      */
     public void downloadServer(HttpServletResponse i_Response ,String i_ContentType ,File i_File ,String i_FileName) throws Exception
     {
@@ -3068,13 +3216,13 @@ public final class FileHelp
         try
         {
             // 非常重要
-            i_Response.reset();  
+            i_Response.reset();
             // 设置编码方式
             i_Response.setContentType(i_ContentType);
             // 写明要下载的文件的大小
             i_Response.setHeader("Content-Length" ,new Long(i_File.length()).toString());
             // 设置附加文件名。转码是为了防止文件名称中文时乱码的情况
-            i_Response.setHeader("Content-Disposition" ,"attachment;filename=" + StringHelp.toCharEncoding(Help.NVL(i_FileName ,i_File.getName()) ,i_ContentType ,"ISO-8859-1"));  
+            i_Response.setHeader("Content-Disposition" ,"attachment;filename=" + StringHelp.toCharEncoding(Help.NVL(i_FileName ,i_File.getName()) ,i_ContentType ,"ISO-8859-1"));
             i_Response.setStatus(HttpServletResponse.SC_OK);
 
             
@@ -3161,10 +3309,10 @@ public final class FileHelp
      * 未判断入参的合法性
      * 
      * @param i_Request
-     * @param i_Response    
+     * @param i_Response
      * @param i_ContentType  编码方式
      * @param i_File         提供下载的文件
-     * @throws Exception 
+     * @throws Exception
      */
     public void downloadServer(HttpServletRequest i_Request ,HttpServletResponse i_Response ,String i_ContentType ,File i_File) throws Exception
     {
@@ -3181,11 +3329,11 @@ public final class FileHelp
      * 未判断入参的合法性
      * 
      * @param i_Request
-     * @param i_Response    
+     * @param i_Response
      * @param i_ContentType  编码方式
      * @param i_File         提供下载的文件
      * @param i_FileName     显示的文件名称（为空则取i_File.getName()的值）
-     * @throws Exception 
+     * @throws Exception
      */
     public void downloadServer(HttpServletRequest i_Request ,HttpServletResponse i_Response ,String i_ContentType ,File i_File ,String i_FileName) throws Exception
     {
@@ -3204,8 +3352,8 @@ public final class FileHelp
             i_Response.reset();
             // 设置编码方式
             i_Response.setContentType(i_ContentType);
-            // 设置附加文件名 
-            i_Response.setHeader("Content-Disposition" ,"attachment;filename=" + StringHelp.toCharEncoding(Help.NVL(i_FileName ,i_File.getName()) ,i_ContentType ,"ISO-8859-1"));  
+            // 设置附加文件名
+            i_Response.setHeader("Content-Disposition" ,"attachment;filename=" + StringHelp.toCharEncoding(Help.NVL(i_FileName ,i_File.getName()) ,i_ContentType ,"ISO-8859-1"));
             
             
             String  v_Range       = i_Request.getHeader("Range");
@@ -3761,7 +3909,7 @@ public final class FileHelp
         
         
         FileOutputStream   v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
-        OutputStreamWriter v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
+        OutputStreamWriter v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding);
 
         try
         {
@@ -3811,7 +3959,7 @@ public final class FileHelp
      * @param i_SaveFile          保存文件的全名称
      * @param i_Contents          文件内容（数组中每个元素均是文件的一行数据）
      * @throws IOException
-     * @throws URISyntaxException 
+     * @throws URISyntaxException
      */
     public void create(URL i_SaveFile ,String [] i_Contents) throws IOException, URISyntaxException
     {
@@ -3831,7 +3979,7 @@ public final class FileHelp
      * @param i_Contents          文件内容（数组中每个元素均是文件的一行数据）
      * @param i_CharEncoding      文件编码
      * @throws IOException
-     * @throws URISyntaxException 
+     * @throws URISyntaxException
      */
     public void create(URL i_SaveFile ,String [] i_Contents ,String i_CharEncoding) throws IOException, URISyntaxException
     {
@@ -3857,7 +4005,7 @@ public final class FileHelp
      * @param i_SaveFile          保存文件的全名称
      * @param i_Contents          文件内容
      * @throws IOException
-     * @throws URISyntaxException 
+     * @throws URISyntaxException
      */
     public void create(URL i_SaveFile ,String i_Contents) throws IOException, URISyntaxException
     {
@@ -3877,7 +4025,7 @@ public final class FileHelp
      * @param i_Contents          文件内容
      * @param i_CharEncoding      文件编码
      * @throws IOException
-     * @throws URISyntaxException 
+     * @throws URISyntaxException
      */
     public void create(URL i_SaveFile ,String i_Contents ,String i_CharEncoding) throws IOException, URISyntaxException
     {
@@ -3911,7 +4059,7 @@ public final class FileHelp
         
         
         FileOutputStream   v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
-        OutputStreamWriter v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
+        OutputStreamWriter v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding);
 
         try
         {
@@ -4019,743 +4167,743 @@ public final class FileHelp
             v_SaveFile   = null;
         }
     }
-	
-	
-	
-	/**
-	 * 创建CSV格式的文件(编码UTF-8)
-	 * 
-	 * @param i_SaveFileFullName  保存文件的全名称
-	 * @param i_Contents          文件内容。集合元素须实现 com.huoyu.common.file.FileSerializable 接口
-	 * @throws IOException 
-	 */
-	public void createCSV(String i_SaveFileFullName ,List<?> i_Contents) throws IOException
-	{
-		this.createCSV(i_SaveFileFullName ,null ,i_Contents ,this.charEncoding);
-	}
-	
-	
-	
-	/**
-	 * 创建CSV格式的文件(编码UTF-8)
-	 * 
-	 * @param i_SaveFileFullName  保存文件的全名称
-	 * @param i_Titles            标题信息
-	 * @param i_Contents          文件内容。集合元素须实现 com.huoyu.common.file.FileSerializable 接口
-	 * @throws IOException 
-	 */
-	public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,List<?> i_Contents) throws IOException
-	{
-		this.createCSV(i_SaveFileFullName ,i_Titles ,i_Contents ,this.charEncoding);
-	}
-	
-	
-	
-	/**
-	 * 创建CSV格式的文件(编码UTF-8) -- 支持超大数据源。
-	 * 
-	 * @param i_SaveFileFullName  保存文件的全名称
-	 * @param i_FileBiggerMemory  超大数据源存储器 com.huoyu.common.file.FileBiggerMemory 接口
-	 * @throws IOException 
-	 */
-	public void createCSV(String i_SaveFileFullName ,FileBiggerMemory i_FileBiggerMemory) throws IOException
-	{
-		this.createCSV(i_SaveFileFullName ,null ,i_FileBiggerMemory ,this.charEncoding);
-	}
-	
-	
-	
-	/**
-	 * 创建CSV格式的文件(编码UTF-8) -- 支持超大数据源。
-	 * 
-	 * @param i_SaveFileFullName  保存文件的全名称
-	 * @param i_Titles            标题信息
-	 * @param i_FileBiggerMemory  超大数据源存储器 com.huoyu.common.file.FileBiggerMemory 接口
-	 * @throws IOException 
-	 */
-	public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,FileBiggerMemory i_FileBiggerMemory) throws IOException
-	{
-		this.createCSV(i_SaveFileFullName ,i_Titles ,i_FileBiggerMemory ,this.charEncoding);
-	}
-	
-	
-	
-	/**
-	 * 创建CSV格式的文件
-	 * 
-	 * @param i_SaveFileFullName  保存文件的全名称
-	 * @param i_Titles            标题信息
-	 * @param i_Contents          文件内容。集合元素须实现 com.huoyu.common.file.FileSerializable 接口
-	 * @param i_CharEncoding      文件的编码
-	 * @throws IOException 
-	 */
-	public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,List<?> i_Contents ,String i_CharEncoding) throws IOException
-	{
-		if ( Help.isNull(i_SaveFileFullName) )
-		{
-			throw new NullPointerException("Save full name is null.");
-		}
-		
-		if ( i_Contents == null || i_Contents.size() <= 0 )
-		{
-			throw new NullPointerException("File[" + i_SaveFileFullName + "] contents is null.");
-		}
-		
-		
-		File v_SaveFile = new File(i_SaveFileFullName);
-		if ( v_SaveFile.exists() )
-		{
-		    if ( !this.isAppend )
-		    {
-    			if ( this.isOverWrite )
-    			{
-    				boolean v_Result = v_SaveFile.delete();
-    				
-    				if ( !v_Result )
-    				{
-    					v_SaveFile = null;
-    					throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
-    				}
-    			}
-    			else
-    			{
-    				v_SaveFile = null;
-    				throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
-    			}
-		    }
-		}
-		
-		
-		long                  v_RowSize    = i_Contents.size();
-		FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
-		OutputStreamWriter    v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
-		DefaultCreateCSVEvent v_Event      = new DefaultCreateCSVEvent(this ,v_RowSize);
-		boolean               v_IsContinue = true;
+    
+    
+    
+    /**
+     * 创建CSV格式的文件(编码UTF-8)
+     * 
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Contents          文件内容。集合元素须实现 com.huoyu.common.file.FileSerializable 接口
+     * @throws IOException
+     */
+    public void createCSV(String i_SaveFileFullName ,List<?> i_Contents) throws IOException
+    {
+        this.createCSV(i_SaveFileFullName ,null ,i_Contents ,this.charEncoding);
+    }
+    
+    
+    
+    /**
+     * 创建CSV格式的文件(编码UTF-8)
+     * 
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Titles            标题信息
+     * @param i_Contents          文件内容。集合元素须实现 com.huoyu.common.file.FileSerializable 接口
+     * @throws IOException
+     */
+    public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,List<?> i_Contents) throws IOException
+    {
+        this.createCSV(i_SaveFileFullName ,i_Titles ,i_Contents ,this.charEncoding);
+    }
+    
+    
+    
+    /**
+     * 创建CSV格式的文件(编码UTF-8) -- 支持超大数据源。
+     * 
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_FileBiggerMemory  超大数据源存储器 com.huoyu.common.file.FileBiggerMemory 接口
+     * @throws IOException
+     */
+    public void createCSV(String i_SaveFileFullName ,FileBiggerMemory i_FileBiggerMemory) throws IOException
+    {
+        this.createCSV(i_SaveFileFullName ,null ,i_FileBiggerMemory ,this.charEncoding);
+    }
+    
+    
+    
+    /**
+     * 创建CSV格式的文件(编码UTF-8) -- 支持超大数据源。
+     * 
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Titles            标题信息
+     * @param i_FileBiggerMemory  超大数据源存储器 com.huoyu.common.file.FileBiggerMemory 接口
+     * @throws IOException
+     */
+    public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,FileBiggerMemory i_FileBiggerMemory) throws IOException
+    {
+        this.createCSV(i_SaveFileFullName ,i_Titles ,i_FileBiggerMemory ,this.charEncoding);
+    }
+    
+    
+    
+    /**
+     * 创建CSV格式的文件
+     * 
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Titles            标题信息
+     * @param i_Contents          文件内容。集合元素须实现 com.huoyu.common.file.FileSerializable 接口
+     * @param i_CharEncoding      文件的编码
+     * @throws IOException
+     */
+    public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,List<?> i_Contents ,String i_CharEncoding) throws IOException
+    {
+        if ( Help.isNull(i_SaveFileFullName) )
+        {
+            throw new NullPointerException("Save full name is null.");
+        }
+        
+        if ( i_Contents == null || i_Contents.size() <= 0 )
+        {
+            throw new NullPointerException("File[" + i_SaveFileFullName + "] contents is null.");
+        }
+        
+        
+        File v_SaveFile = new File(i_SaveFileFullName);
+        if ( v_SaveFile.exists() )
+        {
+            if ( !this.isAppend )
+            {
+                if ( this.isOverWrite )
+                {
+                    boolean v_Result = v_SaveFile.delete();
+                    
+                    if ( !v_Result )
+                    {
+                        v_SaveFile = null;
+                        throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
+                    }
+                }
+                else
+                {
+                    v_SaveFile = null;
+                    throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
+                }
+            }
+        }
+        
+        
+        long                  v_RowSize    = i_Contents.size();
+        FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
+        OutputStreamWriter    v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding);
+        DefaultCreateCSVEvent v_Event      = new DefaultCreateCSVEvent(this ,v_RowSize);
+        boolean               v_IsContinue = true;
 
-		try
-		{
-			v_IsContinue = this.fireCreateCSVBeforeListener(v_Event);
-			
-			if ( v_IsContinue )
-			{
-				// 行级对象的Java类型。
-				// 1: FileSerializable
-				// 2: List
-				int    v_RowInfoType  = 0;
-				int    v_PropertySize = 0;
-				Object v_TitleData    = i_Contents.get(0);
-				 
-				 
-				if ( v_TitleData instanceof FileSerializable )
-				{
-					v_PropertySize = ((FileSerializable)v_TitleData).gatPropertySize();
-					v_RowInfoType  = 1;
-				}
-				else if ( v_TitleData instanceof List )
-				{
-					v_PropertySize = ((List<?>)v_TitleData).size();
-					v_RowInfoType  = 2;
-				}
-				else
-				{
-					throw new ClassCastException("Row info type is only FileSerializable or List.");
-				}
-				
-				
-				if ( v_PropertySize > 0 )
-				{
-					if ( v_RowInfoType == 1 )
-					{
-						// 写入标题
-						if ( i_Titles == null )
-						{
-							this.createCSV_WriteTitle(v_SaveWriter ,(FileSerializable)v_TitleData ,v_PropertySize);
-						}
-						else
-						{
-							this.createCSV_WriteTitle(v_SaveWriter ,i_Titles ,v_PropertySize);
-						}
-					
-						// 写入首行数据
-						this.createCSV_WriteRowData(v_SaveWriter ,(FileSerializable)v_TitleData ,v_PropertySize);
-						
-						((FileSerializable)v_TitleData).freeResource();
-					}
-					else if ( v_RowInfoType == 2 )
-					{
-						// 写入标题
-						if ( i_Titles != null )
-						{
-							this.createCSV_WriteTitle(v_SaveWriter ,i_Titles ,v_PropertySize);
-						}
-						
-						// 写入首行数据
-						this.createCSV_WriteRowData(v_SaveWriter ,(List<?>)v_TitleData ,v_PropertySize);
-						
-						((List<?>)v_TitleData).clear();
-					}
-					
-					v_TitleData = null;
-					
-					
-					// 写入内容
-					if ( v_RowInfoType == 1 )
-					{
-						for (long v_RowIndex=1; v_IsContinue && v_RowIndex<v_RowSize; v_RowIndex++)
-						{
-							FileSerializable v_RowData = (FileSerializable)i_Contents.get((int)v_RowIndex);
-							
-							this.createCSV_WriteRowData(v_SaveWriter ,v_RowData , v_PropertySize);
-							
-							v_Event.setCompleteSize(v_RowIndex);
-							v_IsContinue = this.fireCreatingCSVListener(v_Event);
-						}
-					}
-					else if ( v_RowInfoType == 2 )
-					{
-						for (long v_RowIndex=1; v_IsContinue && v_RowIndex<v_RowSize; v_RowIndex++)
-						{
-							List<?> v_RowData = (List<?>)i_Contents.get((int)v_RowIndex);
-							
-							this.createCSV_WriteRowData(v_SaveWriter ,v_RowData , v_PropertySize);
-							
-							v_Event.setCompleteSize(v_RowIndex);
-							v_IsContinue = this.fireCreatingCSVListener(v_Event);
-						}
-					}
-				}
-			}
-			
-			v_Event.setSucceedFinish();
-		}
-		catch (Exception exce)
-		{
-			v_Event.setEndTime();
-			throw new IOException(exce.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				v_SaveWriter.flush();
-				v_SaveWriter.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			try
-			{
-				v_SaveOutput.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			v_SaveWriter = null;
-			v_SaveOutput = null;
-			v_SaveFile   = null;
-			
-			this.fireCreateCSVAfterListener(v_Event);
-		}
-		
-	}
-	
-	
-	
-	/**
-	 * 创建CSV格式的文件 -- 支持超大数据源。
-	 * 
-	 * @param i_SaveFileFullName  保存文件的全名称
-	 * @param i_Titles            标题信息
-	 * @param i_FileBiggerMemory  超大数据源存储器 com.huoyu.common.file.FileBiggerMemory 接口
-	 * @param i_CharEncoding      文件的编码
-	 * @throws IOException 
-	 */
-	public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,FileBiggerMemory i_FileBiggerMemory ,String i_CharEncoding) throws IOException
-	{
-		if ( Help.isNull(i_SaveFileFullName) )
-		{
-			throw new NullPointerException("Save full name is null.");
-		}
-		
-		if ( i_FileBiggerMemory == null || i_FileBiggerMemory.getRowSize() <= 0 )
-		{
-			throw new NullPointerException("File[" + i_SaveFileFullName + "] bigger memory is null.");
-		}
-		
-		
-		File v_SaveFile = new File(i_SaveFileFullName);
-		if ( v_SaveFile.exists() )
-		{
-		    if ( !this.isAppend )
-		    {
-    			if ( this.isOverWrite )
-    			{
-    				boolean v_Result = v_SaveFile.delete();
-    				
-    				if ( !v_Result )
-    				{
-    					v_SaveFile = null;
-    					throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
-    				}
-    			}
-    			else
-    			{
-    				v_SaveFile = null;
-    				throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
-    			}
-		    }
-		}
-		
-		
-		long                  v_RowSize    = i_FileBiggerMemory.getRowSize();
-		FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
-		OutputStreamWriter    v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
-		DefaultCreateCSVEvent v_Event      = new DefaultCreateCSVEvent(this ,v_RowSize);
-		boolean               v_IsContinue = true;
+        try
+        {
+            v_IsContinue = this.fireCreateCSVBeforeListener(v_Event);
+            
+            if ( v_IsContinue )
+            {
+                // 行级对象的Java类型。
+                // 1: FileSerializable
+                // 2: List
+                int    v_RowInfoType  = 0;
+                int    v_PropertySize = 0;
+                Object v_TitleData    = i_Contents.get(0);
+                 
+                 
+                if ( v_TitleData instanceof FileSerializable )
+                {
+                    v_PropertySize = ((FileSerializable)v_TitleData).gatPropertySize();
+                    v_RowInfoType  = 1;
+                }
+                else if ( v_TitleData instanceof List )
+                {
+                    v_PropertySize = ((List<?>)v_TitleData).size();
+                    v_RowInfoType  = 2;
+                }
+                else
+                {
+                    throw new ClassCastException("Row info type is only FileSerializable or List.");
+                }
+                
+                
+                if ( v_PropertySize > 0 )
+                {
+                    if ( v_RowInfoType == 1 )
+                    {
+                        // 写入标题
+                        if ( i_Titles == null )
+                        {
+                            this.createCSV_WriteTitle(v_SaveWriter ,(FileSerializable)v_TitleData ,v_PropertySize);
+                        }
+                        else
+                        {
+                            this.createCSV_WriteTitle(v_SaveWriter ,i_Titles ,v_PropertySize);
+                        }
+                    
+                        // 写入首行数据
+                        this.createCSV_WriteRowData(v_SaveWriter ,(FileSerializable)v_TitleData ,v_PropertySize);
+                        
+                        ((FileSerializable)v_TitleData).freeResource();
+                    }
+                    else if ( v_RowInfoType == 2 )
+                    {
+                        // 写入标题
+                        if ( i_Titles != null )
+                        {
+                            this.createCSV_WriteTitle(v_SaveWriter ,i_Titles ,v_PropertySize);
+                        }
+                        
+                        // 写入首行数据
+                        this.createCSV_WriteRowData(v_SaveWriter ,(List<?>)v_TitleData ,v_PropertySize);
+                        
+                        ((List<?>)v_TitleData).clear();
+                    }
+                    
+                    v_TitleData = null;
+                    
+                    
+                    // 写入内容
+                    if ( v_RowInfoType == 1 )
+                    {
+                        for (long v_RowIndex=1; v_IsContinue && v_RowIndex<v_RowSize; v_RowIndex++)
+                        {
+                            FileSerializable v_RowData = (FileSerializable)i_Contents.get((int)v_RowIndex);
+                            
+                            this.createCSV_WriteRowData(v_SaveWriter ,v_RowData , v_PropertySize);
+                            
+                            v_Event.setCompleteSize(v_RowIndex);
+                            v_IsContinue = this.fireCreatingCSVListener(v_Event);
+                        }
+                    }
+                    else if ( v_RowInfoType == 2 )
+                    {
+                        for (long v_RowIndex=1; v_IsContinue && v_RowIndex<v_RowSize; v_RowIndex++)
+                        {
+                            List<?> v_RowData = (List<?>)i_Contents.get((int)v_RowIndex);
+                            
+                            this.createCSV_WriteRowData(v_SaveWriter ,v_RowData , v_PropertySize);
+                            
+                            v_Event.setCompleteSize(v_RowIndex);
+                            v_IsContinue = this.fireCreatingCSVListener(v_Event);
+                        }
+                    }
+                }
+            }
+            
+            v_Event.setSucceedFinish();
+        }
+        catch (Exception exce)
+        {
+            v_Event.setEndTime();
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                v_SaveWriter.flush();
+                v_SaveWriter.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            try
+            {
+                v_SaveOutput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            v_SaveWriter = null;
+            v_SaveOutput = null;
+            v_SaveFile   = null;
+            
+            this.fireCreateCSVAfterListener(v_Event);
+        }
+        
+    }
+    
+    
+    
+    /**
+     * 创建CSV格式的文件 -- 支持超大数据源。
+     * 
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_Titles            标题信息
+     * @param i_FileBiggerMemory  超大数据源存储器 com.huoyu.common.file.FileBiggerMemory 接口
+     * @param i_CharEncoding      文件的编码
+     * @throws IOException
+     */
+    public void createCSV(String i_SaveFileFullName ,List<?> i_Titles ,FileBiggerMemory i_FileBiggerMemory ,String i_CharEncoding) throws IOException
+    {
+        if ( Help.isNull(i_SaveFileFullName) )
+        {
+            throw new NullPointerException("Save full name is null.");
+        }
+        
+        if ( i_FileBiggerMemory == null || i_FileBiggerMemory.getRowSize() <= 0 )
+        {
+            throw new NullPointerException("File[" + i_SaveFileFullName + "] bigger memory is null.");
+        }
+        
+        
+        File v_SaveFile = new File(i_SaveFileFullName);
+        if ( v_SaveFile.exists() )
+        {
+            if ( !this.isAppend )
+            {
+                if ( this.isOverWrite )
+                {
+                    boolean v_Result = v_SaveFile.delete();
+                    
+                    if ( !v_Result )
+                    {
+                        v_SaveFile = null;
+                        throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
+                    }
+                }
+                else
+                {
+                    v_SaveFile = null;
+                    throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
+                }
+            }
+        }
+        
+        
+        long                  v_RowSize    = i_FileBiggerMemory.getRowSize();
+        FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
+        OutputStreamWriter    v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding);
+        DefaultCreateCSVEvent v_Event      = new DefaultCreateCSVEvent(this ,v_RowSize);
+        boolean               v_IsContinue = true;
 
-		try
-		{
-			v_IsContinue = this.fireCreateCSVBeforeListener(v_Event);
-			
-			if ( v_IsContinue )
-			{
-				// 行级对象的Java类型。
-				// 1: FileSerializable
-				// 2: List
-				int    v_RowInfoType  = 0;
-				int    v_PropertySize = 0;
-				Object v_TitleData    = i_FileBiggerMemory.getRowInfo(0);
-				 
-				 
-				if ( v_TitleData instanceof FileSerializable )
-				{
-					v_PropertySize = ((FileSerializable)v_TitleData).gatPropertySize();
-					v_RowInfoType  = 1;
-				}
-				else if ( v_TitleData instanceof List )
-				{
-					v_PropertySize = ((List<?>)v_TitleData).size();
-					v_RowInfoType  = 2;
-				}
-				else
-				{
-					throw new ClassCastException("Row info type is only FileSerializable or List.");
-				}
-				 
-				
-				if ( v_PropertySize > 0 )
-				{
-					if ( v_RowInfoType == 1 )
-					{
-						// 写入标题
-						if ( i_Titles == null )
-						{
-							this.createCSV_WriteTitle(v_SaveWriter ,(FileSerializable)v_TitleData ,v_PropertySize);
-						}
-						else
-						{
-							this.createCSV_WriteTitle(v_SaveWriter ,i_Titles ,v_PropertySize);
-						}
-					
-						// 写入首行数据
-						this.createCSV_WriteRowData(v_SaveWriter ,(FileSerializable)v_TitleData ,v_PropertySize);
-						
-						((FileSerializable)v_TitleData).freeResource();
-					}
-					else if ( v_RowInfoType == 2 )
-					{
-						// 写入标题
-						if ( i_Titles != null )
-						{
-							this.createCSV_WriteTitle(v_SaveWriter ,i_Titles ,v_PropertySize);
-						}
-						
-						// 写入首行数据
-						this.createCSV_WriteRowData(v_SaveWriter ,(List<?>)v_TitleData ,v_PropertySize);
-						
-						((List<?>)v_TitleData).clear();
-					}
-					
-					v_TitleData = null;
-					
-					
-					// 写入内容
-					if ( v_RowInfoType == 1 )
-					{
-						for (long v_RowIndex=1; v_IsContinue && v_RowIndex<v_RowSize; v_RowIndex++)
-						{
-							FileSerializable v_RowData = (FileSerializable)i_FileBiggerMemory.getRowInfo(v_RowIndex);
-							
-							this.createCSV_WriteRowData(v_SaveWriter ,v_RowData , v_PropertySize);
-							
-							v_RowData.freeResource();
-							v_RowData = null;
-							
-							v_Event.setCompleteSize(v_RowIndex);
-							v_IsContinue = this.fireCreatingCSVListener(v_Event);
-						}
-					}
-					else if ( v_RowInfoType == 2 )
-					{
-						for (long v_RowIndex=1; v_IsContinue && v_RowIndex<v_RowSize; v_RowIndex++)
-						{
-							List<?> v_RowData = (List<?>)i_FileBiggerMemory.getRowInfo(v_RowIndex);
-							
-							this.createCSV_WriteRowData(v_SaveWriter ,v_RowData , v_PropertySize);
-							
-							v_RowData.clear();
-							v_RowData = null;
-							
-							v_Event.setCompleteSize(v_RowIndex);
-							v_IsContinue = this.fireCreatingCSVListener(v_Event);
-						}
-					}
-				}
-			}
-			
-			v_Event.setSucceedFinish();
-		}
-		catch (Exception exce)
-		{
-			v_Event.setEndTime();
-			throw new IOException(exce.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				v_SaveWriter.flush();
-				v_SaveWriter.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			try
-			{
-				v_SaveOutput.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			v_SaveWriter = null;
-			v_SaveOutput = null;
-			v_SaveFile   = null;
-			
-			this.fireCreateCSVAfterListener(v_Event);
-		}
-		
-	}
-	
-	
-	
-	/**
-	 * 创建CSV格式的文件 -- 支持超大数据源。
-	 * 
-	 * 主要用于性能对比测试。
-	 * 
-	 * @param i_SaveFileFullName  保存文件的全名称
-	 * @param i_ResultSet         数据库结果集
-	 * @param i_CharEncoding      文件的编码
-	 * @throws IOException 
-	 */
-	@SuppressWarnings("unused")
-	private void createCSV(String i_SaveFileFullName ,ResultSet i_ResultSet ,String i_CharEncoding) throws IOException
-	{
-		if ( Help.isNull(i_SaveFileFullName) )
-		{
-			throw new NullPointerException("Save full name is null.");
-		}
-		
-		if ( i_ResultSet == null )
-		{
-			throw new NullPointerException("File[" + i_SaveFileFullName + "] bigger memory is null.");
-		}
-		
-		
-		File v_SaveFile = new File(i_SaveFileFullName);
-		if ( v_SaveFile.exists() )
-		{
-		    if ( !this.isAppend )
-		    {
-    			if ( this.isOverWrite )
-    			{
-    				boolean v_Result = v_SaveFile.delete();
-    				
-    				if ( !v_Result )
-    				{
-    					v_SaveFile = null;
-    					throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
-    				}
-    			}
-    			else
-    			{
-    				v_SaveFile = null;
-    				throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
-    			}
-		    }
-		}
-		
-		
-		// long                  v_RowSize    = -1;
-		FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
-		OutputStreamWriter    v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding); 
-		// DefaultCreateCSVEvent v_Event      = new DefaultCreateCSVEvent(this ,v_RowSize);
-		boolean               v_IsContinue = true;
+        try
+        {
+            v_IsContinue = this.fireCreateCSVBeforeListener(v_Event);
+            
+            if ( v_IsContinue )
+            {
+                // 行级对象的Java类型。
+                // 1: FileSerializable
+                // 2: List
+                int    v_RowInfoType  = 0;
+                int    v_PropertySize = 0;
+                Object v_TitleData    = i_FileBiggerMemory.getRowInfo(0);
+                 
+                 
+                if ( v_TitleData instanceof FileSerializable )
+                {
+                    v_PropertySize = ((FileSerializable)v_TitleData).gatPropertySize();
+                    v_RowInfoType  = 1;
+                }
+                else if ( v_TitleData instanceof List )
+                {
+                    v_PropertySize = ((List<?>)v_TitleData).size();
+                    v_RowInfoType  = 2;
+                }
+                else
+                {
+                    throw new ClassCastException("Row info type is only FileSerializable or List.");
+                }
+                 
+                
+                if ( v_PropertySize > 0 )
+                {
+                    if ( v_RowInfoType == 1 )
+                    {
+                        // 写入标题
+                        if ( i_Titles == null )
+                        {
+                            this.createCSV_WriteTitle(v_SaveWriter ,(FileSerializable)v_TitleData ,v_PropertySize);
+                        }
+                        else
+                        {
+                            this.createCSV_WriteTitle(v_SaveWriter ,i_Titles ,v_PropertySize);
+                        }
+                    
+                        // 写入首行数据
+                        this.createCSV_WriteRowData(v_SaveWriter ,(FileSerializable)v_TitleData ,v_PropertySize);
+                        
+                        ((FileSerializable)v_TitleData).freeResource();
+                    }
+                    else if ( v_RowInfoType == 2 )
+                    {
+                        // 写入标题
+                        if ( i_Titles != null )
+                        {
+                            this.createCSV_WriteTitle(v_SaveWriter ,i_Titles ,v_PropertySize);
+                        }
+                        
+                        // 写入首行数据
+                        this.createCSV_WriteRowData(v_SaveWriter ,(List<?>)v_TitleData ,v_PropertySize);
+                        
+                        ((List<?>)v_TitleData).clear();
+                    }
+                    
+                    v_TitleData = null;
+                    
+                    
+                    // 写入内容
+                    if ( v_RowInfoType == 1 )
+                    {
+                        for (long v_RowIndex=1; v_IsContinue && v_RowIndex<v_RowSize; v_RowIndex++)
+                        {
+                            FileSerializable v_RowData = (FileSerializable)i_FileBiggerMemory.getRowInfo(v_RowIndex);
+                            
+                            this.createCSV_WriteRowData(v_SaveWriter ,v_RowData , v_PropertySize);
+                            
+                            v_RowData.freeResource();
+                            v_RowData = null;
+                            
+                            v_Event.setCompleteSize(v_RowIndex);
+                            v_IsContinue = this.fireCreatingCSVListener(v_Event);
+                        }
+                    }
+                    else if ( v_RowInfoType == 2 )
+                    {
+                        for (long v_RowIndex=1; v_IsContinue && v_RowIndex<v_RowSize; v_RowIndex++)
+                        {
+                            List<?> v_RowData = (List<?>)i_FileBiggerMemory.getRowInfo(v_RowIndex);
+                            
+                            this.createCSV_WriteRowData(v_SaveWriter ,v_RowData , v_PropertySize);
+                            
+                            v_RowData.clear();
+                            v_RowData = null;
+                            
+                            v_Event.setCompleteSize(v_RowIndex);
+                            v_IsContinue = this.fireCreatingCSVListener(v_Event);
+                        }
+                    }
+                }
+            }
+            
+            v_Event.setSucceedFinish();
+        }
+        catch (Exception exce)
+        {
+            v_Event.setEndTime();
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                v_SaveWriter.flush();
+                v_SaveWriter.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            try
+            {
+                v_SaveOutput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            v_SaveWriter = null;
+            v_SaveOutput = null;
+            v_SaveFile   = null;
+            
+            this.fireCreateCSVAfterListener(v_Event);
+        }
+        
+    }
+    
+    
+    
+    /**
+     * 创建CSV格式的文件 -- 支持超大数据源。
+     * 
+     * 主要用于性能对比测试。
+     * 
+     * @param i_SaveFileFullName  保存文件的全名称
+     * @param i_ResultSet         数据库结果集
+     * @param i_CharEncoding      文件的编码
+     * @throws IOException
+     */
+    @SuppressWarnings("unused")
+    private void createCSV(String i_SaveFileFullName ,ResultSet i_ResultSet ,String i_CharEncoding) throws IOException
+    {
+        if ( Help.isNull(i_SaveFileFullName) )
+        {
+            throw new NullPointerException("Save full name is null.");
+        }
+        
+        if ( i_ResultSet == null )
+        {
+            throw new NullPointerException("File[" + i_SaveFileFullName + "] bigger memory is null.");
+        }
+        
+        
+        File v_SaveFile = new File(i_SaveFileFullName);
+        if ( v_SaveFile.exists() )
+        {
+            if ( !this.isAppend )
+            {
+                if ( this.isOverWrite )
+                {
+                    boolean v_Result = v_SaveFile.delete();
+                    
+                    if ( !v_Result )
+                    {
+                        v_SaveFile = null;
+                        throw new IOException("Delete target file[" + i_SaveFileFullName + "] exception.");
+                    }
+                }
+                else
+                {
+                    v_SaveFile = null;
+                    throw new IOException("Target[" + i_SaveFileFullName + "] is exists.");
+                }
+            }
+        }
+        
+        
+        // long                  v_RowSize    = -1;
+        FileOutputStream      v_SaveOutput = new FileOutputStream(v_SaveFile ,this.isAppend);
+        OutputStreamWriter    v_SaveWriter = new OutputStreamWriter(v_SaveOutput ,i_CharEncoding);
+        // DefaultCreateCSVEvent v_Event      = new DefaultCreateCSVEvent(this ,v_RowSize);
+        boolean               v_IsContinue = true;
 
-		try
-		{
-			// v_IsContinue = this.fireCreateCSVBeforeListener(v_Event);
-			
-			if ( v_IsContinue )
-			{
-				int v_PropertySize = i_ResultSet.getMetaData().getColumnCount();
-				
-				while ( i_ResultSet.next() )
-				{
-					// 写入内容
-					for (int v_PropertyIndex=1; v_PropertyIndex<=v_PropertySize; v_PropertyIndex++)
-					{
-						String v_Value = i_ResultSet.getString(v_PropertyIndex);
-						
-						if ( v_Value == null )
-						{
-							v_SaveWriter.write("\"\"");
-						}
-						else
-						{
-							v_SaveWriter.write("\"");
-							v_SaveWriter.write(v_Value.replaceAll("\"", "\"\""));
-							v_SaveWriter.write("\"");
-						}
-						
-						if ( v_PropertyIndex < v_PropertySize - 1 )
-						{
-							v_SaveWriter.write(",");
-						}
-					}
-					
-					v_SaveWriter.write(this.getNewLine());
-					v_SaveWriter.flush();
-					
-					
-					// v_Event.setCompleteSize(v_RowIndex);
-					// v_IsContinue = this.fireCreatingCSVListener(v_Event);
-				}
-			}
-			
-			// v_Event.setCompleteSize(v_Event.getSize());
-			// v_Event.setEndTime(new Date());
-			// this.fireCreateCSVAfterListener(v_Event);
-		}
-		catch (Exception exce)
-		{
-			throw new IOException(exce.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				v_SaveWriter.flush();
-				v_SaveWriter.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			try
-			{
-				v_SaveOutput.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			v_SaveWriter = null;
-			v_SaveOutput = null;
-			v_SaveFile   = null;
-		}
-		
-	}
-	
-	
-	
-	/**
-	 * 创建CSV文件时，写入标题的方法
-	 * 
-	 * @param i_Write         数据流
-	 * @param i_RowData       行数据
-	 * @param i_PropertySize  属性数量
-	 * @throws IOException
-	 */
-	private void createCSV_WriteTitle(OutputStreamWriter i_Write ,FileSerializable i_RowData ,int i_PropertySize) throws IOException
-	{
-	    StringBuilder v_Buffer = new StringBuilder();
-		
-		for (int v_PropertyIndex=0; v_PropertyIndex<i_PropertySize; v_PropertyIndex++)
-		{
-			v_Buffer.append("\"");
-			
-			Object v_Value = i_RowData.gatPropertyName(v_PropertyIndex);
-			if ( v_Value != null )
-			{
-				v_Buffer.append(v_Value.toString().replaceAll("\"", "\"\""));
-			}
-			
-			v_Buffer.append("\"");
-			
-			if ( v_PropertyIndex < i_PropertySize - 1 )
-			{
-				v_Buffer.append(",");
-			}
-		}
-		
-		v_Buffer.append(this.getNewLine());
-		
-		i_Write.write(v_Buffer.toString());
-		i_Write.flush();
-	}
-	
-	
-	
-	/**
-	 * 创建CSV文件时，写入标题的方法
-	 * 
-	 * @param i_Write         数据流
-	 * @param i_RowData       行数据
-	 * @param i_PropertySize  属性数量
-	 * @throws IOException
-	 */
-	private void createCSV_WriteTitle(OutputStreamWriter i_Write ,List<?> i_Titals ,int i_PropertySize) throws IOException
-	{
-	    StringBuilder v_Buffer = new StringBuilder();
-		
-		for (int v_PropertyIndex=0; v_PropertyIndex<i_PropertySize; v_PropertyIndex++)
-		{
-			v_Buffer.append("\"");
-			
-			Object v_Value = i_Titals.get(v_PropertyIndex);
-			if ( v_Value != null )
-			{
-				v_Buffer.append(v_Value.toString().replaceAll("\"", "\"\""));
-			}
-			
-			v_Buffer.append("\"");
-			
-			if ( v_PropertyIndex < i_PropertySize - 1 )
-			{
-				v_Buffer.append(",");
-			}
-		}
-		
-		v_Buffer.append(this.getNewLine());
-		
-		i_Write.write(v_Buffer.toString());
-		i_Write.flush();
-	}
-	
-	
-	
-	/**
-	 * 创建CSV文件时，写入一行数据的方法
-	 * 
-	 * @param i_Write         数据流
-	 * @param i_RowData       行数据
-	 * @param i_PropertySize  属性数量
-	 * @throws IOException
-	 */
-	private void createCSV_WriteRowData(OutputStreamWriter i_Write ,FileSerializable i_RowData ,int i_PropertySize) throws IOException
-	{
-	    StringBuilder v_Buffer = new StringBuilder();
-		
-		for (int v_PropertyIndex=0; v_PropertyIndex<i_PropertySize; v_PropertyIndex++)
-		{
+        try
+        {
+            // v_IsContinue = this.fireCreateCSVBeforeListener(v_Event);
+            
+            if ( v_IsContinue )
+            {
+                int v_PropertySize = i_ResultSet.getMetaData().getColumnCount();
+                
+                while ( i_ResultSet.next() )
+                {
+                    // 写入内容
+                    for (int v_PropertyIndex=1; v_PropertyIndex<=v_PropertySize; v_PropertyIndex++)
+                    {
+                        String v_Value = i_ResultSet.getString(v_PropertyIndex);
+                        
+                        if ( v_Value == null )
+                        {
+                            v_SaveWriter.write("\"\"");
+                        }
+                        else
+                        {
+                            v_SaveWriter.write("\"");
+                            v_SaveWriter.write(v_Value.replaceAll("\"", "\"\""));
+                            v_SaveWriter.write("\"");
+                        }
+                        
+                        if ( v_PropertyIndex < v_PropertySize - 1 )
+                        {
+                            v_SaveWriter.write(",");
+                        }
+                    }
+                    
+                    v_SaveWriter.write(this.getNewLine());
+                    v_SaveWriter.flush();
+                    
+                    
+                    // v_Event.setCompleteSize(v_RowIndex);
+                    // v_IsContinue = this.fireCreatingCSVListener(v_Event);
+                }
+            }
+            
+            // v_Event.setCompleteSize(v_Event.getSize());
+            // v_Event.setEndTime(new Date());
+            // this.fireCreateCSVAfterListener(v_Event);
+        }
+        catch (Exception exce)
+        {
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                v_SaveWriter.flush();
+                v_SaveWriter.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            try
+            {
+                v_SaveOutput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            v_SaveWriter = null;
+            v_SaveOutput = null;
+            v_SaveFile   = null;
+        }
+        
+    }
+    
+    
+    
+    /**
+     * 创建CSV文件时，写入标题的方法
+     * 
+     * @param i_Write         数据流
+     * @param i_RowData       行数据
+     * @param i_PropertySize  属性数量
+     * @throws IOException
+     */
+    private void createCSV_WriteTitle(OutputStreamWriter i_Write ,FileSerializable i_RowData ,int i_PropertySize) throws IOException
+    {
+        StringBuilder v_Buffer = new StringBuilder();
+        
+        for (int v_PropertyIndex=0; v_PropertyIndex<i_PropertySize; v_PropertyIndex++)
+        {
+            v_Buffer.append("\"");
+            
+            Object v_Value = i_RowData.gatPropertyName(v_PropertyIndex);
+            if ( v_Value != null )
+            {
+                v_Buffer.append(v_Value.toString().replaceAll("\"", "\"\""));
+            }
+            
+            v_Buffer.append("\"");
+            
+            if ( v_PropertyIndex < i_PropertySize - 1 )
+            {
+                v_Buffer.append(",");
+            }
+        }
+        
+        v_Buffer.append(this.getNewLine());
+        
+        i_Write.write(v_Buffer.toString());
+        i_Write.flush();
+    }
+    
+    
+    
+    /**
+     * 创建CSV文件时，写入标题的方法
+     * 
+     * @param i_Write         数据流
+     * @param i_RowData       行数据
+     * @param i_PropertySize  属性数量
+     * @throws IOException
+     */
+    private void createCSV_WriteTitle(OutputStreamWriter i_Write ,List<?> i_Titals ,int i_PropertySize) throws IOException
+    {
+        StringBuilder v_Buffer = new StringBuilder();
+        
+        for (int v_PropertyIndex=0; v_PropertyIndex<i_PropertySize; v_PropertyIndex++)
+        {
+            v_Buffer.append("\"");
+            
+            Object v_Value = i_Titals.get(v_PropertyIndex);
+            if ( v_Value != null )
+            {
+                v_Buffer.append(v_Value.toString().replaceAll("\"", "\"\""));
+            }
+            
+            v_Buffer.append("\"");
+            
+            if ( v_PropertyIndex < i_PropertySize - 1 )
+            {
+                v_Buffer.append(",");
+            }
+        }
+        
+        v_Buffer.append(this.getNewLine());
+        
+        i_Write.write(v_Buffer.toString());
+        i_Write.flush();
+    }
+    
+    
+    
+    /**
+     * 创建CSV文件时，写入一行数据的方法
+     * 
+     * @param i_Write         数据流
+     * @param i_RowData       行数据
+     * @param i_PropertySize  属性数量
+     * @throws IOException
+     */
+    private void createCSV_WriteRowData(OutputStreamWriter i_Write ,FileSerializable i_RowData ,int i_PropertySize) throws IOException
+    {
+        StringBuilder v_Buffer = new StringBuilder();
+        
+        for (int v_PropertyIndex=0; v_PropertyIndex<i_PropertySize; v_PropertyIndex++)
+        {
             v_Buffer.append(this.getCsvDataPrefix());
-			v_Buffer.append("\"");
-			
-			Object v_Value = i_RowData.gatPropertyValue(v_PropertyIndex);
-			if ( v_Value != null )
-			{
-				v_Buffer.append(v_Value.toString().replaceAll("\"", "\"\""));
-			}
-			
-			v_Buffer.append("\"");
-			
-			if ( v_PropertyIndex < i_PropertySize - 1 )
-			{
-				v_Buffer.append(",");
-			}
-		}
-		
-		v_Buffer.append(this.getNewLine());
-		
-		i_Write.write(v_Buffer.toString());
-		i_Write.flush();
-	}
-	
-	
-	
-	/**
-	 * 创建CSV文件时，写入一行数据的方法
-	 * 
-	 * @param i_Write         数据流
-	 * @param i_RowData       行数据
-	 * @param i_PropertySize  属性数量
-	 * @throws IOException
-	 */
-	private void createCSV_WriteRowData(OutputStreamWriter i_Write ,List<?> i_RowData ,int i_PropertySize) throws IOException
-	{
-	    StringBuilder v_Buffer = new StringBuilder();
-		
-		for (int v_PropertyIndex=0; v_PropertyIndex<i_PropertySize; v_PropertyIndex++)
-		{
+            v_Buffer.append("\"");
+            
+            Object v_Value = i_RowData.gatPropertyValue(v_PropertyIndex);
+            if ( v_Value != null )
+            {
+                v_Buffer.append(v_Value.toString().replaceAll("\"", "\"\""));
+            }
+            
+            v_Buffer.append("\"");
+            
+            if ( v_PropertyIndex < i_PropertySize - 1 )
+            {
+                v_Buffer.append(",");
+            }
+        }
+        
+        v_Buffer.append(this.getNewLine());
+        
+        i_Write.write(v_Buffer.toString());
+        i_Write.flush();
+    }
+    
+    
+    
+    /**
+     * 创建CSV文件时，写入一行数据的方法
+     * 
+     * @param i_Write         数据流
+     * @param i_RowData       行数据
+     * @param i_PropertySize  属性数量
+     * @throws IOException
+     */
+    private void createCSV_WriteRowData(OutputStreamWriter i_Write ,List<?> i_RowData ,int i_PropertySize) throws IOException
+    {
+        StringBuilder v_Buffer = new StringBuilder();
+        
+        for (int v_PropertyIndex=0; v_PropertyIndex<i_PropertySize; v_PropertyIndex++)
+        {
             v_Buffer.append(this.getCsvDataPrefix());
-			v_Buffer.append("\"");
-			
-			Object v_Value = i_RowData.get(v_PropertyIndex);
-			if ( v_Value != null )
-			{
-				v_Buffer.append(v_Value.toString().replaceAll("\"", "\"\""));
-			}
-			
-			v_Buffer.append("\"");
-			
-			if ( v_PropertyIndex < i_PropertySize - 1 )
-			{
-				v_Buffer.append(",");
-			}
-		}
-		
-		v_Buffer.append(this.getNewLine());
-		
-		i_Write.write(v_Buffer.toString());
-		i_Write.flush();
-	}
-	
-	
-	
-	/**
-	 * 创建Zip的压缩文件(不忽略原文件异常)
+            v_Buffer.append("\"");
+            
+            Object v_Value = i_RowData.get(v_PropertyIndex);
+            if ( v_Value != null )
+            {
+                v_Buffer.append(v_Value.toString().replaceAll("\"", "\"\""));
+            }
+            
+            v_Buffer.append("\"");
+            
+            if ( v_PropertyIndex < i_PropertySize - 1 )
+            {
+                v_Buffer.append(",");
+            }
+        }
+        
+        v_Buffer.append(this.getNewLine());
+        
+        i_Write.write(v_Buffer.toString());
+        i_Write.flush();
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件(不忽略原文件异常)
      * 
      * 创建的Zip文件没有目录结构
-	 * 
-	 * @param i_SaveZipFullName        保存Zip压缩文件全名称
-	 * @param i_SourceLists            要压缩的原文件列表
-	 * @throws IOException
-	 */
-	public void createZip(String i_SaveZipFullName ,Collection<?> i_SourceLists) throws IOException
-	{
-		this.createZip(i_SaveZipFullName ,null ,i_SourceLists ,false);
-	}
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_SourceLists            要压缩的原文件列表
+     * @throws IOException
+     */
+    public void createZip(String i_SaveZipFullName ,Collection<?> i_SourceLists) throws IOException
+    {
+        this.createZip(i_SaveZipFullName ,null ,i_SourceLists ,false);
+    }
     
     
     
@@ -4773,58 +4921,58 @@ public final class FileHelp
     {
         this.createZip(i_SaveZipFullName ,i_ZipRootPath ,i_SourceLists ,false);
     }
-	
-	
-	
-	/**
-	 * 创建Zip的压缩文件
-	 * 
-	 * @param i_SaveZipFullName        保存Zip压缩文件全名称
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
      * @param i_ZipRootPath            创建Zip目录结构的根目录（当为空时，创建的Zip文件没有目录结构）
-	 * @param i_SourceLists            要压缩的原文件列表
-	 * @param i_IgnoreSourceFileError  是否忽略原文件异常(如原文件不存、或不可读等异常)
-	 * @throws IOException
-	 */
-	public void createZip(String i_SaveZipFullName ,String i_ZipRootPath ,Collection<?> i_SourceLists ,boolean i_IgnoreSourceFileError) throws IOException
-	{
-		if ( Help.isNull(i_SaveZipFullName) )
-		{
-			throw new NullPointerException("Save full name is null.");
-		}
-		
-		if ( i_SourceLists == null || i_SourceLists.size() <= 0 )
-		{
-			throw new NullPointerException("Zip source files[" + i_SaveZipFullName + "] list is null.");
-		}
-		
-		
-		File v_SaveZipFile = new File(i_SaveZipFullName);
-		if ( v_SaveZipFile.exists() )
-		{
-			if ( this.isOverWrite )
-			{
-				boolean v_Result = v_SaveZipFile.delete();
-				
-				if ( !v_Result )
-				{
-					v_SaveZipFile = null;
-					throw new IOException("Delete target file[" + i_SaveZipFullName + "] exception.");
-				}
-			}
-			else
-			{
-				v_SaveZipFile = null;
-				throw new IOException("Target[" + i_SaveZipFullName + "] is exists.");
-			}
-		}
-		
-		
-		FileInputStream       v_SourceInput = null;
-		FileOutputStream      v_ZipOutput   = new FileOutputStream(v_SaveZipFile);
-		ZipOutputStream       v_ZipWriter   = new ZipOutputStream(v_ZipOutput ,Charset.forName(this.charEncoding));
-		Iterator<?>           v_IterSources = i_SourceLists.iterator();
-		DefaultCreateZipEvent v_Event       = new DefaultCreateZipEvent(this ,i_SourceLists.size());
-		boolean               v_IsContinue  = true;
+     * @param i_SourceLists            要压缩的原文件列表
+     * @param i_IgnoreSourceFileError  是否忽略原文件异常(如原文件不存、或不可读等异常)
+     * @throws IOException
+     */
+    public void createZip(String i_SaveZipFullName ,String i_ZipRootPath ,Collection<?> i_SourceLists ,boolean i_IgnoreSourceFileError) throws IOException
+    {
+        if ( Help.isNull(i_SaveZipFullName) )
+        {
+            throw new NullPointerException("Save full name is null.");
+        }
+        
+        if ( i_SourceLists == null || i_SourceLists.size() <= 0 )
+        {
+            throw new NullPointerException("Zip source files[" + i_SaveZipFullName + "] list is null.");
+        }
+        
+        
+        File v_SaveZipFile = new File(i_SaveZipFullName);
+        if ( v_SaveZipFile.exists() )
+        {
+            if ( this.isOverWrite )
+            {
+                boolean v_Result = v_SaveZipFile.delete();
+                
+                if ( !v_Result )
+                {
+                    v_SaveZipFile = null;
+                    throw new IOException("Delete target file[" + i_SaveZipFullName + "] exception.");
+                }
+            }
+            else
+            {
+                v_SaveZipFile = null;
+                throw new IOException("Target[" + i_SaveZipFullName + "] is exists.");
+            }
+        }
+        
+        
+        FileInputStream       v_SourceInput = null;
+        FileOutputStream      v_ZipOutput   = new FileOutputStream(v_SaveZipFile);
+        ZipOutputStream       v_ZipWriter   = new ZipOutputStream(v_ZipOutput ,Charset.forName(this.charEncoding));
+        Iterator<?>           v_IterSources = i_SourceLists.iterator();
+        DefaultCreateZipEvent v_Event       = new DefaultCreateZipEvent(this ,i_SourceLists.size());
+        boolean               v_IsContinue  = true;
         String                v_ZipRootPath = Help.NVL(i_ZipRootPath).trim().toLowerCase();
         int                   v_ReadIndex   = 0;
         
@@ -4833,55 +4981,55 @@ public final class FileHelp
             v_ZipRootPath = v_ZipRootPath + Help.getSysPathSeparator();
         }
         
-		try
-		{
-			v_IsContinue = this.fireCreateZipBeforeListener(v_Event);
-			
-			while ( v_IsContinue && v_IterSources.hasNext() )
-			{
-				String v_SourceFileFullName = v_IterSources.next().toString();
-				File   v_SourceFile         = new File(v_SourceFileFullName);
-				
-				if ( !v_SourceFile.exists() )
-				{
-					if ( !i_IgnoreSourceFileError )
-					{
-						throw new RuntimeException(v_SourceFileFullName + " is not exists.");
-					}
-					else
-					{
-						// 某一个原文件不存时，同时忽略原文件错误时，进行下一个原文件的压缩
-						v_Event.setIgnoreErrorSize(v_Event.getIgnoreErrorSize() + 1);
-						continue;
-					}
-				}
-				
-				if ( !v_SourceFile.canRead() )
-				{
-					if ( !i_IgnoreSourceFileError )
-					{
-						throw new RuntimeException(v_SourceFileFullName + " can not read.");
-					}
-					else
-					{
-						// 某一个原文件不可读取时，同时忽略原文件错误时，进行下一个原文件的压缩
-						v_Event.setIgnoreErrorSize(v_Event.getIgnoreErrorSize() + 1);
-						continue;
-					}
-				}
-				
-				
-				// 压缩某一个具体文件
-				long                  v_SourceLen   = v_SourceFile.length();
-				long                  v_WriteIndex  = 0;
-				byte []               v_ByteBuffer  = new byte[bufferSize];
-				DefaultCreateZipEvent v_PerSource   = new DefaultCreateZipEvent(this ,v_SourceLen);
-				ZipEntry              v_ZipEntry    = null;
-				String                v_DirFlag     = v_SourceFile.isDirectory() ? "/" : "";
-				
-				v_Event.setPerSource(v_PerSource);
-				v_IsContinue = this.fireCreatingZipListener(v_Event);
-				
+        try
+        {
+            v_IsContinue = this.fireCreateZipBeforeListener(v_Event);
+            
+            while ( v_IsContinue && v_IterSources.hasNext() )
+            {
+                String v_SourceFileFullName = v_IterSources.next().toString();
+                File   v_SourceFile         = new File(v_SourceFileFullName);
+                
+                if ( !v_SourceFile.exists() )
+                {
+                    if ( !i_IgnoreSourceFileError )
+                    {
+                        throw new RuntimeException(v_SourceFileFullName + " is not exists.");
+                    }
+                    else
+                    {
+                        // 某一个原文件不存时，同时忽略原文件错误时，进行下一个原文件的压缩
+                        v_Event.setIgnoreErrorSize(v_Event.getIgnoreErrorSize() + 1);
+                        continue;
+                    }
+                }
+                
+                if ( !v_SourceFile.canRead() )
+                {
+                    if ( !i_IgnoreSourceFileError )
+                    {
+                        throw new RuntimeException(v_SourceFileFullName + " can not read.");
+                    }
+                    else
+                    {
+                        // 某一个原文件不可读取时，同时忽略原文件错误时，进行下一个原文件的压缩
+                        v_Event.setIgnoreErrorSize(v_Event.getIgnoreErrorSize() + 1);
+                        continue;
+                    }
+                }
+                
+                
+                // 压缩某一个具体文件
+                long                  v_SourceLen   = v_SourceFile.length();
+                long                  v_WriteIndex  = 0;
+                byte []               v_ByteBuffer  = new byte[bufferSize];
+                DefaultCreateZipEvent v_PerSource   = new DefaultCreateZipEvent(this ,v_SourceLen);
+                ZipEntry              v_ZipEntry    = null;
+                String                v_DirFlag     = v_SourceFile.isDirectory() ? "/" : "";
+                
+                v_Event.setPerSource(v_PerSource);
+                v_IsContinue = this.fireCreatingZipListener(v_Event);
+                
                 if ( Help.isNull(i_ZipRootPath) )
                 {
                     v_ZipEntry = new ZipEntry(v_SourceFile.getName() + v_DirFlag);
@@ -4931,26 +5079,26 @@ public final class FileHelp
                     }
                     
                     v_SourceInput = null;
-    				v_SourceFile  = null;
+                    v_SourceFile  = null;
                 }
                 else
                 {
                     v_ZipWriter.closeEntry();
                 }
-			}
-			
-			v_Event.setSucceedFinish();
-		}
-		catch (Exception exce)
-		{
-			v_Event.setEndTime();
-			throw new IOException(exce.getMessage());
-		}
-		finally
-		{
-		    if ( v_SourceInput != null )
+            }
+            
+            v_Event.setSucceedFinish();
+        }
+        catch (Exception exce)
+        {
+            v_Event.setEndTime();
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            if ( v_SourceInput != null )
             {
-    		    try
+                try
                 {
                     v_SourceInput.close();
                 }
@@ -4962,21 +5110,21 @@ public final class FileHelp
                 v_SourceInput = null;
             }
             
-		    if ( v_ZipWriter != null )
-		    {
-    			try
-    			{
-    				v_ZipWriter.close();
-    			}
-    			catch (Exception exce)
-    			{
-    				// Nothing.
-    			}
-    			
-    			v_ZipWriter = null;
-		    }
-		    
-		    if ( v_ZipOutput != null )
+            if ( v_ZipWriter != null )
+            {
+                try
+                {
+                    v_ZipWriter.close();
+                }
+                catch (Exception exce)
+                {
+                    // Nothing.
+                }
+                
+                v_ZipWriter = null;
+            }
+            
+            if ( v_ZipOutput != null )
             {
                 try
                 {
@@ -4989,128 +5137,128 @@ public final class FileHelp
                 
                 v_ZipOutput = null;
             }
-		    
-			this.fireCreateZipAfterListener(v_Event);
-		}
+            
+            this.fireCreateZipAfterListener(v_Event);
+        }
 
-	}
-	
-	
-	
-	
-	/**
-	 * 解压缩
-	 * 
-	 * 2018-03-13  修复：解压时用出现解压不完整的问题。
-	 * 2018-03-16  修复：当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
-	 * 2018-04-09  添加：从压缩包中读取文件的最后修改时间
-	 * 
-	 * @param i_ZipFullName       压缩包文件
-	 * @param i_SaveDir           保存解压目录
-	 * @param i_IgnoreUnZipError  是否忽略解压缩过程中的异常(如解压包中的每个文件已存在在保存目录中: 1.无法删除的情况; 2.不允许重复的情况。)  
-	 * @throws IOException
-	 */
-	public void UnCompressZip(String i_ZipFullName ,String i_SaveDir ,boolean i_IgnoreUnZipError) throws IOException
-	{
-		if ( Help.isNull(i_ZipFullName) )
-		{
-			throw new NullPointerException("Zip full name is null.");
-		}
-		
-		if ( Help.isNull(i_SaveDir) )
-		{
-			throw new NullPointerException("Zip save directory is null.");
-		}
-		
-		
-		File v_ZipFile = new File(i_ZipFullName);
-		if ( !v_ZipFile.exists() )
-		{
-			v_ZipFile = null;
-			throw new IOException("Zip file[" + i_ZipFullName + "] is not exists.");
-		}
-		
-		if ( !v_ZipFile.isFile() )
-		{
-			v_ZipFile = null;
-			throw new IOException("Zip[" + i_ZipFullName + "] is not file.");
-		}
-		
-		if ( !v_ZipFile.canRead() )
-		{
-			v_ZipFile = null;
-			throw new IOException("Zip[" + i_ZipFullName + "] can not read.");
-		}
-		
-		
-		File v_SaveDirFile = new File(i_SaveDir);
-		if ( !v_SaveDirFile.exists() )
-		{
-			boolean v_Result = v_SaveDirFile.mkdirs();
-			
-			if ( !v_Result )
-			{
-				v_SaveDirFile = null;
-				throw new IOException("Create save dir[" + i_SaveDir + "] exception.");
-			}
-		}
-		
-		
-		@SuppressWarnings("resource")
+    }
+    
+    
+    
+    
+    /**
+     * 解压缩
+     * 
+     * 2018-03-13  修复：解压时用出现解压不完整的问题。
+     * 2018-03-16  修复：当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
+     * 2018-04-09  添加：从压缩包中读取文件的最后修改时间
+     * 
+     * @param i_ZipFullName       压缩包文件
+     * @param i_SaveDir           保存解压目录
+     * @param i_IgnoreUnZipError  是否忽略解压缩过程中的异常(如解压包中的每个文件已存在在保存目录中: 1.无法删除的情况; 2.不允许重复的情况。)
+     * @throws IOException
+     */
+    public void UnCompressZip(String i_ZipFullName ,String i_SaveDir ,boolean i_IgnoreUnZipError) throws IOException
+    {
+        if ( Help.isNull(i_ZipFullName) )
+        {
+            throw new NullPointerException("Zip full name is null.");
+        }
+        
+        if ( Help.isNull(i_SaveDir) )
+        {
+            throw new NullPointerException("Zip save directory is null.");
+        }
+        
+        
+        File v_ZipFile = new File(i_ZipFullName);
+        if ( !v_ZipFile.exists() )
+        {
+            v_ZipFile = null;
+            throw new IOException("Zip file[" + i_ZipFullName + "] is not exists.");
+        }
+        
+        if ( !v_ZipFile.isFile() )
+        {
+            v_ZipFile = null;
+            throw new IOException("Zip[" + i_ZipFullName + "] is not file.");
+        }
+        
+        if ( !v_ZipFile.canRead() )
+        {
+            v_ZipFile = null;
+            throw new IOException("Zip[" + i_ZipFullName + "] can not read.");
+        }
+        
+        
+        File v_SaveDirFile = new File(i_SaveDir);
+        if ( !v_SaveDirFile.exists() )
+        {
+            boolean v_Result = v_SaveDirFile.mkdirs();
+            
+            if ( !v_Result )
+            {
+                v_SaveDirFile = null;
+                throw new IOException("Create save dir[" + i_SaveDir + "] exception.");
+            }
+        }
+        
+        
+        @SuppressWarnings("resource")
         ZipFile                   v_ZipFileObject = new ZipFile(v_ZipFile);
-		Enumeration<?>            v_ZipEntries    = v_ZipFileObject.entries();
-		boolean                   v_IsContinue    = true;
-		long                      v_TotalSize     = v_ZipFile.length();
-		DefaultUnCompressZipEvent v_Event         = new DefaultUnCompressZipEvent(this ,v_TotalSize);
-		
-		v_IsContinue = this.fireUnCompressZipBeforeListener(v_Event);
-		
-		for ( ;v_IsContinue && v_ZipEntries.hasMoreElements(); )
-		{
-			ZipEntry v_ZipEntry       = (ZipEntry)v_ZipEntries.nextElement();
-			// 2018-03-16  修复：当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
-			String   v_TargetFullName = v_SaveDirFile.getAbsolutePath() + Help.getSysPathSeparator() + StringHelp.replaceAll(v_ZipEntry.getName() ,new String[]{"\\" ,"/"} ,new String[]{Help.getSysPathSeparator()}); 
-			File     v_TargetFile     = new File(v_TargetFullName);
-			
-			if ( v_TargetFile.exists() )
-			{
-				// 允许重写则删除
-				if ( this.isOverWrite() )
-				{
-					if ( !v_TargetFile.delete() )
-					{
-						if ( i_IgnoreUnZipError )
-						{
-							continue;
-						}
-						else
-						{
-							v_Event.setEndTime();
-							this.fireUnCompressZipAfterListener(v_Event);
-							throw new IOException("Delete target file[" + v_TargetFullName + "] exception.");
-						}
-					}
-				}
-				// 不允许重写的情况
-				else
-				{
-					if ( i_IgnoreUnZipError )
-					{
-						continue;
-					}
-					else
-					{
-						v_Event.setEndTime();
-						this.fireUnCompressZipAfterListener(v_Event);
-						throw new IOException("Target file[" + v_TargetFullName + "] is exists.");
-					}
-				}
-			}
-			else
-			{
-			    if ( v_ZipEntry.isDirectory() )
-			    {
-			        if ( !v_TargetFile.exists() )
+        Enumeration<?>            v_ZipEntries    = v_ZipFileObject.entries();
+        boolean                   v_IsContinue    = true;
+        long                      v_TotalSize     = v_ZipFile.length();
+        DefaultUnCompressZipEvent v_Event         = new DefaultUnCompressZipEvent(this ,v_TotalSize);
+        
+        v_IsContinue = this.fireUnCompressZipBeforeListener(v_Event);
+        
+        for ( ;v_IsContinue && v_ZipEntries.hasMoreElements(); )
+        {
+            ZipEntry v_ZipEntry       = (ZipEntry)v_ZipEntries.nextElement();
+            // 2018-03-16  修复：当Window环境下打包的压缩包，在Linux环境解压时，因路径符不同而造成错误。
+            String   v_TargetFullName = v_SaveDirFile.getAbsolutePath() + Help.getSysPathSeparator() + StringHelp.replaceAll(v_ZipEntry.getName() ,new String[]{"\\" ,"/"} ,new String[]{Help.getSysPathSeparator()});
+            File     v_TargetFile     = new File(v_TargetFullName);
+            
+            if ( v_TargetFile.exists() )
+            {
+                // 允许重写则删除
+                if ( this.isOverWrite() )
+                {
+                    if ( !v_TargetFile.delete() )
+                    {
+                        if ( i_IgnoreUnZipError )
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            v_Event.setEndTime();
+                            this.fireUnCompressZipAfterListener(v_Event);
+                            throw new IOException("Delete target file[" + v_TargetFullName + "] exception.");
+                        }
+                    }
+                }
+                // 不允许重写的情况
+                else
+                {
+                    if ( i_IgnoreUnZipError )
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        v_Event.setEndTime();
+                        this.fireUnCompressZipAfterListener(v_Event);
+                        throw new IOException("Target file[" + v_TargetFullName + "] is exists.");
+                    }
+                }
+            }
+            else
+            {
+                if ( v_ZipEntry.isDirectory() )
+                {
+                    if ( !v_TargetFile.exists() )
                     {
                         boolean v_Result = v_TargetFile.mkdirs();
                         
@@ -5120,223 +5268,223 @@ public final class FileHelp
                             throw new IOException("Create save dir[" + v_TargetFile.toString() + "] exception.");
                         }
                     }
-			        
-			        continue;
-			    }
-			    else
-			    {
-    			    if ( !v_TargetFile.getParentFile().exists() )
-    			    {
-    			        boolean v_Result = v_TargetFile.getParentFile().mkdirs();
-    		            
-    		            if ( !v_Result )
-    		            {
-    		                v_SaveDirFile = null;
-    		                throw new IOException("Create save dir[" + v_TargetFile.getParent() + "] exception.");
-    		            }
-    			    }
-			    }
-			}
-			
-			InputStream               v_SourceInput  = v_ZipFileObject.getInputStream(v_ZipEntry);
-			OutputStream              v_TargetOutput = new FileOutputStream(v_TargetFile);
-			long                      v_SourceLen    = v_ZipEntry.getSize();
-			long                      v_WriteIndex   = 0;
-			byte []                   v_ByteBuffer   = new byte[bufferSize];
-			DefaultUnCompressZipEvent v_PerSource    = new DefaultUnCompressZipEvent(this ,v_SourceLen);
-			
-			try
-			{
-				v_Event.setPerSource(v_PerSource);
-				v_IsContinue = this.fireUnCompressZipListener(v_Event);
-				
-				while ( v_IsContinue )
-				{
-				    // 2018-03-13 修复：解压时用出现解压不完整的问题。
-				    int v_ReadSize = v_SourceInput.read(v_ByteBuffer);
-				    if ( v_ReadSize <= 0  )
-				    {
-				        v_PerSource.setSucceedFinish();
+                    
+                    continue;
+                }
+                else
+                {
+                    if ( !v_TargetFile.getParentFile().exists() )
+                    {
+                        boolean v_Result = v_TargetFile.getParentFile().mkdirs();
+                        
+                        if ( !v_Result )
+                        {
+                            v_SaveDirFile = null;
+                            throw new IOException("Create save dir[" + v_TargetFile.getParent() + "] exception.");
+                        }
+                    }
+                }
+            }
+            
+            InputStream               v_SourceInput  = v_ZipFileObject.getInputStream(v_ZipEntry);
+            OutputStream              v_TargetOutput = new FileOutputStream(v_TargetFile);
+            long                      v_SourceLen    = v_ZipEntry.getSize();
+            long                      v_WriteIndex   = 0;
+            byte []                   v_ByteBuffer   = new byte[bufferSize];
+            DefaultUnCompressZipEvent v_PerSource    = new DefaultUnCompressZipEvent(this ,v_SourceLen);
+            
+            try
+            {
+                v_Event.setPerSource(v_PerSource);
+                v_IsContinue = this.fireUnCompressZipListener(v_Event);
+                
+                while ( v_IsContinue )
+                {
+                    // 2018-03-13 修复：解压时用出现解压不完整的问题。
+                    int v_ReadSize = v_SourceInput.read(v_ByteBuffer);
+                    if ( v_ReadSize <= 0  )
+                    {
+                        v_PerSource.setSucceedFinish();
                         v_Event.setPerSource(v_PerSource);
                         v_IsContinue = this.fireUnCompressZipListener(v_Event);
-				        break;
-				    }
-				    
-				    v_TargetOutput.write(v_ByteBuffer ,0 ,v_ReadSize);
+                        break;
+                    }
+                    
+                    v_TargetOutput.write(v_ByteBuffer ,0 ,v_ReadSize);
                     v_TargetOutput.flush();
                     
                     v_WriteIndex += v_ReadSize;
-				    
+                    
                     v_PerSource.setCompleteSize(v_WriteIndex);
                     v_Event.setPerSource(v_PerSource);
                     v_IsContinue = this.fireUnCompressZipListener(v_Event);
-				}
-			}
-			catch (Exception exce)
-			{
-				v_PerSource.setEndTime();
-				throw new IOException(exce.getMessage());
-			}
-			finally
-			{
-				try
-				{
-					v_SourceInput.close();
-				}
-				catch (Exception exce)
-				{
-					// Nothing.
-				}
-				
-				try
-				{
-					v_TargetOutput.close();
-				}
-				catch (Exception exce)
-				{
-					// Nothing.
-				}
-				
-				// 设置文件最后时间
-				v_TargetFile.setLastModified(v_ZipEntry.getTime());
-				v_SourceInput  = null;
-				v_TargetOutput = null;
-				v_TargetFile   = null;
-			}
-		}
-		
-		v_Event.setSucceedFinish();
-		this.fireUnCompressZipAfterListener(v_Event);
-		
-		v_ZipEntries = null;
-		v_ZipFileObject.close();
-		v_ZipFileObject = null;
-		v_SaveDirFile   = null;
-		v_ZipFile       = null;
-	}
-	
-	
-	
-	/**
-	 * 解压缩。并文件内容以字符串返回
-	 * 
-	 * 没有解压进度事件
-	 * 
-	 * @param i_ZipURL        压缩包文件
-	 * @param i_ReadFileName  读取压缩包中的哪个文件(不区分大小匹配)
-	 * @param i_CharEncoding  文件的编码
-	 * @throws IOException
-	 */
-	public String UnCompressZip(URL i_ZipURL ,String i_ReadFileName ,String i_CharEncoding) throws Exception
-	{
-		if ( i_ZipURL == null )
-		{
-			throw new NullPointerException("Zip URL is null.");
-		}
-		
-		File v_File = new File(i_ZipURL.toString());
-		
-		if ( !v_File.exists() )
-		{
-			v_File = new File(i_ZipURL.getFile());
-		}
-		
-		return UnCompressZip(v_File ,i_ReadFileName ,i_CharEncoding);
-	}
-	
-	
-	
-	/**
-	 * 解压缩。并文件内容以字符串返回
-	 * 
-	 * 没有解压进度事件
-	 * 
-	 * @param i_ZipFile       压缩包文件
-	 * @param i_ReadFileName  读取压缩包中的哪个文件(不区分大小匹配)
-	 * @param i_CharEncoding  文件的编码
-	 * @throws IOException
-	 */
-	public String UnCompressZip(File i_ZipFile ,String i_ReadFileName ,String i_CharEncoding) throws Exception
-	{
-		if ( i_ZipFile == null )
-		{
-			throw new NullPointerException("Zip file is null.");
-		}
-		
-		File v_ZipFile = i_ZipFile;
-		if ( !v_ZipFile.exists() )
-		{
-			v_ZipFile = null;
-			throw new IOException("Zip file[" + i_ZipFile.toString() + "] is not exists.");
-		}
-		
-		if ( !v_ZipFile.isFile() )
-		{
-			v_ZipFile = null;
-			throw new IOException("Zip[" + i_ZipFile.toString() + "] is not file.");
-		}
-		
-		if ( !v_ZipFile.canRead() )
-		{
-			v_ZipFile = null;
-			throw new IOException("Zip[" + i_ZipFile.toString() + "] can not read.");
-		}
-		
-		
-		
-		ZipFile        v_ZipFileObject = new ZipFile(v_ZipFile);
-		Enumeration<?> v_ZipEntries    = v_ZipFileObject.entries();
-		StringBuilder  v_Buffer        = new StringBuilder();
-		
-		
-		for ( ;v_ZipEntries.hasMoreElements(); )
-		{
-			ZipEntry v_ZipEntry = (ZipEntry)v_ZipEntries.nextElement();
-			
-			if ( !v_ZipEntry.isDirectory() && i_ReadFileName.equalsIgnoreCase(v_ZipEntry.getName()) && v_ZipEntry.getSize() > 0 )
-			{
-				BufferedReader v_SourceInput = null;
-				try
-				{
-					v_SourceInput = new BufferedReader(new InputStreamReader(v_ZipFileObject.getInputStream(v_ZipEntry) ,i_CharEncoding));
-					String v_Line = "";
-					while ( (v_Line = v_SourceInput.readLine()) != null )
-					{
-						v_Buffer.append(v_Line).append(Help.getSysLineSeparator());
-					}
-				}
-				catch (Exception exce)
-				{
-					throw new IOException(exce.getMessage());
-				}
-				finally
-				{
-					try
-					{
-						v_SourceInput.close();
-					}
-					catch (Exception exce)
-					{
-						// Nothing.
-					}
-					
-					v_SourceInput  = null;
-				}
-			}
-		}
-		
-		v_ZipEntries = null;
-		v_ZipFileObject.close();
-		v_ZipFileObject = null;
-		v_ZipFile       = null;
-		
-		return v_Buffer.toString();
-	}
-	
-	
-	
-	
-	/**
+                }
+            }
+            catch (Exception exce)
+            {
+                v_PerSource.setEndTime();
+                throw new IOException(exce.getMessage());
+            }
+            finally
+            {
+                try
+                {
+                    v_SourceInput.close();
+                }
+                catch (Exception exce)
+                {
+                    // Nothing.
+                }
+                
+                try
+                {
+                    v_TargetOutput.close();
+                }
+                catch (Exception exce)
+                {
+                    // Nothing.
+                }
+                
+                // 设置文件最后时间
+                v_TargetFile.setLastModified(v_ZipEntry.getTime());
+                v_SourceInput  = null;
+                v_TargetOutput = null;
+                v_TargetFile   = null;
+            }
+        }
+        
+        v_Event.setSucceedFinish();
+        this.fireUnCompressZipAfterListener(v_Event);
+        
+        v_ZipEntries = null;
+        v_ZipFileObject.close();
+        v_ZipFileObject = null;
+        v_SaveDirFile   = null;
+        v_ZipFile       = null;
+    }
+    
+    
+    
+    /**
+     * 解压缩。并文件内容以字符串返回
+     * 
+     * 没有解压进度事件
+     * 
+     * @param i_ZipURL        压缩包文件
+     * @param i_ReadFileName  读取压缩包中的哪个文件(不区分大小匹配)
+     * @param i_CharEncoding  文件的编码
+     * @throws IOException
+     */
+    public String UnCompressZip(URL i_ZipURL ,String i_ReadFileName ,String i_CharEncoding) throws Exception
+    {
+        if ( i_ZipURL == null )
+        {
+            throw new NullPointerException("Zip URL is null.");
+        }
+        
+        File v_File = new File(i_ZipURL.toString());
+        
+        if ( !v_File.exists() )
+        {
+            v_File = new File(i_ZipURL.getFile());
+        }
+        
+        return UnCompressZip(v_File ,i_ReadFileName ,i_CharEncoding);
+    }
+    
+    
+    
+    /**
+     * 解压缩。并文件内容以字符串返回
+     * 
+     * 没有解压进度事件
+     * 
+     * @param i_ZipFile       压缩包文件
+     * @param i_ReadFileName  读取压缩包中的哪个文件(不区分大小匹配)
+     * @param i_CharEncoding  文件的编码
+     * @throws IOException
+     */
+    public String UnCompressZip(File i_ZipFile ,String i_ReadFileName ,String i_CharEncoding) throws Exception
+    {
+        if ( i_ZipFile == null )
+        {
+            throw new NullPointerException("Zip file is null.");
+        }
+        
+        File v_ZipFile = i_ZipFile;
+        if ( !v_ZipFile.exists() )
+        {
+            v_ZipFile = null;
+            throw new IOException("Zip file[" + i_ZipFile.toString() + "] is not exists.");
+        }
+        
+        if ( !v_ZipFile.isFile() )
+        {
+            v_ZipFile = null;
+            throw new IOException("Zip[" + i_ZipFile.toString() + "] is not file.");
+        }
+        
+        if ( !v_ZipFile.canRead() )
+        {
+            v_ZipFile = null;
+            throw new IOException("Zip[" + i_ZipFile.toString() + "] can not read.");
+        }
+        
+        
+        
+        ZipFile        v_ZipFileObject = new ZipFile(v_ZipFile);
+        Enumeration<?> v_ZipEntries    = v_ZipFileObject.entries();
+        StringBuilder  v_Buffer        = new StringBuilder();
+        
+        
+        for ( ;v_ZipEntries.hasMoreElements(); )
+        {
+            ZipEntry v_ZipEntry = (ZipEntry)v_ZipEntries.nextElement();
+            
+            if ( !v_ZipEntry.isDirectory() && i_ReadFileName.equalsIgnoreCase(v_ZipEntry.getName()) && v_ZipEntry.getSize() > 0 )
+            {
+                BufferedReader v_SourceInput = null;
+                try
+                {
+                    v_SourceInput = new BufferedReader(new InputStreamReader(v_ZipFileObject.getInputStream(v_ZipEntry) ,i_CharEncoding));
+                    String v_Line = "";
+                    while ( (v_Line = v_SourceInput.readLine()) != null )
+                    {
+                        v_Buffer.append(v_Line).append(Help.getSysLineSeparator());
+                    }
+                }
+                catch (Exception exce)
+                {
+                    throw new IOException(exce.getMessage());
+                }
+                finally
+                {
+                    try
+                    {
+                        v_SourceInput.close();
+                    }
+                    catch (Exception exce)
+                    {
+                        // Nothing.
+                    }
+                    
+                    v_SourceInput  = null;
+                }
+            }
+        }
+        
+        v_ZipEntries = null;
+        v_ZipFileObject.close();
+        v_ZipFileObject = null;
+        v_ZipFile       = null;
+        
+        return v_Buffer.toString();
+    }
+    
+    
+    
+    
+    /**
      * 创建Zip的压缩文件 (压缩级别为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
      * 
      * @author      ZhengWei(HY)
@@ -5413,7 +5561,7 @@ public final class FileHelp
     
     
     /**
-     * 创建Zip的压缩文件 
+     * 创建Zip的压缩文件
      * 
      * @author      ZhengWei(HY)
      * @createDate  2018-04-09
@@ -5541,20 +5689,20 @@ public final class FileHelp
         }
         
         
-        ZipParameters v_ZipParams = new ZipParameters(); 
-        v_ZipParams.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);           // 压缩方式  
-        v_ZipParams.setCompressionLevel( i_CompressionLevel);                    // 压缩级别  
-        if ( i_Password != null && !"".equals(i_Password) ) 
-        {  
-            v_ZipParams.setEncryptFiles(true);  
-            v_ZipParams.setEncryptionMethod(Zip4jConstants.ENC_METHOD_STANDARD); // 加密方式  
-            v_ZipParams.setPassword(i_Password.toCharArray());  
+        ZipParameters v_ZipParams = new ZipParameters();
+        v_ZipParams.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);           // 压缩方式
+        v_ZipParams.setCompressionLevel( i_CompressionLevel);                    // 压缩级别
+        if ( i_Password != null && !"".equals(i_Password) )
+        {
+            v_ZipParams.setEncryptFiles(true);
+            v_ZipParams.setEncryptionMethod(Zip4jConstants.ENC_METHOD_STANDARD); // 加密方式
+            v_ZipParams.setPassword(i_Password.toCharArray());
         }
         
         
         try
         {
-            net.lingala.zip4j.core.ZipFile v_ZipWriter = new net.lingala.zip4j.core.ZipFile(i_SaveZipFile);  
+            net.lingala.zip4j.core.ZipFile v_ZipWriter = new net.lingala.zip4j.core.ZipFile(i_SaveZipFile);
             v_ZipWriter.setFileNameCharset(this.charEncoding.toUpperCase().replace("UTF-8" ,"UTF8"));
             
             if ( i_ZipFile.isDirectory() )
@@ -5606,7 +5754,7 @@ public final class FileHelp
      * @param i_UnCompressDir  解压目录。当不存在时，自动创建
      * @throws IOException
      */
-    public void UnCompressZip4j(String i_ZipFile ,String i_UnCompressDir) throws IOException 
+    public void UnCompressZip4j(String i_ZipFile ,String i_UnCompressDir) throws IOException
     {
         this.UnCompressZip4j(i_ZipFile ,i_UnCompressDir ,null);
     }
@@ -5625,7 +5773,7 @@ public final class FileHelp
      * @param i_Passwd         加密密码
      * @throws IOException
      */
-    public void UnCompressZip4j(String i_ZipFile ,String i_UnCompressDir ,String i_Passwd) throws IOException 
+    public void UnCompressZip4j(String i_ZipFile ,String i_UnCompressDir ,String i_Passwd) throws IOException
     {
         if ( Help.isNull(i_ZipFile) )
         {
@@ -5648,7 +5796,7 @@ public final class FileHelp
      * @param i_UnCompressDir  解压目录。当不存在时，自动创建
      * @throws IOException
      */
-    public void UnCompressZip4j(File i_ZipFile ,String i_UnCompressDir) throws IOException 
+    public void UnCompressZip4j(File i_ZipFile ,String i_UnCompressDir) throws IOException
     {
         this.UnCompressZip4j(i_ZipFile ,i_UnCompressDir ,null);
     }
@@ -5667,7 +5815,7 @@ public final class FileHelp
      * @param i_Passwd         加密密码
      * @throws IOException
      */
-    public void UnCompressZip4j(File i_ZipFile ,String i_UnCompressDir ,String i_Passwd) throws IOException 
+    public void UnCompressZip4j(File i_ZipFile ,String i_UnCompressDir ,String i_Passwd) throws IOException
     {
         if ( Help.isNull(i_UnCompressDir) )
         {
@@ -5675,16 +5823,16 @@ public final class FileHelp
         }
         
         File v_UnCompressDir = new File(i_UnCompressDir.trim());
-        if ( !v_UnCompressDir.exists() || !v_UnCompressDir.isDirectory() ) 
-        {    
-            v_UnCompressDir.mkdirs();    
+        if ( !v_UnCompressDir.exists() || !v_UnCompressDir.isDirectory() )
+        {
+            v_UnCompressDir.mkdirs();
         }
         
         
         net.lingala.zip4j.core.ZipFile v_ZipFile = null;
         try
         {
-            v_ZipFile = new net.lingala.zip4j.core.ZipFile(i_ZipFile); 
+            v_ZipFile = new net.lingala.zip4j.core.ZipFile(i_ZipFile);
             v_ZipFile.setFileNameCharset(this.charEncoding.toUpperCase().replace("UTF-8" ,"UTF8"));
         }
         catch (Exception exce)
@@ -5692,24 +5840,24 @@ public final class FileHelp
             throw new IOException(exce.getMessage());
         }
         
-        if (!v_ZipFile.isValidZipFile() ) 
-        {   
-            // 验证文件是否合法，是否存在、是否为zip文件、是否被损坏等    
+        if (!v_ZipFile.isValidZipFile() )
+        {
+            // 验证文件是否合法，是否存在、是否为zip文件、是否被损坏等
             throw new IOException("ZipFile[" + i_ZipFile.toString() + "] is not valid ,may be damage.");
         }
         
         try
         {
-            if ( v_ZipFile.isEncrypted() ) 
-            {    
+            if ( v_ZipFile.isEncrypted() )
+            {
                 if ( i_Passwd == null || "".equals(i_Passwd) )
                 {
                     throw new IOException("ZipFile[" + i_ZipFile.toString() + "] is the password required for encryption.");
                 }
                 else
                 {
-                    // 设置密码    
-                    v_ZipFile.setPassword(i_Passwd.toCharArray());  
+                    // 设置密码
+                    v_ZipFile.setPassword(i_Passwd.toCharArray());
                 }
             }
             
@@ -5722,7 +5870,7 @@ public final class FileHelp
             v_UnzipParameters.setIgnoreReadOnlyFileAttribute(false);
             v_UnzipParameters.setIgnoreSystemFileAttribute(  false);
             
-            v_ZipFile.extractAll(i_UnCompressDir.trim() ,v_UnzipParameters); 
+            v_ZipFile.extractAll(i_UnCompressDir.trim() ,v_UnzipParameters);
         }
         catch (Exception exce)
         {
@@ -6110,51 +6258,51 @@ public final class FileHelp
         
         return v_Buffer.toString();
     }
-	
-	
-	
-	public int getBufferSize() 
-	{
-		return bufferSize;
-	}
-
-
-
-	public void setBufferSize(int bufferSize) 
-	{
-		this.bufferSize = bufferSize;
-	}
-
-
-
-	public String getNewLine() 
-	{
-		return newLine;
-	}
-
-	
-
-	public void setNewLine(String newLine)
-	{
-		this.newLine = newLine;
-	}
-
-
-	
-	public boolean isOverWrite() 
-	{
-		return isOverWrite;
-	}
-
-
-	
-	public void setOverWrite(boolean isOverWrite) 
-	{
-		this.isOverWrite = isOverWrite;
-	}
-	
     
-	
+    
+    
+    public int getBufferSize()
+    {
+        return bufferSize;
+    }
+
+
+
+    public void setBufferSize(int bufferSize)
+    {
+        this.bufferSize = bufferSize;
+    }
+
+
+
+    public String getNewLine()
+    {
+        return newLine;
+    }
+
+    
+
+    public void setNewLine(String newLine)
+    {
+        this.newLine = newLine;
+    }
+
+
+    
+    public boolean isOverWrite()
+    {
+        return isOverWrite;
+    }
+
+
+    
+    public void setOverWrite(boolean isOverWrite)
+    {
+        this.isOverWrite = isOverWrite;
+    }
+    
+    
+    
     /**
      * 获取：是否追加写入数据
      */
@@ -6168,7 +6316,7 @@ public final class FileHelp
     /**
      * 设置：是否追加写入数据
      * 
-     * @param isAppend 
+     * @param isAppend
      */
     public void setAppend(boolean isAppend)
     {
@@ -6204,7 +6352,7 @@ public final class FileHelp
     /**
      * 设置：数据包的超时时长（单位：秒）
      * 
-     * @param dataPacketTimeOut 
+     * @param dataPacketTimeOut
      */
     public void setDataPacketTimeOut(long dataPacketTimeOut)
     {
@@ -6226,7 +6374,7 @@ public final class FileHelp
     /**
      * 设置：编码类型
      * 
-     * @param charEncoding 
+     * @param charEncoding
      */
     public void setCharEncoding(String charEncoding)
     {
@@ -6248,7 +6396,7 @@ public final class FileHelp
     /**
      * 设置：Http内容类型
      * 
-     * @param contentType 
+     * @param contentType
      */
     public void setContentType(String contentType)
     {
@@ -6282,7 +6430,7 @@ public final class FileHelp
      * 
      * 此为性能参数
      * 
-     * @param isReturnContent 
+     * @param isReturnContent
      */
     public void setReturnContent(boolean isReturnContent)
     {
@@ -6291,33 +6439,34 @@ public final class FileHelp
     
 
 
-    protected void finalize() throws Throwable 
-	{
-		if ( this.fileCopyListeners != null )
-		{
-			this.fileCopyListeners.clear();
-			this.fileCopyListeners = null;
-		}
-		
-		if ( this.createCSVListeners != null )
-		{
-			this.createCSVListeners.clear();
-			this.createCSVListeners = null;
-		}
-		
-		if ( this.createZipListeners != null )
-		{
-			this.createZipListeners.clear();
-			this.createZipListeners = null;
-		}
-		
-		if ( this.unCompressZipListeners != null )
-		{
-			this.unCompressZipListeners.clear();
-			this.unCompressZipListeners = null;
-		}
-		
-		super.finalize();
-	}
-	
+    @Override
+    protected void finalize() throws Throwable
+    {
+        if ( this.fileCopyListeners != null )
+        {
+            this.fileCopyListeners.clear();
+            this.fileCopyListeners = null;
+        }
+        
+        if ( this.createCSVListeners != null )
+        {
+            this.createCSVListeners.clear();
+            this.createCSVListeners = null;
+        }
+        
+        if ( this.createZipListeners != null )
+        {
+            this.createZipListeners.clear();
+            this.createZipListeners = null;
+        }
+        
+        if ( this.unCompressZipListeners != null )
+        {
+            this.unCompressZipListeners.clear();
+            this.unCompressZipListeners = null;
+        }
+        
+        super.finalize();
+    }
+    
 }
