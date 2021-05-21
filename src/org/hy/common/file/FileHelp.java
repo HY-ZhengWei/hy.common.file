@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -106,6 +107,8 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *                             2.添加：获取图片的轮廓
  *                             3.添加：按小图的选定轮廓，从大图中剪切出一部分小图
  *                             4.添加：将前景图透明处理后，覆盖在背景图的上图
+ *                             5.添加：对拷图片数据
+ *                             6.添加：将图片转成Base64字符，用于浏览器的显示
  */
 public final class FileHelp
 {
@@ -2377,8 +2380,9 @@ public final class FileHelp
     public static BufferedImage getContentImage(String i_ImageUrl) throws MalformedURLException, IOException
     {
         BufferedImage v_Image = null;
+        String        v_URL   = i_ImageUrl.toLowerCase();
         
-        if ( i_ImageUrl.startsWith("file:") )
+        if ( v_URL.startsWith("file:") || v_URL.startsWith("http:") || v_URL.startsWith("https:") )
         {
             v_Image = ImageIO.read(new URL(i_ImageUrl));
         }
@@ -2388,6 +2392,55 @@ public final class FileHelp
         }
         
         return v_Image;
+    }
+    
+    
+    
+    /**
+     * 将图片转成Base64字符，用于浏览器的显示
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-20
+     * @version     v1.0
+     * 
+     * @param i_Image
+     * @return
+     * @throws IOException
+     */
+    public static String getContentImageBase64(BufferedImage i_Image) throws IOException
+    {
+        ByteArrayOutputStream v_Out = new ByteArrayOutputStream();
+        ImageIO.write(i_Image ,"png" ,v_Out);
+        
+        return Base64.getEncoder().encodeToString(v_Out.toByteArray());
+    }
+    
+    
+    
+    /**
+     * 对拷图片数据
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-20
+     * @version     v1.0
+     * 
+     * @param i_OldImage
+     * @param io_NewImage
+     */
+    public static void copyImage(BufferedImage i_OldImage ,BufferedImage io_NewImage)
+    {
+        int v_MaxWidthOld  = i_OldImage.getWidth();
+        int v_MaxHeightOld = i_OldImage.getHeight();
+        int v_MaxWidthNew  = io_NewImage.getWidth();
+        int v_MaxHeightNew = io_NewImage.getHeight();
+        
+        for (int yOld=0 ,yNew=0; yOld<v_MaxHeightOld && yNew<v_MaxHeightNew ; yOld++ ,yNew++)
+        {
+            for (int xOld=0 ,xNew=0; xOld<v_MaxWidthOld && xNew<v_MaxWidthNew ; xOld++ ,xNew++)
+            {
+                io_NewImage.setRGB(xNew ,yNew ,i_OldImage.getRGB(xOld ,yOld));
+            }
+        }
     }
     
     
