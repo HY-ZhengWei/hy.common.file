@@ -109,6 +109,7 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *                             4.添加：将前景图透明处理后，覆盖在背景图的上图
  *                             5.添加：对拷图片数据
  *                             6.添加：将图片转成Base64字符，用于浏览器的显示
+ *                             7.添加：为图片描边上色
  */
 public final class FileHelp
 {
@@ -2397,6 +2398,25 @@ public final class FileHelp
     
     
     /**
+     * 加载图片内容。
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-18
+     * @version     v1.0
+     * 
+     * @param i_ImageUrl  图片路径
+     * @return
+     * @throws MalformedURLException
+     * @throws IOException
+     */
+    public static BufferedImage getContentImage(URL i_ImageUrl) throws MalformedURLException, IOException
+    {
+        return ImageIO.read(i_ImageUrl);
+    }
+    
+    
+    
+    /**
      * 将图片转成Base64字符，用于浏览器的显示
      * 
      * @author      ZhengWei(HY)
@@ -2460,6 +2480,27 @@ public final class FileHelp
      */
     public static Return<?>[][] getImageOutline(BufferedImage i_Image ,int i_TransparentColor) throws MalformedURLException, IOException
     {
+        return getImageOutline(i_Image ,i_TransparentColor ,i_TransparentColor);
+    }
+    
+    
+    
+    /**
+     * 获取图片的轮廓（有描边数据的）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-27
+     * @version     v1.0
+     * 
+     * @param i_Image             图片的资源
+     * @param i_TransparentColor  透明色
+     * @param i_StrokeColor       描边色
+     * @return
+     * @throws MalformedURLException
+     * @throws IOException
+     */
+    public static Return<?>[][] getImageOutline(BufferedImage i_Image ,int i_TransparentColor ,int i_StrokeColor) throws MalformedURLException, IOException
+    {
         int           v_Width  = i_Image.getWidth();
         int           v_Height = i_Image.getHeight();
         Return<?>[][] v_Datas  = new Return<?>[v_Width][v_Height];
@@ -2473,6 +2514,10 @@ public final class FileHelp
                 {
                     v_Datas[x][y] = new Return<Object>(false);
                 }
+                else if ( v_Color == i_StrokeColor )
+                {
+                    v_Datas[x][y] = new Return<Object>(true).setParamStr("1").setParamInt(v_Color);
+                }
                 else
                 {
                     v_Datas[x][y] = new Return<Object>(true).setParamInt(v_Color);
@@ -2481,6 +2526,41 @@ public final class FileHelp
         }
         
         return v_Datas;
+    }
+    
+    
+    
+    /**
+     * 为图片描边上色
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-27
+     * @version     v1.0
+     * 
+     * @param io_Image         描边的图形
+     * @param i_StrokeOutline  选定的轮廓
+     * @param i_StrokeX        描边的左上角X位置
+     * @param i_StrokeY        描边的左上角Y位置
+     * @param i_StrokeColor    描边的颜色
+     */
+    public static void strokeImage(BufferedImage io_Image ,Return<?>[][] i_StrokeOutline ,int i_StrokeX ,int i_StrokeY ,int i_StrokeColor)
+    {
+        int v_MaxWidth  = Help.min(io_Image.getWidth()  ,i_StrokeOutline   .length + i_StrokeX);
+        int v_MaxHeight = Help.min(io_Image.getHeight() ,i_StrokeOutline[0].length + i_StrokeY);
+        
+        for (int y=i_StrokeY ,v_OutY=0; y<v_MaxHeight; y++ ,v_OutY++)
+        {
+            for (int x=i_StrokeX ,v_OutX=0; x<v_MaxWidth; x++ ,v_OutX++)
+            {
+                Boolean v_IsStroke = "1".equals(i_StrokeOutline[v_OutX][v_OutY].getParamStr());
+                
+                if ( v_IsStroke )
+                {
+                    // 抠图复制对应颜色值
+                    io_Image.setRGB(x ,y ,i_StrokeColor);
+                }
+            }
+        }
     }
     
     
