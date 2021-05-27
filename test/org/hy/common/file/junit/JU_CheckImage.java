@@ -32,15 +32,17 @@ public class JU_CheckImage
     @Test
     public void test_CheckImage() throws MalformedURLException, IOException
     {
-        Color v_TransparentColor = new Color(255 ,255 ,255);
+        Color  v_TransparentColor = new Color(255 ,255 ,255);   // 透明色的识别
+        Color  v_StrokeColor      = new Color(255 ,0   ,0);     // 描边色的识别
         
         BufferedImage v_OutLineImageA = FileHelp.getContentImage("C:\\WorkSpace\\hy.common.file\\test\\org\\hy\\common\\file\\junit\\CheckImageTemplateA.png");
         BufferedImage v_OutLineImageB = FileHelp.getContentImage("C:\\WorkSpace\\hy.common.file\\test\\org\\hy\\common\\file\\junit\\CheckImageTemplateB.png");
-        Return<?>[][] v_OutlineData   = FileHelp.getImageOutline(v_OutLineImageA ,v_TransparentColor.getRGB());
+        Return<?>[][] v_OutlineData   = FileHelp.getImageOutline(v_OutLineImageA ,v_TransparentColor.getRGB() ,v_StrokeColor.getRGB());
         BufferedImage v_OrgImage      = FileHelp.getContentImage("C:\\WorkSpace\\hy.common.file\\test\\org\\hy\\common\\file\\junit\\CheckImage.png");
         BufferedImage v_NewImage      = new BufferedImage(v_OutlineData.length ,v_OutlineData[0].length, BufferedImage.TYPE_INT_ARGB);
         
         FileHelp.cutImage(v_OrgImage ,v_NewImage ,v_OutlineData ,200 ,200);
+        FileHelp.strokeImage(v_NewImage ,v_OutlineData ,0 ,0 ,(new Color(255 ,255 ,255)).getRGB());
         FileHelp.overAlphaImage(v_OrgImage ,v_OutLineImageB ,200 ,200 ,0.5F);
         
         ImageIO.write(v_NewImage, "png", new File("C:\\WorkSpace\\hy.common.file\\test\\org\\hy\\common\\file\\junit\\NewSmallImage.png"));
