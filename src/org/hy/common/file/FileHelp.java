@@ -249,17 +249,17 @@ public final class FileHelp
     /**
      * 触发读取文件内容事件
      * 
-     * @param i_Event
+     * @param io_Event    读取事件的所有监听器，均可以影响读取结果
      * @return   返回值表示是否继续
      */
-    protected boolean fireReadingListener(FileReadEvent i_Event)
+    protected boolean fireReadingListener(FileReadEvent io_Event)
     {
         if ( this.readListener == null )
         {
             return true;
         }
         
-        return notifyReadingListeners(i_Event);
+        return notifyReadingListeners(io_Event);
     }
     
     
@@ -305,16 +305,16 @@ public final class FileHelp
     /**
      * 通知所有注册读取文件内容事件监听的对象
      * 
-     * @param i_Event
+     * @param io_Event    读取事件的所有监听器，均可以影响读取结果
      */
-    private boolean notifyReadingListeners(FileReadEvent i_Event)
+    private boolean notifyReadingListeners(FileReadEvent io_Event)
     {
         Iterator<FileReadListener> v_Iter       = this.readListener.iterator();
         boolean                    v_IsContinue = true;
 
         while ( v_IsContinue && v_Iter.hasNext() )
         {
-            v_IsContinue = v_Iter.next().readProcess(i_Event);
+            v_IsContinue = v_Iter.next().readProcess(io_Event);
         }
         
         return v_IsContinue;
@@ -2102,12 +2102,13 @@ public final class FileHelp
                 {
                     while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
                     {
-                        v_Buffer.append(v_LineData).append("\r\n");
-                        
                         v_ReadIndex += v_LineData.length();
                         v_Event.setDataString(v_LineData + "\r\n");
                         v_Event.setCompleteSize(v_ReadIndex);
                         v_IsContinue = this.fireReadingListener(v_Event);
+                        
+                        // 读取事件的所有监听器，均可以影响读取结果  ZhengWei Add 2021-06-27
+                        v_Buffer.append(v_Event.getDataString());
                     }
                 }
                 else
@@ -2127,12 +2128,13 @@ public final class FileHelp
                 {
                     while ( v_IsContinue && (v_LineData = v_Reader.readLine()) != null )
                     {
-                        v_Buffer.append(v_LineData);
-                        
                         v_ReadIndex += v_LineData.length();
                         v_Event.setDataString(v_LineData);
                         v_Event.setCompleteSize(v_ReadIndex);
                         v_IsContinue = this.fireReadingListener(v_Event);
+                        
+                        // 读取事件的所有监听器，均可以影响读取结果  ZhengWei Add 2021-06-27
+                        v_Buffer.append(v_Event.getDataString());
                     }
                 }
                 else
@@ -2394,12 +2396,13 @@ public final class FileHelp
             {
                 while ( v_IsContinue && (v_ReadSize = i_SourceInput.read(v_ReadBuffer ,0 ,this.bufferSize)) > 0 )
                 {
-                    v_Output.write(v_ReadBuffer ,0 ,v_ReadSize);
-                    
                     v_ReadIndex += v_ReadSize;
                     v_Event.setDataByte(ByteHelp.substr(v_ReadBuffer ,0 ,v_ReadSize));
                     v_Event.setCompleteSize(v_ReadIndex);
                     v_IsContinue = this.fireReadingListener(v_Event);
+                    
+                    // 读取事件的所有监听器，均可以影响读取结果  ZhengWei Add 2021-06-27
+                    v_Output.write(v_Event.getDataByte() ,0 ,v_Event.getDataByte().length);
                 }
             }
             else

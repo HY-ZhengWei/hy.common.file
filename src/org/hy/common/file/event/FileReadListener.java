@@ -13,34 +13,34 @@ import java.util.EventListener;
  * @createDate  2018-03-15
  * @version     v1.0
  */
-public interface FileReadListener extends EventListener 
+public interface FileReadListener extends EventListener
 {
-	
-	/**
-	 * 读取文件内容之前
-	 * 
-	 * @param e
-	 * @return   返回值表示是否继续拷贝
-	 */
-	public boolean readBefore(FileReadEvent e);
-	
-	
+    
+    /**
+     * 读取文件内容之前
+     * 
+     * @param i_Event
+     * @return          返回值表示是否继续拷贝
+     */
+    public boolean readBefore(FileReadEvent i_Event);
+    
+    
 
-	/**
-	 * 读取文件内容的进度
-	 * 
-	 * @param e
-	 * @return   返回值表示是否继续拷贝
-	 */
-	public boolean readProcess(FileReadEvent e);
-	
-	
-	
-	/**
-	 * 读取文件内容完成之后
-	 * 
-	 * @param e
-	 */
-	public void readAfter(FileReadEvent e);
-	
+    /**
+     * 读取文件内容的进度
+     * 
+     * @param io_Event  读取事件的所有监听器，均可以影响读取结果
+     * @return          返回值表示是否继续拷贝
+     */
+    public boolean readProcess(FileReadEvent io_Event);
+    
+    
+    
+    /**
+     * 读取文件内容完成之后
+     * 
+     * @param i_Event
+     */
+    public void readAfter(FileReadEvent i_Event);
+    
 }
