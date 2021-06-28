@@ -1320,7 +1320,7 @@ public final class FileHelp
         if ( i_Dir.isDirectory() )
         {
             File [] v_ChildFiles = i_Dir.listFiles();
-            Long    v_MaxTime    = 0L;
+            long    v_MaxTime    = 0L;
             File    v_MaxFile    = null;
             
             for (File v_ChildFile : v_ChildFiles)
@@ -1353,14 +1353,82 @@ public final class FileHelp
                 }
             }
             
-            if ( v_MaxFile == null )
-            {
-                return i_Dir;
-            }
-            
-            if ( i_IsFindChilds )
+            if ( v_MaxFile != null && i_IsFindChilds )
             {
                 return findLastModified(v_MaxFile ,i_FindDirName ,i_FindFileName ,i_IsFindChilds);
+            }
+            else
+            {
+                return v_MaxFile;
+            }
+        }
+        else if ( i_Dir.isFile() )
+        {
+            return i_Dir;
+        }
+        else
+        {
+            return null;
+        }
+    }
+    
+    
+    
+    /**
+     * 递归查找文件时间和名称最新的文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-06-25
+     * @version     v1.0
+     * 
+     * @param i_Dir            查到的目录
+     * @param i_FindDirName    查到的文件名称（支持模糊匹配、不区分大小写）（可为空）
+     * @param i_FindFileName   查到的文件名称（支持模糊匹配、不区分大小写）（可为空）
+     * @param i_IsFindChilds   是否递归查找子目录
+     * @return
+     */
+    public static File findLastName(File i_Dir ,String i_FindDirName ,String i_FindFileName ,boolean i_IsFindChilds)
+    {
+        if ( i_Dir.isDirectory() )
+        {
+            File [] v_ChildFiles = i_Dir.listFiles();
+            String  v_MaxName    = "";
+            File    v_MaxFile    = null;
+            
+            for (File v_ChildFile : v_ChildFiles)
+            {
+                if ( v_ChildFile.isDirectory() )
+                {
+                    if ( !Help.isNull(i_FindDirName) )
+                    {
+                        if ( v_ChildFile.getName().toLowerCase().indexOf(i_FindDirName.toLowerCase()) < 0 )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                else if ( v_ChildFile.isFile() )
+                {
+                    if ( !Help.isNull(i_FindFileName) )
+                    {
+                        if ( v_ChildFile.getName().toLowerCase().indexOf(i_FindFileName.toLowerCase()) < 0 )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                
+                if ( v_MaxName.compareTo(v_ChildFile.getName()) <= -1 )
+                {
+                    v_MaxName = v_ChildFile.getName();
+                    v_MaxFile = v_ChildFile;
+                }
+            }
+            
+            
+            if ( v_MaxFile != null && i_IsFindChilds )
+            {
+                return findLastName(v_MaxFile ,i_FindDirName ,i_FindFileName ,i_IsFindChilds);
             }
             else
             {
