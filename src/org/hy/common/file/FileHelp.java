@@ -1305,6 +1305,8 @@ public final class FileHelp
     /**
      * 递归查找修改时间最新的文件
      * 
+     * 特点：当两同级目录A、B，A没有文件和B有文件时，也能取到有文件的目录（无论A、B目录谁是最新的）。
+     * 
      * @author      ZhengWei(HY)
      * @createDate  2021-06-25
      * @version     v1.0
@@ -1321,7 +1323,8 @@ public final class FileHelp
         {
             File [] v_ChildFiles = i_Dir.listFiles();
             long    v_MaxTime    = 0L;
-            File    v_MaxFile    = null;
+            File    v_MaxFile    = null;     // 最大的文件
+            File    v_SecondFile = null;     // 第二大的文件
             
             for (File v_ChildFile : v_ChildFiles)
             {
@@ -1348,18 +1351,69 @@ public final class FileHelp
                 
                 if ( v_MaxTime < v_ChildFile.lastModified() )
                 {
-                    v_MaxTime = v_ChildFile.lastModified();
-                    v_MaxFile = v_ChildFile;
+                    v_SecondFile = v_MaxFile;
+                    v_MaxTime    = v_ChildFile.lastModified();
+                    v_MaxFile    = v_ChildFile;
                 }
             }
             
-            if ( v_MaxFile != null && i_IsFindChilds )
+            if ( v_MaxFile == null )
             {
-                return findLastModified(v_MaxFile ,i_FindDirName ,i_FindFileName ,i_IsFindChilds);
+                return null;
+            }
+            else if ( v_MaxFile.isFile() )
+            {
+                return v_MaxFile;
+            }
+            else if ( v_MaxFile.isDirectory() )
+            {
+                File v_FindFile = null;
+                if ( i_IsFindChilds )
+                {
+                    v_FindFile = findLastModified(v_MaxFile ,i_FindDirName ,i_FindFileName ,i_IsFindChilds);
+                    if ( v_FindFile == null )
+                    {
+                        if ( v_SecondFile == null )
+                        {
+                            return null;
+                        }
+                        if ( v_SecondFile.isFile() )
+                        {
+                            return v_SecondFile;
+                        }
+                        else if ( v_SecondFile.isDirectory() )
+                        {
+                            return findLastModified(v_SecondFile ,i_FindDirName ,i_FindFileName ,i_IsFindChilds);
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    }
+                    else
+                    {
+                        return v_FindFile;
+                    }
+                }
+                else
+                {
+                    if ( v_SecondFile == null )
+                    {
+                        return null;
+                    }
+                    else if ( v_SecondFile.isFile() )
+                    {
+                        return v_SecondFile;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
             }
             else
             {
-                return v_MaxFile;
+                return null;
             }
         }
         else if ( i_Dir.isFile() )
@@ -1377,6 +1431,8 @@ public final class FileHelp
     /**
      * 递归查找文件时间和名称最新的文件
      * 
+     * 特点：当两同级目录A、B，A没有文件和B有文件时，也能取到有文件的目录（无论A、B目录谁是最新的）。
+     * 
      * @author      ZhengWei(HY)
      * @createDate  2021-06-25
      * @version     v1.0
@@ -1393,7 +1449,8 @@ public final class FileHelp
         {
             File [] v_ChildFiles = i_Dir.listFiles();
             String  v_MaxName    = "";
-            File    v_MaxFile    = null;
+            File    v_MaxFile    = null;     // 最大的文件
+            File    v_SecondFile = null;     // 第二大的文件
             
             for (File v_ChildFile : v_ChildFiles)
             {
@@ -1420,19 +1477,69 @@ public final class FileHelp
                 
                 if ( v_MaxName.compareTo(v_ChildFile.getName()) <= -1 )
                 {
-                    v_MaxName = v_ChildFile.getName();
-                    v_MaxFile = v_ChildFile;
+                    v_SecondFile = v_MaxFile;
+                    v_MaxName    = v_ChildFile.getName();
+                    v_MaxFile    = v_ChildFile;
                 }
             }
             
-            
-            if ( v_MaxFile != null && i_IsFindChilds )
+            if ( v_MaxFile == null )
             {
-                return findLastName(v_MaxFile ,i_FindDirName ,i_FindFileName ,i_IsFindChilds);
+                return null;
+            }
+            else if ( v_MaxFile.isFile() )
+            {
+                return v_MaxFile;
+            }
+            else if ( v_MaxFile.isDirectory() )
+            {
+                File v_FindFile = null;
+                if ( i_IsFindChilds )
+                {
+                    v_FindFile = findLastName(v_MaxFile ,i_FindDirName ,i_FindFileName ,i_IsFindChilds);
+                    if ( v_FindFile == null )
+                    {
+                        if ( v_SecondFile == null )
+                        {
+                            return null;
+                        }
+                        if ( v_SecondFile.isFile() )
+                        {
+                            return v_SecondFile;
+                        }
+                        else if ( v_SecondFile.isDirectory() )
+                        {
+                            return findLastName(v_SecondFile ,i_FindDirName ,i_FindFileName ,i_IsFindChilds);
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    }
+                    else
+                    {
+                        return v_FindFile;
+                    }
+                }
+                else
+                {
+                    if ( v_SecondFile == null )
+                    {
+                        return null;
+                    }
+                    else if ( v_SecondFile.isFile() )
+                    {
+                        return v_SecondFile;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
             }
             else
             {
-                return v_MaxFile;
+                return null;
             }
         }
         else if ( i_Dir.isFile() )
