@@ -133,23 +133,23 @@ public final class FileHelp
     
     
     
-	/** 缓存大小 */
-	private int                                  bufferSize    = 128 * 1024;
-	
-	/** 文件新行的标识 */
-	private String                               newLine       = "\r\n";
-	
-	/** 是否覆盖 */
-	private boolean                              isOverWrite   = false;
-	
-	/** 是否追加写入数据 */
-	private boolean                              isAppend      = false;
-	
-	/** 编码类型 */
-	private String                               charEncoding  = "UTF-8";
-	
-	/** Http内容类型 */
-	private String                               contentType   = "application/json; charset=utf-8";
+    /** 缓存大小 */
+    private int                                  bufferSize    = 128 * 1024;
+    
+    /** 文件新行的标识 */
+    private String                               newLine       = "\r\n";
+    
+    /** 是否覆盖 */
+    private boolean                              isOverWrite   = false;
+    
+    /** 是否追加写入数据 */
+    private boolean                              isAppend      = false;
+    
+    /** 编码类型 */
+    private String                               charEncoding  = "UTF-8";
+    
+    /** Http内容类型 */
+    private String                               contentType   = "application/json; charset=utf-8";
     
     /** CSV文件数据项加的前缀。如=号，可防止用Excel打开数字乱码 */
     private String                               csvDataPrefix = "=";
@@ -336,590 +336,590 @@ public final class FileHelp
             v_Iter.next().readAfter(i_Event);
         }
     }
-	
-	
-	
-	/**
-	 * 注册拷贝文件事件
-	 * 
-	 * @param e
-	 */
-	public void addCopyListener(FileCopyListener e)
-	{
-		if ( this.fileCopyListeners == null )
-		{
-			this.fileCopyListeners = new HashSet<FileCopyListener>();
-		}
-		
-		this.fileCopyListeners.add(e);
-	}
-	
-	
-	
-	/**
-	 * 移除拷贝事件
-	 * 
-	 * @param e
-	 */
-	public void removeCopyListener(FileCopyListener e)
-	{
-		if ( this.fileCopyListeners == null )
-		{
-			return;
-		}
-		
-		this.fileCopyListeners.remove(e);
-	}
-	
-	
-	
-	/**
-	 * 触发拷贝文件之前的事件
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	protected boolean fireCopyBeforeListener(FileCopyEvent i_Event)
-	{
-		if ( this.fileCopyListeners == null )
-		{
-			return true;
-		}
-		
-		return notifyCopyBeforeListeners(i_Event);
-	}
-	
-	
-	
-	/**
-	 * 触发拷贝文件事件
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	protected boolean fireCopyingListener(FileCopyEvent i_Event)
-	{
-		if ( this.fileCopyListeners == null )
-		{
-			return true;
-		}
-		
-		return notifyCopyingListeners(i_Event);
-	}
-	
-	
-	
-	/**
-	 * 触发拷贝文件完成之后的事件
-	 * 
-	 * @param i_Event
-	 */
-	protected void fireCopyAfterListener(FileCopyEvent i_Event)
-	{
-		if ( this.fileCopyListeners == null )
-		{
-			return;
-		}
-		
-		notifyCopyAfterListeners(i_Event);
-	}
+    
+    
+    
+    /**
+     * 注册拷贝文件事件
+     * 
+     * @param e
+     */
+    public void addCopyListener(FileCopyListener e)
+    {
+        if ( this.fileCopyListeners == null )
+        {
+            this.fileCopyListeners = new HashSet<FileCopyListener>();
+        }
+        
+        this.fileCopyListeners.add(e);
+    }
+    
+    
+    
+    /**
+     * 移除拷贝事件
+     * 
+     * @param e
+     */
+    public void removeCopyListener(FileCopyListener e)
+    {
+        if ( this.fileCopyListeners == null )
+        {
+            return;
+        }
+        
+        this.fileCopyListeners.remove(e);
+    }
+    
+    
+    
+    /**
+     * 触发拷贝文件之前的事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireCopyBeforeListener(FileCopyEvent i_Event)
+    {
+        if ( this.fileCopyListeners == null )
+        {
+            return true;
+        }
+        
+        return notifyCopyBeforeListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发拷贝文件事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireCopyingListener(FileCopyEvent i_Event)
+    {
+        if ( this.fileCopyListeners == null )
+        {
+            return true;
+        }
+        
+        return notifyCopyingListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发拷贝文件完成之后的事件
+     * 
+     * @param i_Event
+     */
+    protected void fireCopyAfterListener(FileCopyEvent i_Event)
+    {
+        if ( this.fileCopyListeners == null )
+        {
+            return;
+        }
+        
+        notifyCopyAfterListeners(i_Event);
+    }
 
-	
-	
-	/**
-	 * 通知所有注册拷贝文件之前的事件监听的对象
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	private boolean notifyCopyBeforeListeners(FileCopyEvent i_Event)
-	{
-		Iterator<FileCopyListener> v_Iter       = this.fileCopyListeners.iterator();
-		boolean                    v_IsContinue = true;
+    
+    
+    /**
+     * 通知所有注册拷贝文件之前的事件监听的对象
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    private boolean notifyCopyBeforeListeners(FileCopyEvent i_Event)
+    {
+        Iterator<FileCopyListener> v_Iter       = this.fileCopyListeners.iterator();
+        boolean                    v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() )
-		{
-			v_IsContinue = v_Iter.next().copyBefore(i_Event);
-		}
-		
-		return v_IsContinue;
-	}
-	
-	
-	
-	/**
-	 * 通知所有注册拷贝文件事件监听的对象
-	 * 
-	 * @param i_Event
-	 */
-	private boolean notifyCopyingListeners(FileCopyEvent i_Event)
-	{
-		Iterator<FileCopyListener> v_Iter       = this.fileCopyListeners.iterator();
-		boolean                    v_IsContinue = true;
+        while ( v_IsContinue && v_Iter.hasNext() )
+        {
+            v_IsContinue = v_Iter.next().copyBefore(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
+    
+    
+    
+    /**
+     * 通知所有注册拷贝文件事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private boolean notifyCopyingListeners(FileCopyEvent i_Event)
+    {
+        Iterator<FileCopyListener> v_Iter       = this.fileCopyListeners.iterator();
+        boolean                    v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() )
-		{
-			v_IsContinue = v_Iter.next().copyProcess(i_Event);
-		}
-		
-		return v_IsContinue;
-	}
+        while ( v_IsContinue && v_Iter.hasNext() )
+        {
+            v_IsContinue = v_Iter.next().copyProcess(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
 
-	
-	
-	/**
-	 * 通知所有注册拷贝文件完成之后的事件监听的对象
-	 * 
-	 * @param i_Event
-	 */
-	private void notifyCopyAfterListeners(FileCopyEvent i_Event)
-	{
-		Iterator<FileCopyListener> v_Iter = this.fileCopyListeners.iterator();
+    
+    
+    /**
+     * 通知所有注册拷贝文件完成之后的事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private void notifyCopyAfterListeners(FileCopyEvent i_Event)
+    {
+        Iterator<FileCopyListener> v_Iter = this.fileCopyListeners.iterator();
 
-		while ( v_Iter.hasNext() )
-		{
-			v_Iter.next().copyAfter(i_Event);
-		}
-	}
-	
-	
-	
-	/**
-	 * 注册创建CSV文件事件
-	 * 
-	 * @param e
-	 */
-	public void addCreateCSVListener(CreateCSVListener e)
-	{
-		if ( this.createCSVListeners == null )
-		{
-			this.createCSVListeners = new HashSet<CreateCSVListener>();
-		}
-		
-		this.createCSVListeners.add(e);
-	}
-	
-	
-	
-	/**
-	 * 移除创建CSV文件事件
-	 * 
-	 * @param e
-	 */
-	public void removeCreateCSVListener(CreateCSVListener e)
-	{
-		if ( this.createCSVListeners == null )
-		{
-			return;
-		}
-		
-		this.createCSVListeners.remove(e);
-	}
-	
-	
-	
-	/**
-	 * 触发创建CSV文件之前的事件
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	protected boolean fireCreateCSVBeforeListener(CreateCSVEvent i_Event)
-	{
-		if ( this.createCSVListeners == null )
-		{
-			return true;
-		}
-		
-		return notifyCreateCSVBeforeListeners(i_Event);
-	}
-	
-	
-	
-	/**
-	 * 触发创建CSV文件事件
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	protected boolean fireCreatingCSVListener(CreateCSVEvent i_Event)
-	{
-		if ( this.createCSVListeners == null )
-		{
-			return true;
-		}
-		
-		return notifyCreatingCSVListeners(i_Event);
-	}
-	
-	
-	
-	/**
-	 * 触发创建CSV文件完成之后的事件
-	 * 
-	 * @param i_Event
-	 */
-	protected void fireCreateCSVAfterListener(CreateCSVEvent i_Event)
-	{
-		if ( this.createCSVListeners == null )
-		{
-			return;
-		}
-		
-		notifyCreateCSVAfterListeners(i_Event);
-	}
+        while ( v_Iter.hasNext() )
+        {
+            v_Iter.next().copyAfter(i_Event);
+        }
+    }
+    
+    
+    
+    /**
+     * 注册创建CSV文件事件
+     * 
+     * @param e
+     */
+    public void addCreateCSVListener(CreateCSVListener e)
+    {
+        if ( this.createCSVListeners == null )
+        {
+            this.createCSVListeners = new HashSet<CreateCSVListener>();
+        }
+        
+        this.createCSVListeners.add(e);
+    }
+    
+    
+    
+    /**
+     * 移除创建CSV文件事件
+     * 
+     * @param e
+     */
+    public void removeCreateCSVListener(CreateCSVListener e)
+    {
+        if ( this.createCSVListeners == null )
+        {
+            return;
+        }
+        
+        this.createCSVListeners.remove(e);
+    }
+    
+    
+    
+    /**
+     * 触发创建CSV文件之前的事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireCreateCSVBeforeListener(CreateCSVEvent i_Event)
+    {
+        if ( this.createCSVListeners == null )
+        {
+            return true;
+        }
+        
+        return notifyCreateCSVBeforeListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发创建CSV文件事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireCreatingCSVListener(CreateCSVEvent i_Event)
+    {
+        if ( this.createCSVListeners == null )
+        {
+            return true;
+        }
+        
+        return notifyCreatingCSVListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发创建CSV文件完成之后的事件
+     * 
+     * @param i_Event
+     */
+    protected void fireCreateCSVAfterListener(CreateCSVEvent i_Event)
+    {
+        if ( this.createCSVListeners == null )
+        {
+            return;
+        }
+        
+        notifyCreateCSVAfterListeners(i_Event);
+    }
 
-	
-	
-	/**
-	 * 通知所有注册创建CSV文件之前的事件监听的对象
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	private boolean notifyCreateCSVBeforeListeners(CreateCSVEvent i_Event)
-	{
-		Iterator<CreateCSVListener> v_Iter       = this.createCSVListeners.iterator();
-		boolean                     v_IsContinue = true;
+    
+    
+    /**
+     * 通知所有注册创建CSV文件之前的事件监听的对象
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    private boolean notifyCreateCSVBeforeListeners(CreateCSVEvent i_Event)
+    {
+        Iterator<CreateCSVListener> v_Iter       = this.createCSVListeners.iterator();
+        boolean                     v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() )
-		{
-			v_IsContinue = v_Iter.next().createCSVBefore(i_Event);
-		}
-		
-		return v_IsContinue;
-	}
-	
-	
-	
-	/**
-	 * 通知所有注册创建CSV文件事件监听的对象
-	 * 
-	 * @param i_Event
-	 */
-	private boolean notifyCreatingCSVListeners(CreateCSVEvent i_Event)
-	{
-		Iterator<CreateCSVListener> v_Iter       = this.createCSVListeners.iterator();
-		boolean                     v_IsContinue = true;
+        while ( v_IsContinue && v_Iter.hasNext() )
+        {
+            v_IsContinue = v_Iter.next().createCSVBefore(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
+    
+    
+    
+    /**
+     * 通知所有注册创建CSV文件事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private boolean notifyCreatingCSVListeners(CreateCSVEvent i_Event)
+    {
+        Iterator<CreateCSVListener> v_Iter       = this.createCSVListeners.iterator();
+        boolean                     v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() )
-		{
-			v_IsContinue = v_Iter.next().createCSVProcess(i_Event);
-		}
-		
-		return v_IsContinue;
-	}
+        while ( v_IsContinue && v_Iter.hasNext() )
+        {
+            v_IsContinue = v_Iter.next().createCSVProcess(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
 
-	
-	
-	/**
-	 * 通知所有注册创建CSV文件完成之后的事件监听的对象
-	 * 
-	 * @param i_Event
-	 */
-	private void notifyCreateCSVAfterListeners(CreateCSVEvent i_Event)
-	{
-		Iterator<CreateCSVListener> v_Iter = this.createCSVListeners.iterator();
+    
+    
+    /**
+     * 通知所有注册创建CSV文件完成之后的事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private void notifyCreateCSVAfterListeners(CreateCSVEvent i_Event)
+    {
+        Iterator<CreateCSVListener> v_Iter = this.createCSVListeners.iterator();
 
-		while ( v_Iter.hasNext() )
-		{
-			v_Iter.next().createCSVAfter(i_Event);
-		}
-	}
-	
-	
-	
-	/**
-	 * 注册创建Zip文件事件
-	 * 
-	 * @param e
-	 */
-	public void addCreateZipListener(CreateZipListener e)
-	{
-		if ( this.createZipListeners == null )
-		{
-			this.createZipListeners = new HashSet<CreateZipListener>();
-		}
-		
-		this.createZipListeners.add(e);
-	}
-	
-	
-	
-	/**
-	 * 移除创建Zip文件事件
-	 * 
-	 * @param e
-	 */
-	public void removeCreateZipListener(CreateZipListener e)
-	{
-		if ( this.createZipListeners == null )
-		{
-			return;
-		}
-		
-		this.createZipListeners.remove(e);
-	}
-	
-	
-	
-	/**
-	 * 触发创建Zip文件之前的事件
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	protected boolean fireCreateZipBeforeListener(CreateZipEvent i_Event)
-	{
-		if ( this.createZipListeners == null )
-		{
-			return true;
-		}
-		
-		return notifyCreateZipBeforeListeners(i_Event);
-	}
-	
-	
-	
-	/**
-	 * 触发创建Zip文件事件
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	protected boolean fireCreatingZipListener(CreateZipEvent i_Event)
-	{
-		if ( this.createZipListeners == null )
-		{
-			return true;
-		}
-		
-		return notifyCreatingZipListeners(i_Event);
-	}
-	
-	
-	
-	/**
-	 * 触发创建Zip文件完成之后的事件
-	 * 
-	 * @param i_Event
-	 */
-	protected void fireCreateZipAfterListener(CreateZipEvent i_Event)
-	{
-		if ( this.createZipListeners == null )
-		{
-			return;
-		}
-		
-		notifyCreateZipAfterListeners(i_Event);
-	}
+        while ( v_Iter.hasNext() )
+        {
+            v_Iter.next().createCSVAfter(i_Event);
+        }
+    }
+    
+    
+    
+    /**
+     * 注册创建Zip文件事件
+     * 
+     * @param e
+     */
+    public void addCreateZipListener(CreateZipListener e)
+    {
+        if ( this.createZipListeners == null )
+        {
+            this.createZipListeners = new HashSet<CreateZipListener>();
+        }
+        
+        this.createZipListeners.add(e);
+    }
+    
+    
+    
+    /**
+     * 移除创建Zip文件事件
+     * 
+     * @param e
+     */
+    public void removeCreateZipListener(CreateZipListener e)
+    {
+        if ( this.createZipListeners == null )
+        {
+            return;
+        }
+        
+        this.createZipListeners.remove(e);
+    }
+    
+    
+    
+    /**
+     * 触发创建Zip文件之前的事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireCreateZipBeforeListener(CreateZipEvent i_Event)
+    {
+        if ( this.createZipListeners == null )
+        {
+            return true;
+        }
+        
+        return notifyCreateZipBeforeListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发创建Zip文件事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireCreatingZipListener(CreateZipEvent i_Event)
+    {
+        if ( this.createZipListeners == null )
+        {
+            return true;
+        }
+        
+        return notifyCreatingZipListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发创建Zip文件完成之后的事件
+     * 
+     * @param i_Event
+     */
+    protected void fireCreateZipAfterListener(CreateZipEvent i_Event)
+    {
+        if ( this.createZipListeners == null )
+        {
+            return;
+        }
+        
+        notifyCreateZipAfterListeners(i_Event);
+    }
 
-	
-	
-	/**
-	 * 通知所有注册创建Zip文件之前的事件监听的对象
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	private boolean notifyCreateZipBeforeListeners(CreateZipEvent i_Event)
-	{
-		Iterator<CreateZipListener> v_Iter       = this.createZipListeners.iterator();
-		boolean                     v_IsContinue = true;
+    
+    
+    /**
+     * 通知所有注册创建Zip文件之前的事件监听的对象
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    private boolean notifyCreateZipBeforeListeners(CreateZipEvent i_Event)
+    {
+        Iterator<CreateZipListener> v_Iter       = this.createZipListeners.iterator();
+        boolean                     v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() )
-		{
-			v_IsContinue = v_Iter.next().createZipBefore(i_Event);
-		}
-		
-		return v_IsContinue;
-	}
-	
-	
-	
-	/**
-	 * 通知所有注册创建Zip文件事件监听的对象
-	 * 
-	 * @param i_Event
-	 */
-	private boolean notifyCreatingZipListeners(CreateZipEvent i_Event)
-	{
-		Iterator<CreateZipListener> v_Iter       = this.createZipListeners.iterator();
-		boolean                     v_IsContinue = true;
+        while ( v_IsContinue && v_Iter.hasNext() )
+        {
+            v_IsContinue = v_Iter.next().createZipBefore(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
+    
+    
+    
+    /**
+     * 通知所有注册创建Zip文件事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private boolean notifyCreatingZipListeners(CreateZipEvent i_Event)
+    {
+        Iterator<CreateZipListener> v_Iter       = this.createZipListeners.iterator();
+        boolean                     v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() )
-		{
-			v_IsContinue = v_Iter.next().createZipProcess(i_Event);
-		}
-		
-		return v_IsContinue;
-	}
+        while ( v_IsContinue && v_Iter.hasNext() )
+        {
+            v_IsContinue = v_Iter.next().createZipProcess(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
 
-	
-	
-	/**
-	 * 通知所有注册创建Zip文件完成之后的事件监听的对象
-	 * 
-	 * @param i_Event
-	 */
-	private void notifyCreateZipAfterListeners(CreateZipEvent i_Event)
-	{
-		Iterator<CreateZipListener> v_Iter = this.createZipListeners.iterator();
+    
+    
+    /**
+     * 通知所有注册创建Zip文件完成之后的事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private void notifyCreateZipAfterListeners(CreateZipEvent i_Event)
+    {
+        Iterator<CreateZipListener> v_Iter = this.createZipListeners.iterator();
 
-		while ( v_Iter.hasNext() )
-		{
-			v_Iter.next().createZipAfter(i_Event);
-		}
-	}
-	
-	
-	
-	/**
-	 * 注册解压缩Zip文件事件
-	 * 
-	 * @param e
-	 */
-	public void addUnCompressZipListener(UnCompressZipListener e)
-	{
-		if ( this.unCompressZipListeners == null )
-		{
-			this.unCompressZipListeners = new HashSet<UnCompressZipListener>();
-		}
-		
-		this.unCompressZipListeners.add(e);
-	}
-	
-	
-	
-	/**
-	 * 移除解压缩Zip文件事件
-	 * 
-	 * @param e
-	 */
-	public void removeUnCompressZipListener(UnCompressZipListener e)
-	{
-		if ( this.unCompressZipListeners == null )
-		{
-			return;
-		}
-		
-		this.unCompressZipListeners.remove(e);
-	}
-	
-	
-	
-	/**
-	 * 触发解压缩Zip文件之前的事件
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	protected boolean fireUnCompressZipBeforeListener(UnCompressZipEvent i_Event)
-	{
-		if ( this.unCompressZipListeners == null )
-		{
-			return true;
-		}
-		
-		return notifyUnCompressZipBeforeListeners(i_Event);
-	}
-	
-	
-	
-	/**
-	 * 触发解压缩Zip文件事件
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	protected boolean fireUnCompressZipListener(UnCompressZipEvent i_Event)
-	{
-		if ( this.unCompressZipListeners == null )
-		{
-			return true;
-		}
-		
-		return notifyUnCompressZipListeners(i_Event);
-	}
-	
-	
-	
-	/**
-	 * 触发解压缩Zip文件完成之后的事件
-	 * 
-	 * @param i_Event
-	 */
-	protected void fireUnCompressZipAfterListener(UnCompressZipEvent i_Event)
-	{
-		if ( this.unCompressZipListeners == null )
-		{
-			return;
-		}
-		
-		notifyUnCompressZipAfterListeners(i_Event);
-	}
+        while ( v_Iter.hasNext() )
+        {
+            v_Iter.next().createZipAfter(i_Event);
+        }
+    }
+    
+    
+    
+    /**
+     * 注册解压缩Zip文件事件
+     * 
+     * @param e
+     */
+    public void addUnCompressZipListener(UnCompressZipListener e)
+    {
+        if ( this.unCompressZipListeners == null )
+        {
+            this.unCompressZipListeners = new HashSet<UnCompressZipListener>();
+        }
+        
+        this.unCompressZipListeners.add(e);
+    }
+    
+    
+    
+    /**
+     * 移除解压缩Zip文件事件
+     * 
+     * @param e
+     */
+    public void removeUnCompressZipListener(UnCompressZipListener e)
+    {
+        if ( this.unCompressZipListeners == null )
+        {
+            return;
+        }
+        
+        this.unCompressZipListeners.remove(e);
+    }
+    
+    
+    
+    /**
+     * 触发解压缩Zip文件之前的事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireUnCompressZipBeforeListener(UnCompressZipEvent i_Event)
+    {
+        if ( this.unCompressZipListeners == null )
+        {
+            return true;
+        }
+        
+        return notifyUnCompressZipBeforeListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发解压缩Zip文件事件
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    protected boolean fireUnCompressZipListener(UnCompressZipEvent i_Event)
+    {
+        if ( this.unCompressZipListeners == null )
+        {
+            return true;
+        }
+        
+        return notifyUnCompressZipListeners(i_Event);
+    }
+    
+    
+    
+    /**
+     * 触发解压缩Zip文件完成之后的事件
+     * 
+     * @param i_Event
+     */
+    protected void fireUnCompressZipAfterListener(UnCompressZipEvent i_Event)
+    {
+        if ( this.unCompressZipListeners == null )
+        {
+            return;
+        }
+        
+        notifyUnCompressZipAfterListeners(i_Event);
+    }
 
-	
-	
-	/**
-	 * 通知所有注册解压缩Zip文件之前的事件监听的对象
-	 * 
-	 * @param i_Event
-	 * @return   返回值表示是否继续
-	 */
-	private boolean notifyUnCompressZipBeforeListeners(UnCompressZipEvent i_Event)
-	{
-		Iterator<UnCompressZipListener> v_Iter       = this.unCompressZipListeners.iterator();
-		boolean                         v_IsContinue = true;
+    
+    
+    /**
+     * 通知所有注册解压缩Zip文件之前的事件监听的对象
+     * 
+     * @param i_Event
+     * @return   返回值表示是否继续
+     */
+    private boolean notifyUnCompressZipBeforeListeners(UnCompressZipEvent i_Event)
+    {
+        Iterator<UnCompressZipListener> v_Iter       = this.unCompressZipListeners.iterator();
+        boolean                         v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() )
-		{
-			v_IsContinue = v_Iter.next().unCompressZipBefore(i_Event);
-		}
-		
-		return v_IsContinue;
-	}
-	
-	
-	
-	/**
-	 * 通知所有注册解压缩Zip文件事件监听的对象
-	 * 
-	 * @param i_Event
-	 */
-	private boolean notifyUnCompressZipListeners(UnCompressZipEvent i_Event)
-	{
-		Iterator<UnCompressZipListener> v_Iter       = this.unCompressZipListeners.iterator();
-		boolean                         v_IsContinue = true;
+        while ( v_IsContinue && v_Iter.hasNext() )
+        {
+            v_IsContinue = v_Iter.next().unCompressZipBefore(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
+    
+    
+    
+    /**
+     * 通知所有注册解压缩Zip文件事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private boolean notifyUnCompressZipListeners(UnCompressZipEvent i_Event)
+    {
+        Iterator<UnCompressZipListener> v_Iter       = this.unCompressZipListeners.iterator();
+        boolean                         v_IsContinue = true;
 
-		while ( v_IsContinue && v_Iter.hasNext() )
-		{
-			v_IsContinue = v_Iter.next().unCompressZipProcess(i_Event);
-		}
-		
-		return v_IsContinue;
-	}
+        while ( v_IsContinue && v_Iter.hasNext() )
+        {
+            v_IsContinue = v_Iter.next().unCompressZipProcess(i_Event);
+        }
+        
+        return v_IsContinue;
+    }
 
-	
-	
-	/**
-	 * 通知所有注册解压缩Zip文件完成之后的事件监听的对象
-	 * 
-	 * @param i_Event
-	 */
-	private void notifyUnCompressZipAfterListeners(UnCompressZipEvent i_Event)
-	{
-		Iterator<UnCompressZipListener> v_Iter = this.unCompressZipListeners.iterator();
+    
+    
+    /**
+     * 通知所有注册解压缩Zip文件完成之后的事件监听的对象
+     * 
+     * @param i_Event
+     */
+    private void notifyUnCompressZipAfterListeners(UnCompressZipEvent i_Event)
+    {
+        Iterator<UnCompressZipListener> v_Iter = this.unCompressZipListeners.iterator();
 
-		while ( v_Iter.hasNext() )
-		{
-			v_Iter.next().unCompressZipAfter(i_Event);
-		}
-	}
-	
-	
-	
-	/**
+        while ( v_Iter.hasNext() )
+        {
+            v_Iter.next().unCompressZipAfter(i_Event);
+        }
+    }
+    
+    
+    
+    /**
      * 缩放图片（限制最小宽度或最小高度）
      * 
      * @author      ZhengWei(HY)
@@ -1061,10 +1061,10 @@ public final class FileHelp
             return i_Image;
         }
     }
-	
-	
-	
-	/**
+    
+    
+    
+    /**
      * 缩放图片（限制最大宽度或最大高度）
      * 
      * @author      ZhengWei(HY)
@@ -1587,7 +1587,7 @@ public final class FileHelp
     {
         Date v_ExpireTime = Date.getNowTime().getDate(Math.abs(i_ExpireDays)  * -1);
         
-        this.delFiles(i_Folder ,v_ExpireTime ,i_IsDelChilds);
+        this.delFiles(i_Folder ,v_ExpireTime ,i_IsDelChilds ,null ,null);
     }
     
     
@@ -1599,11 +1599,33 @@ public final class FileHelp
      * @createDate  2017-06-21
      * @version     v1.0
      *
-     * @param i_Folder       被删除文件所在目录
-     * @param i_ExpireTime   过期时间。小于此时间点的文件将被删除
-     * @param i_IsDelChilds  是否递归的删除所有子目录中的过期文件
+     * @param i_Folder          被删除文件所在目录
+     * @param i_ExpireTime      过期时间。小于此时间点的文件将被删除
+     * @param i_IsDelChilds     是否递归的删除所有子目录中的过期文件
      */
     public void delFiles(File i_Folder ,Date i_ExpireTime ,boolean i_IsDelChilds)
+    {
+        this.delFiles(i_Folder ,i_ExpireTime ,i_IsDelChilds ,null ,null);
+    }
+    
+    
+    
+    /**
+     * 删除指定目录下过期的文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2017-06-21
+     * @version     v1.0
+     *              v2.0  2021-10-21  添加：排除在外的文件是哪些
+     *                                添加：排除在外的目录是哪些
+     *
+     * @param i_Folder          被删除文件所在目录
+     * @param i_ExpireTime      过期时间。小于此时间点的文件将被删除
+     * @param i_IsDelChilds     是否递归的删除所有子目录中的过期文件
+     * @param i_ExcludeFiles    排除在外的文件是哪些，格式如："|文件名称|"。为NULL时表示不排除
+     * @param i_ExcludeFolders  排除在外的目录是哪些，格式如："|目录名称|"。为NULL时表示不排除
+     */
+    public void delFiles(File i_Folder ,Date i_ExpireTime ,boolean i_IsDelChilds ,String i_ExcludeFiles ,String i_ExcludeFolders)
     {
         if ( i_Folder == null )
         {
@@ -1621,10 +1643,28 @@ public final class FileHelp
             return;
         }
         
+        String v_ExcludeFiles   = Help.NVL(i_ExcludeFiles)  .toLowerCase();
+        String v_ExcludeFolders = Help.NVL(i_ExcludeFolders).toLowerCase();
+        
         for (File v_File : v_Files)
         {
             if ( v_File.isFile() )
             {
+                if ( !Help.isNull(v_ExcludeFiles) )
+                {
+                    String v_FileName = v_File.getName().toLowerCase();
+                    if ( v_ExcludeFiles.indexOf("|" + v_FileName + "|") >= 0 )
+                    {
+                        continue;
+                    }
+                    
+                    String v_FilePostfix = StringHelp.getFilePostfix(v_FileName);
+                    if ( v_FilePostfix != null && v_ExcludeFiles.indexOf("|" + v_FilePostfix + "|") >= 0 )
+                    {
+                        continue;
+                    }
+                }
+                
                 if ( v_File.lastModified() < i_ExpireTime.getTime() )
                 {
                     try
@@ -1639,7 +1679,12 @@ public final class FileHelp
             }
             else if ( v_File.isDirectory() && i_IsDelChilds )
             {
-                delFiles(v_File ,i_ExpireTime ,i_IsDelChilds);
+                if ( !Help.isNull(v_ExcludeFolders) && v_ExcludeFolders.indexOf("|" + v_File.getName().toLowerCase() + "|") >= 0 )
+                {
+                    continue;
+                }
+                
+                delFiles(v_File ,i_ExpireTime ,i_IsDelChilds ,v_ExcludeFiles ,v_ExcludeFolders);
                 v_File.delete();
             }
         }
@@ -1801,24 +1846,24 @@ public final class FileHelp
     {
         return this.getFiles(new File(i_Folder) ,i_HaveDirectory);
     }
-	
-	
-	
-	/**
-	 * 递归的获取目录所有文件及子目录中的文件
-	 * 
-	 * @author      ZhengWei(HY)
-	 * @createDate  2018-03-13
-	 * @version     v1.0
-	 *
-	 * @param i_Folder         父目录
-	 * @param i_HaveDirectory  是否包括目录
-	 * @return
-	 */
-	public List<File> getFiles(File i_Folder ,boolean i_HaveDirectory)
+    
+    
+    
+    /**
+     * 递归的获取目录所有文件及子目录中的文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-03-13
+     * @version     v1.0
+     *
+     * @param i_Folder         父目录
+     * @param i_HaveDirectory  是否包括目录
+     * @return
+     */
+    public List<File> getFiles(File i_Folder ,boolean i_HaveDirectory)
     {
-	    List<File> v_Ret = new ArrayList<File>();
-	    
+        List<File> v_Ret = new ArrayList<File>();
+        
         if ( i_Folder == null )
         {
             return v_Ret;
@@ -1854,10 +1899,10 @@ public final class FileHelp
         
         return v_Ret;
     }
-	
-	
-	
-	/**
+    
+    
+    
+    /**
      * 读取外部Jar包中的文件内容
      * 
      * @author      ZhengWei(HY)
@@ -1901,32 +1946,32 @@ public final class FileHelp
     {
         return this.getContent(i_Jar ,i_FileName ,i_CharEncoding ,false);
     }
-	
-	
-	
-	/**
-	 * 读取外部Jar包中的文件内容
-	 * 
-	 * @author      ZhengWei(HY)
-	 * @createDate  2019-02-08
-	 * @version     v1.0
-	 *
-	 * @param i_Jar           Jar包文件的对象。
-	 *                            方法内部不会做关闭动作JarFile.close()，请在外部自行关。
-	 *                            不再内部自动关闭的好处是：外部方法可以多次调用此方法读取不同的文件内容。
-	 * @param i_FileName      要读取Jar包里的文件的名称。
-	 *                            1. 可以是全路径的(/为路径分隔符)。
-	 *                            2. 也可以只是文件名称 或 部分路径加文件名称
-	 * @param i_CharEncoding  文件的编码
+    
+    
+    
+    /**
+     * 读取外部Jar包中的文件内容
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2019-02-08
+     * @version     v1.0
+     *
+     * @param i_Jar           Jar包文件的对象。
+     *                            方法内部不会做关闭动作JarFile.close()，请在外部自行关。
+     *                            不再内部自动关闭的好处是：外部方法可以多次调用此方法读取不同的文件内容。
+     * @param i_FileName      要读取Jar包里的文件的名称。
+     *                            1. 可以是全路径的(/为路径分隔符)。
+     *                            2. 也可以只是文件名称 或 部分路径加文件名称
+     * @param i_CharEncoding  文件的编码
      * @param i_HaveNewLine   生成的文件内容是否包含 “回车换行” 符
-	 * @return                为匹配到文件时，返回null
-	 * @throws IOException    读取异常时，抛异常
-	 */
-	public String getContent(JarFile i_Jar ,String i_FileName ,String i_CharEncoding ,boolean i_HaveNewLine) throws IOException
-	{
-	    String                v_Content = null;
-	    Enumeration<JarEntry> v_Entries = i_Jar.entries();
-	    
+     * @return                为匹配到文件时，返回null
+     * @throws IOException    读取异常时，抛异常
+     */
+    public String getContent(JarFile i_Jar ,String i_FileName ,String i_CharEncoding ,boolean i_HaveNewLine) throws IOException
+    {
+        String                v_Content = null;
+        Enumeration<JarEntry> v_Entries = i_Jar.entries();
+        
         while ( v_Entries.hasMoreElements() )
         {
             JarEntry v_JarEntry = v_Entries.nextElement();
@@ -1939,12 +1984,12 @@ public final class FileHelp
             }
         }
         
-	    return v_Content;
-	}
-	
-	
-	
-	/**
+        return v_Content;
+    }
+    
+    
+    
+    /**
      * 获取文件内容。
      * 
      * 主要针对小文件。文件内容为正常文字的文件。
@@ -2025,24 +2070,24 @@ public final class FileHelp
         
         return getContent(new File(v_FileFullName) ,i_CharEncoding ,i_HaveNewLine);
     }
-	
-	
-	
-	/**
-	 * 获取文件内容。
-	 * 
-	 * 主要针对小文件。文件内容为正常文字的文件。
-	 * 
-	 * @param i_SourceFile    文件对象
-	 */
-	public String getContent(File i_SourceFile) throws IOException
-	{
-		return this.getContent(i_SourceFile ,this.charEncoding);
-	}
-	
-	
-	
-	/**
+    
+    
+    
+    /**
+     * 获取文件内容。
+     * 
+     * 主要针对小文件。文件内容为正常文字的文件。
+     * 
+     * @param i_SourceFile    文件对象
+     */
+    public String getContent(File i_SourceFile) throws IOException
+    {
+        return this.getContent(i_SourceFile ,this.charEncoding);
+    }
+    
+    
+    
+    /**
      * 获取文件内容。
      * 
      * 主要针对小文件。文件内容为正常文字的文件。
@@ -2054,20 +2099,20 @@ public final class FileHelp
     {
         return this.getContent(i_SourceFile ,i_CharEncoding ,false);
     }
-	
-	
-	
-	/**
-	 * 获取文件内容。
-	 * 
-	 * 主要针对小文件。文件内容为正常文字的文件。
-	 * 
-	 * @param i_SourceFile    文件对象
-	 * @param i_CharEncoding  文件的编码
-	 * @param i_HaveNewLine   生成的文件内容是否包含 “回车换行” 符
-	 */
-	public String getContent(File i_SourceFile ,String i_CharEncoding ,boolean i_HaveNewLine) throws IOException
-	{
+    
+    
+    
+    /**
+     * 获取文件内容。
+     * 
+     * 主要针对小文件。文件内容为正常文字的文件。
+     * 
+     * @param i_SourceFile    文件对象
+     * @param i_CharEncoding  文件的编码
+     * @param i_HaveNewLine   生成的文件内容是否包含 “回车换行” 符
+     */
+    public String getContent(File i_SourceFile ,String i_CharEncoding ,boolean i_HaveNewLine) throws IOException
+    {
         if ( i_SourceFile == null )
         {
             throw new NullPointerException("Source file is null.");
@@ -2104,11 +2149,11 @@ public final class FileHelp
         }
         
         return v_Ret;
-	}
-	
-	
-	
-	/**
+    }
+    
+    
+    
+    /**
      * 获取文件内容。
      * 
      * 主要针对小文件。文件内容为正常文字的文件。
@@ -2971,27 +3016,27 @@ public final class FileHelp
     {
         return this.xcopy(i_SourceFolderFullName ,i_TargetFolderFullName ,i_ModifiedTime ,null ,null);
     }
-	
-	
-	
-	/**
-	 * 模仿window的xcopy命令的功能
-	 * 
-	 * @author      ZhengWei(HY)
-	 * @createDate  2015-01-21
-	 * @version     v1.0
-	 *
-	 * @param i_SourceFolderFullName  源目录的全路径
-	 * @param i_TargetFolderFullName  目标目录的全路径
-	 * @param i_ModifiedTime          文件的最后修改时间
+    
+    
+    
+    /**
+     * 模仿window的xcopy命令的功能
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2015-01-21
+     * @version     v1.0
+     *
+     * @param i_SourceFolderFullName  源目录的全路径
+     * @param i_TargetFolderFullName  目标目录的全路径
+     * @param i_ModifiedTime          文件的最后修改时间
      * @param i_Exclusion             过滤方式：排除在外的  ，即：不想要哪些
      * @param i_Accept                过滤方式：在此范围内的，即：想要哪些
      * @return                        返回实际拷贝的文件数量
-	 * @throws IOException
-	 */
-	public int xcopy(String i_SourceFolderFullName ,String i_TargetFolderFullName ,Long i_ModifiedTime ,String i_Exclusion ,String i_Accept) throws IOException
-	{
-	    if ( Help.isNull(i_SourceFolderFullName) )
+     * @throws IOException
+     */
+    public int xcopy(String i_SourceFolderFullName ,String i_TargetFolderFullName ,Long i_ModifiedTime ,String i_Exclusion ,String i_Accept) throws IOException
+    {
+        if ( Help.isNull(i_SourceFolderFullName) )
         {
             throw new NullPointerException("Source full name is null.");
         }
@@ -3016,11 +3061,11 @@ public final class FileHelp
         }
         
         return this.xcopy(new File(i_SourceFolderFullName) ,new File(i_TargetFolderFullName) ,i_ModifiedTime ,v_Exclusion ,v_Accept);
-	}
-	
-	
-	
-	/**
+    }
+    
+    
+    
+    /**
      * 模仿window的xcopy命令的功能 (过滤方式：排除在外的  ，即：不想要哪些)
      * 
      * @author      ZhengWei(HY)
@@ -3038,10 +3083,10 @@ public final class FileHelp
     {
         return this.xcopy(i_SourceFolder ,i_TargetFolder ,i_ModifiedTime ,i_Exclusion ,null);
     }
-	
-	
-	
-	/**
+    
+    
+    
+    /**
      * 模仿window的xcopy命令的功能 (过滤方式：排除在外的  ，即：不想要哪些)
      * 
      * @author      ZhengWei(HY)
@@ -3055,14 +3100,14 @@ public final class FileHelp
      * @return                返回实际拷贝的文件数量
      * @throws IOException
      */
-	public int xcopyExclusion(File i_SourceFolder ,File i_TargetFolder ,Long i_ModifiedTime ,Pattern i_Exclusion) throws IOException
+    public int xcopyExclusion(File i_SourceFolder ,File i_TargetFolder ,Long i_ModifiedTime ,Pattern i_Exclusion) throws IOException
     {
         return this.xcopy(i_SourceFolder ,i_TargetFolder ,i_ModifiedTime ,i_Exclusion ,null);
     }
-	
-	
-	
-	/**
+    
+    
+    
+    /**
      * 模仿window的xcopy命令的功能 (过滤方式：在此范围内的，即：想要哪些)
      * 
      * @author      ZhengWei(HY)
@@ -3076,14 +3121,14 @@ public final class FileHelp
      * @return                返回实际拷贝的文件数量
      * @throws IOException
      */
-	public int xcopyAccept(File i_SourceFolder ,File i_TargetFolder ,Long i_ModifiedTime ,Pattern i_Accept) throws IOException
+    public int xcopyAccept(File i_SourceFolder ,File i_TargetFolder ,Long i_ModifiedTime ,Pattern i_Accept) throws IOException
     {
         return this.xcopy(i_SourceFolder ,i_TargetFolder ,i_ModifiedTime ,null ,i_Accept);
     }
-	
-	
-	
-	/**
+    
+    
+    
+    /**
      * 模仿window的xcopy命令的功能
      * 
      * @author      ZhengWei(HY)
@@ -3102,32 +3147,32 @@ public final class FileHelp
     {
         return this.xcopy(i_SourceFolder ,i_TargetFolder ,i_ModifiedTime ,null ,null);
     }
-	
-	
-	
-	/**
-	 * 模仿window的xcopy命令的功能
-	 * 
+    
+    
+    
+    /**
+     * 模仿window的xcopy命令的功能
+     * 
      * 1. 递归操作
      * 2. 生成目标文件夹的结构(目录层次)与源文件夹的结构一样
      * 3. 不创建多余的空目录
      * 4. 只拷贝大于 i_ModifiedTime 时间的文件。当 i_ModifiedTime == null 时就不再用时间过滤了
      * 5. 不要求目标文件夹一定在存在
      * 6. 目录文件已存时，可通过 this.isOverWrite 属性控制
-	 * 
-	 * @author      ZhengWei(HY)
-	 * @createDate  2015-01-21
-	 * @version     v1.0
-	 *
-	 * @param i_SourceFolder  源目录
-	 * @param i_TargetFolder  目标目录
-	 * @param i_ModifiedTime  文件的最后修改时间
-	 * @param i_Exclusion     过滤方式：排除在外的  ，即：不想要哪些
-	 * @param i_Accept        过滤方式：在此范围内的，即：想要哪些
-	 * @return                返回实际拷贝的文件数量
-	 * @throws IOException
-	 */
-	public int xcopy(File i_SourceFolder ,File i_TargetFolder ,Long i_ModifiedTime ,Pattern i_Exclusion ,Pattern i_Accept) throws IOException
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2015-01-21
+     * @version     v1.0
+     *
+     * @param i_SourceFolder  源目录
+     * @param i_TargetFolder  目标目录
+     * @param i_ModifiedTime  文件的最后修改时间
+     * @param i_Exclusion     过滤方式：排除在外的  ，即：不想要哪些
+     * @param i_Accept        过滤方式：在此范围内的，即：想要哪些
+     * @return                返回实际拷贝的文件数量
+     * @throws IOException
+     */
+    public int xcopy(File i_SourceFolder ,File i_TargetFolder ,Long i_ModifiedTime ,Pattern i_Exclusion ,Pattern i_Accept) throws IOException
     {
         if ( !i_SourceFolder.exists() )
         {
@@ -3204,10 +3249,10 @@ public final class FileHelp
         
         return v_CopyFileCount;
     }
-	
-	
-	
-	/**
+    
+    
+    
+    /**
      * 拷贝文件
      * 
      * @param i_SourceFullName  原文件的全路径
@@ -3229,243 +3274,243 @@ public final class FileHelp
         
         this.copyFile(new File(i_SourceFullName) ,new File(i_TargetFullName));
     }
-	
-	
-	
-	/**
-	 * 拷贝文件
-	 * 
+    
+    
+    
+    /**
+     * 拷贝文件
+     * 
      * @param i_SourceFile  原文件
      * @param i_TargetFile  目标文件
-	 * @throws NullPointerException
-	 * @throws IOException
-	 */
-	public void copyFile(File i_SourceFile ,File i_TargetFile) throws NullPointerException, IOException
-	{
-		if ( !i_SourceFile.exists() )
-		{
-			throw new IOException("Source file[" + i_SourceFile.toString() + "] is not exists.");
-		}
-		
-		if ( !i_SourceFile.isFile() )
-		{
-			throw new IOException("Source[" + i_SourceFile.toString() + "] is not file.");
-		}
-		
-		if ( !i_SourceFile.canRead() )
-		{
-			throw new IOException("Source[" + i_SourceFile.toString() + "] can not read.");
-		}
-		
-		if ( i_TargetFile.exists() )
-		{
-			if ( this.isOverWrite )
-			{
-				boolean v_Result = i_TargetFile.delete();
-				
-				if ( !v_Result )
-				{
-					throw new IOException("Delete target file[" + i_TargetFile.toString() + "] exception.");
-				}
-			}
-			else
-			{
-				throw new IOException("Target[" + i_TargetFile.toString() + "] is exists.");
-			}
-		}
-		
-		
-		FileInputStream      v_SourceInput  = new FileInputStream( i_SourceFile);
-		FileOutputStream     v_TargetOutput = new FileOutputStream(i_TargetFile);
-		long                 v_SourceLen    = i_SourceFile.length();
-		long                 v_WriteIndex   = 0;
-		byte []              v_ByteBuffer   = new byte[bufferSize];
-		DefaultFileCopyEvent v_Event        = new DefaultFileCopyEvent(this ,v_SourceLen);
-		boolean              v_IsContinue   = true;
-		
-		try
-		{
-		    v_Event.setInfo(i_TargetFile.getAbsolutePath());
-			v_IsContinue = this.fireCopyBeforeListener(v_Event);
-			
-			while ( v_IsContinue )
-			{
-				if ( v_WriteIndex + bufferSize <= v_SourceLen )
-				{
-					v_SourceInput.read(  v_ByteBuffer);
-					v_TargetOutput.write(v_ByteBuffer);
-					v_TargetOutput.flush();
-					
-					v_WriteIndex += bufferSize;
-					
-					v_Event.setCompleteSize(v_WriteIndex);
-					v_IsContinue = this.fireCopyingListener(v_Event);
-				}
-				else
-				{
-					v_ByteBuffer = new byte[(int)(v_SourceLen - v_WriteIndex)];
-					
-					v_SourceInput.read(  v_ByteBuffer);
-					v_TargetOutput.write(v_ByteBuffer);
-					v_TargetOutput.flush();
-					
-					v_Event.setSucceedFinish();
-					this.fireCopyingListener(v_Event);
-					break;
-				}
-			}
-		}
-		catch (Exception exce)
-		{
-			v_Event.setEndTime();
-			throw new IOException(exce.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				v_SourceInput.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			try
-			{
-				v_TargetOutput.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			v_SourceInput  = null;
-			v_TargetOutput = null;
-			
-			this.fireCopyAfterListener(v_Event);
-		}
-		
-	}
-	
-	
-	
-	/**
-	 * 拷贝文件
-	 * 
-	 * 不支持进度事件
-	 * 
-	 * @param i_SourceInput     原文件的文件流
-	 * @param i_TargetFullName  目标文件的全路径
-	 * @throws NullPointerException
-	 * @throws IOException
-	 */
-	public void copyFile(InputStream i_SourceInput ,String i_TargetFullName) throws NullPointerException, IOException
-	{
-		if ( i_SourceInput == null )
-		{
-			throw new NullPointerException("Source InputStream is null.");
-		}
-		
-		if ( Help.isNull(i_TargetFullName) )
-		{
-			throw new NullPointerException("Target full name is null.");
-		}
-		
-		
-		copyFile(i_SourceInput ,new File(i_TargetFullName));
-	}
-	
-	
-	
-	/**
-	 * 拷贝文件
-	 * 
-	 * 不支持进度事件
-	 * 
-	 * @param i_SourceInput     原文件的文件流
-	 * @param i_TargetFile      目标文件
-	 * @throws NullPointerException
-	 * @throws IOException
-	 */
-	public void copyFile(InputStream i_SourceInput ,File i_TargetFile) throws NullPointerException, IOException
-	{
-		if ( i_SourceInput == null )
-		{
-			throw new NullPointerException("Source InputStream is null.");
-		}
-		
-		if ( i_TargetFile == null )
-		{
-			throw new NullPointerException("Target file is null.");
-		}
-		
-		
-		File v_TargetFile = i_TargetFile;
-		if ( v_TargetFile.exists() )
-		{
-			if ( this.isOverWrite )
-			{
-				boolean v_Result = v_TargetFile.delete();
-				
-				if ( !v_Result )
-				{
-					throw new IOException("Delete target file[" + i_TargetFile.toString() + "] exception.");
-				}
-			}
-			else
-			{
-				throw new IOException("Target[" + i_TargetFile.toString() + "] is exists.");
-			}
-		}
-		
-		
-		InputStream          v_SourceInput  = i_SourceInput;
-		FileOutputStream     v_TargetOutput = new FileOutputStream(v_TargetFile);
-		int                  v_ReadLen      = 0;
-		byte []              v_ByteBuffer   = new byte[bufferSize];
-		
-		try
-		{
-			while ( (v_ReadLen = v_SourceInput.read(v_ByteBuffer)) > 0 )
-			{
-				v_TargetOutput.write(v_ByteBuffer ,0 ,v_ReadLen);
-				v_TargetOutput.flush();
-			}
-		}
-		catch (Exception exce)
-		{
-			throw new IOException(exce.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				v_SourceInput.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			try
-			{
-				v_TargetOutput.close();
-			}
-			catch (Exception exce)
-			{
-				// Nothing.
-			}
-			
-			v_SourceInput  = null;
-			v_TargetOutput = null;
-			v_TargetFile   = null;
-		}
-		
-	}
-	
-	
-	
+     * @throws NullPointerException
+     * @throws IOException
+     */
+    public void copyFile(File i_SourceFile ,File i_TargetFile) throws NullPointerException, IOException
+    {
+        if ( !i_SourceFile.exists() )
+        {
+            throw new IOException("Source file[" + i_SourceFile.toString() + "] is not exists.");
+        }
+        
+        if ( !i_SourceFile.isFile() )
+        {
+            throw new IOException("Source[" + i_SourceFile.toString() + "] is not file.");
+        }
+        
+        if ( !i_SourceFile.canRead() )
+        {
+            throw new IOException("Source[" + i_SourceFile.toString() + "] can not read.");
+        }
+        
+        if ( i_TargetFile.exists() )
+        {
+            if ( this.isOverWrite )
+            {
+                boolean v_Result = i_TargetFile.delete();
+                
+                if ( !v_Result )
+                {
+                    throw new IOException("Delete target file[" + i_TargetFile.toString() + "] exception.");
+                }
+            }
+            else
+            {
+                throw new IOException("Target[" + i_TargetFile.toString() + "] is exists.");
+            }
+        }
+        
+        
+        FileInputStream      v_SourceInput  = new FileInputStream( i_SourceFile);
+        FileOutputStream     v_TargetOutput = new FileOutputStream(i_TargetFile);
+        long                 v_SourceLen    = i_SourceFile.length();
+        long                 v_WriteIndex   = 0;
+        byte []              v_ByteBuffer   = new byte[bufferSize];
+        DefaultFileCopyEvent v_Event        = new DefaultFileCopyEvent(this ,v_SourceLen);
+        boolean              v_IsContinue   = true;
+        
+        try
+        {
+            v_Event.setInfo(i_TargetFile.getAbsolutePath());
+            v_IsContinue = this.fireCopyBeforeListener(v_Event);
+            
+            while ( v_IsContinue )
+            {
+                if ( v_WriteIndex + bufferSize <= v_SourceLen )
+                {
+                    v_SourceInput.read(  v_ByteBuffer);
+                    v_TargetOutput.write(v_ByteBuffer);
+                    v_TargetOutput.flush();
+                    
+                    v_WriteIndex += bufferSize;
+                    
+                    v_Event.setCompleteSize(v_WriteIndex);
+                    v_IsContinue = this.fireCopyingListener(v_Event);
+                }
+                else
+                {
+                    v_ByteBuffer = new byte[(int)(v_SourceLen - v_WriteIndex)];
+                    
+                    v_SourceInput.read(  v_ByteBuffer);
+                    v_TargetOutput.write(v_ByteBuffer);
+                    v_TargetOutput.flush();
+                    
+                    v_Event.setSucceedFinish();
+                    this.fireCopyingListener(v_Event);
+                    break;
+                }
+            }
+        }
+        catch (Exception exce)
+        {
+            v_Event.setEndTime();
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                v_SourceInput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            try
+            {
+                v_TargetOutput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            v_SourceInput  = null;
+            v_TargetOutput = null;
+            
+            this.fireCopyAfterListener(v_Event);
+        }
+        
+    }
+    
+    
+    
+    /**
+     * 拷贝文件
+     * 
+     * 不支持进度事件
+     * 
+     * @param i_SourceInput     原文件的文件流
+     * @param i_TargetFullName  目标文件的全路径
+     * @throws NullPointerException
+     * @throws IOException
+     */
+    public void copyFile(InputStream i_SourceInput ,String i_TargetFullName) throws NullPointerException, IOException
+    {
+        if ( i_SourceInput == null )
+        {
+            throw new NullPointerException("Source InputStream is null.");
+        }
+        
+        if ( Help.isNull(i_TargetFullName) )
+        {
+            throw new NullPointerException("Target full name is null.");
+        }
+        
+        
+        copyFile(i_SourceInput ,new File(i_TargetFullName));
+    }
+    
+    
+    
+    /**
+     * 拷贝文件
+     * 
+     * 不支持进度事件
+     * 
+     * @param i_SourceInput     原文件的文件流
+     * @param i_TargetFile      目标文件
+     * @throws NullPointerException
+     * @throws IOException
+     */
+    public void copyFile(InputStream i_SourceInput ,File i_TargetFile) throws NullPointerException, IOException
+    {
+        if ( i_SourceInput == null )
+        {
+            throw new NullPointerException("Source InputStream is null.");
+        }
+        
+        if ( i_TargetFile == null )
+        {
+            throw new NullPointerException("Target file is null.");
+        }
+        
+        
+        File v_TargetFile = i_TargetFile;
+        if ( v_TargetFile.exists() )
+        {
+            if ( this.isOverWrite )
+            {
+                boolean v_Result = v_TargetFile.delete();
+                
+                if ( !v_Result )
+                {
+                    throw new IOException("Delete target file[" + i_TargetFile.toString() + "] exception.");
+                }
+            }
+            else
+            {
+                throw new IOException("Target[" + i_TargetFile.toString() + "] is exists.");
+            }
+        }
+        
+        
+        InputStream          v_SourceInput  = i_SourceInput;
+        FileOutputStream     v_TargetOutput = new FileOutputStream(v_TargetFile);
+        int                  v_ReadLen      = 0;
+        byte []              v_ByteBuffer   = new byte[bufferSize];
+        
+        try
+        {
+            while ( (v_ReadLen = v_SourceInput.read(v_ByteBuffer)) > 0 )
+            {
+                v_TargetOutput.write(v_ByteBuffer ,0 ,v_ReadLen);
+                v_TargetOutput.flush();
+            }
+        }
+        catch (Exception exce)
+        {
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                v_SourceInput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            try
+            {
+                v_TargetOutput.close();
+            }
+            catch (Exception exce)
+            {
+                // Nothing.
+            }
+            
+            v_SourceInput  = null;
+            v_TargetOutput = null;
+            v_TargetFile   = null;
+        }
+        
+    }
+    
+    
+    
     /**
      * 下载文件
      * 

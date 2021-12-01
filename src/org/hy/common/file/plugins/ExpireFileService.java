@@ -7,7 +7,7 @@ import org.hy.common.file.FileHelp;
 
 
 /**
- * 过期文件的服务 
+ * 过期文件的服务
  *
  * @author      ZhengWei(HY)
  * @createDate  2017-06-21
@@ -23,6 +23,12 @@ public class ExpireFileService
     
     /** 是否递归的删除所有子目录中的过期文件 */
     private Boolean isDelChilds;
+    
+    /** 排除在外的文件是哪些，格式如："|文件名称|"。为NULL时表示不排除 */
+    private String  excludeFiles;
+    
+    /** 排除在外的目录是哪些，格式如："|目录名称|"。为NULL时表示不排除 */
+    private String  excludeFolders;
     
     
     
@@ -46,7 +52,7 @@ public class ExpireFileService
     /**
      * 设置：目录全路径
      * 
-     * @param folder 
+     * @param folder
      */
     public void setFolder(String folder)
     {
@@ -66,7 +72,7 @@ public class ExpireFileService
     /**
      * 设置：过期天数（即，只保留多少天的文件）
      * 
-     * @param expireDays 
+     * @param expireDays
      */
     public void setExpireDays(Integer expireDays)
     {
@@ -86,11 +92,51 @@ public class ExpireFileService
     /**
      * 设置：是否递归的删除所有子目录中的过期文件
      * 
-     * @param isDelChilds 
+     * @param isDelChilds
      */
     public void setIsDelChilds(Boolean isDelChilds)
     {
         this.isDelChilds = isDelChilds;
+    }
+
+
+    /**
+     * 获取：排除在外的文件是哪些，格式如："|文件名称|"。为NULL时表示不排除
+     */
+    public String getExcludeFiles()
+    {
+        return excludeFiles;
+    }
+
+
+    /**
+     * 设置：排除在外的文件是哪些，格式如："|文件名称|"。为NULL时表示不排除
+     * 
+     * @param excludeFiles
+     */
+    public void setExcludeFiles(String excludeFiles)
+    {
+        this.excludeFiles = excludeFiles;
+    }
+
+
+    /**
+     * 获取：排除在外的目录是哪些，格式如："|目录名称|"。为NULL时表示不排除
+     */
+    public String getExcludeFolders()
+    {
+        return excludeFolders;
+    }
+
+
+    /**
+     * 设置：排除在外的目录是哪些，格式如："|目录名称|"。为NULL时表示不排除
+     * 
+     * @param excludeFolders
+     */
+    public void setExcludeFolders(String excludeFolders)
+    {
+        this.excludeFolders = excludeFolders;
     }
     
 }
