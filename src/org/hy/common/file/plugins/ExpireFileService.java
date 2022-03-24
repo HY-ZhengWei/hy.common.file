@@ -1,5 +1,8 @@
 package org.hy.common.file.plugins;
 
+import java.io.File;
+
+import org.hy.common.Date;
 import org.hy.common.file.FileHelp;
 
 
@@ -34,9 +37,10 @@ public class ExpireFileService
     
     public void delExpireFiles()
     {
-        FileHelp v_FileHelp = new FileHelp();
+        FileHelp v_FileHelp   = new FileHelp();
+        Date     v_ExpireTime = Date.getNowTime().getDate(Math.abs(this.expireDays)  * -1);
         
-        v_FileHelp.delFiles(this.folder ,this.expireDays ,isDelChilds);
+        v_FileHelp.delFiles(new File(this.folder) ,v_ExpireTime ,this.isDelChilds ,this.excludeFiles ,this.excludeFolders);
     }
 
     
