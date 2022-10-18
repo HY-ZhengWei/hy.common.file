@@ -25,20 +25,14 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-    
-    <!-- https://github.com/HY-ZhengWei/hy.common.base -->
-    <!-- https://gitee.com/HY-ZhengWei/hy.common.base -->
+    <!-- 
+    此为建议版本，不再强行依赖，而由外界使用者来决定
     <dependency>
         <groupId>org</groupId>
         <artifactId>hy.common.base</artifactId>
-        <version>1.0.158</version>
+        <version>1.0.160</version>
     </dependency>
+    -->
     
     <dependency>
         <groupId>net.lingala.zip4j</groupId>

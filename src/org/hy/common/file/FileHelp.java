@@ -2011,7 +2011,7 @@ public final class FileHelp
      * 主要针对小文件。文件内容为正常文字的文件。
      * 
      * 1. 如果i_FileName以点"."前头：表示获取当前目录下的文件。
-     * 2. 如果i_FileName以CLASSS前头：并且格式为 CLASS:org.hy.common.xxx:FileName
+     * 2. 如果i_FileName以CLASS前头：并且格式为 CLASS:org.hy.common.xxx:FileName
      *    表示获取org.hy.common.xxx类下的资源FileName文件信息。
      * 
      * @param i_FileName      文件的名称(可动态的、可相对的)
@@ -2032,7 +2032,7 @@ public final class FileHelp
      * 主要针对小文件。文件内容为正常文字的文件。
      * 
      * 1. 如果i_FileName以点"."前头：表示获取当前目录下的文件。
-     * 2. 如果i_FileName以CLASSS前头：并且格式为 CLASS:org.hy.common.xxx:FileName
+     * 2. 如果i_FileName以CLASS前头：并且格式为 CLASS:org.hy.common.xxx:FileName
      *    表示获取org.hy.common.xxx类下的资源FileName文件信息。
      * 
      * @param i_FileName      文件的名称(可动态的、可相对的)
@@ -2433,7 +2433,7 @@ public final class FileHelp
      * 主要针对小文件。文件内容为二进制的文件。
      * 
      * 1. 如果i_FileName以点"."前头：表示获取当前目录下的文件。
-     * 2. 如果i_FileName以CLASSS前头：并且格式为 CLASS:org.hy.common.xxx:FileName
+     * 2. 如果i_FileName以CLASS前头：并且格式为 CLASS:org.hy.common.xxx:FileName
      *    表示获取org.hy.common.xxx类下的资源FileName文件信息。
      * 
      * @param i_FileName      文件的名称(可动态的、可相对的)
