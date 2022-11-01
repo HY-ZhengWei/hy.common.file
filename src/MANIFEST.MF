@@ -1,6 +1,0 @@
-Manifest-Version: 1.1.12
-Created-By: HY.ZhengWei@qq.com  2012
-Specification-Version: 1.1.12  2022-03-24
-SourceCode: https://github.com/HY-ZhengWei/hy.common.file
-SourceCodeChina: https://gitee.com/HY-ZhengWei/hy.common.file
-Build-JDK: 1.8
