@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<config>
+
+    <import name="xconfig"         class="java.util.ArrayList" />
+    <import name="ftp"             class="org.hy.common.ftp.FTPInfo" />
+    
+    
+    
+    <!-- 文件服务器的配置信息 -->
+    <xconfig>
+        
+        <ftp id="FTPServer01">
+            <ip>10.1.50.234</ip>
+            <port>21</port>
+            <user>cgftp</user>
+            <password encrypt="org.hy.common.StringHelp">cgftp</password>
+            <localPassiveMode>true</localPassiveMode>
+            <remotePassiveMode>false</remotePassiveMode>
+        </ftp>
+        
+    </xconfig>
+    
+</config>
