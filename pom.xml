@@ -6,7 +6,7 @@
 
     <groupId>cn.openapis</groupId>
     <artifactId>hy.common.file</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.4</version>
     <packaging>jar</packaging>
 
     <name>cn.openapis.hy.common.file</name>
@@ -54,7 +54,7 @@
         <dependency>
             <groupId>cn.openapis</groupId>
             <artifactId>hy.common.base</artifactId>
-            <version>1.0.164</version>
+            <version>1.0.170</version>
             <scope>provided</scope>
         </dependency>
         
@@ -76,6 +76,62 @@
             <artifactId>servlet-api</artifactId>
             <version>3.0-alpha-1</version>
             <scope>provided</scope>
+        </dependency>
+        
+        <!-- Drools -->
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-core</artifactId>
+            <version>7.73.0.Final</version>
+        </dependency>
+        
+        <!-- Drools -->
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-core-dynamic</artifactId>
+            <version>7.73.0.Final</version>
+        </dependency>
+        
+        <!-- Drools -->
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-core-reflective</artifactId>
+            <version>7.73.0.Final</version>
+        </dependency>
+        
+        <!-- Drools -->
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-decisiontables</artifactId>
+            <version>7.73.0.Final</version>
+        </dependency>
+        
+        <!-- Drools -->
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-compiler</artifactId>
+            <version>7.73.0.Final</version>
+        </dependency>
+        
+        <!-- Drools -->
+        <dependency>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-api</artifactId>
+            <version>7.73.0.Final</version>
+        </dependency>
+        
+        <!-- Drools -->
+        <dependency>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-ci</artifactId>
+            <version>7.73.0.Final</version>
+        </dependency>
+        
+        <!-- Drools -->
+        <dependency>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-internal</artifactId>
+            <version>7.73.0.Final</version>
         </dependency>
 
         <dependency>
@@ -99,10 +155,25 @@
                 <directory>src/main/java</directory>
                 <filtering>true</filtering>
                 <includes>
+                    <include>**/LICENSE</include>
                     <include>**/*.xml</include>
                     <include>**/*.html</include>
                     <include>**/*.txt</include>
                     <include>**/*.ini</include>
+                    <include>**/*.json</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.md</include>
+                    <include>**/*.MF</include>
+                    <include>**/*.js</include>
+                    <include>**/*.css</include>
+                    <include>**/*.map</include>
+                    <include>**/*.png</include>
+                    <include>**/*.gif</include>
+                    <include>**/*.eot</include>
+                    <include>**/*.svg</include>
+                    <include>**/*.ttf</include>
+                    <include>**/*.woff</include>
+                    <include>**/*.woff2</include>
                 </includes>
             </resource>
 
