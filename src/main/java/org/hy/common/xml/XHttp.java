@@ -220,11 +220,11 @@ public final class XHttp extends SerializableDef implements XJavaID
      *
      * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
      *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
-     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
      * 
      * @param   i_BodyData  请求体中的数据
      *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求休中的数据使用 i_BodyData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
@@ -253,7 +253,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      * 
      * @param   i_BodyData  请求体中的数据
      *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求休中的数据使用 i_BodyData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
@@ -293,7 +293,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      * 
      * @param   i_BodyData  请求体中的数据
      *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求休中的数据使用 i_BodyData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
@@ -543,7 +543,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      * @version     v1.0
      *
      * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
-     *                      1. 当为Get请求时，表示请求URL的动态请求参加
+     *                      1. 当为Get请求时，表示请求URL的动态请求参数
      *                      2. 当为Post请求时，表示请求体中的请求数据
      * 
      * @return  返回是否请求成功。
@@ -566,12 +566,12 @@ public final class XHttp extends SerializableDef implements XJavaID
      * @version     v1.0
      *
      * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
-     *                      1. 当为Get请求时，表示请求URL的动态请求参加
+     *                      1. 当为Get请求时，表示请求URL的动态请求参数
      *                      2. 当为Post请求时，表示请求体中的请求数据
      * 
      * @param   i_BodyData  请求体中的数据
      *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求休中的数据使用 i_BodyData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
@@ -595,11 +595,11 @@ public final class XHttp extends SerializableDef implements XJavaID
      *
      * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
      *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
-     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
      * 
      * @param   i_BodyData  请求体中的数据
      *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求休中的数据使用 i_BodyData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
@@ -635,11 +635,11 @@ public final class XHttp extends SerializableDef implements XJavaID
      *
      * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
      *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
-     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
      * 
      * @param   i_BodyData  请求体中的数据
      *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求休中的数据使用 i_BodyData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
@@ -932,7 +932,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      * 
      * @param   i_BodyData  请求体中的数据
      *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求休中的数据使用 i_BodyData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
@@ -961,7 +961,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      * 
      * @param   i_BodyData  请求体中的数据
      *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求休中的数据使用 i_BodyData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
@@ -998,11 +998,11 @@ public final class XHttp extends SerializableDef implements XJavaID
      * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
      *                      这个字符串已被外界拼接好了。
      *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
-     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
      * 
      * @param   i_BodyData  请求体中的数据
      *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求休中的数据使用 i_BodyData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。

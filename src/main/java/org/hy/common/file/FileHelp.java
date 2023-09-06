@@ -110,6 +110,7 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *                             5.添加：对拷图片数据
  *                             6.添加：将图片转成Base64字符，用于浏览器的显示
  *                             7.添加：为图片描边上色
+ *           v13.0 2023-09-06  1.添加：扩大图片的画布大小（从中心点扩大）
  */
 public final class FileHelp
 {
@@ -2902,6 +2903,72 @@ public final class FileHelp
                 }
             }
         }
+    }
+    
+    
+    
+    /**
+     * 扩大图片的画布大小（从中心点扩大）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2021-05-17
+     * @version     v1.0
+     * 
+     * @param i_Image       原始图片
+     * @param io_NewImage   剪切出的小图
+     * @param i_NewWidth    新的宽度值
+     * @param i_NewHeight   新的高度值
+     * @param i_BGColor     背景颜色
+     */
+    public static BufferedImage expandImage(BufferedImage i_Image ,int i_NewWidth ,int i_NewHeight ,int i_BGColor)
+    {
+        int v_BorderLRSize = (i_NewWidth  - i_Image.getWidth())  / 2;  // 左右边框线的大小
+        int v_BorderTBSize = (i_NewHeight - i_Image.getHeight()) / 2;  // 上下边框线的大小
+        
+        BufferedImage v_NewImage = new BufferedImage(i_NewWidth ,i_NewHeight ,BufferedImage.TYPE_INT_ARGB);
+        
+        for (int x=0; x<i_NewWidth; x++)
+        {
+            // 绘制顶部边线
+            for (int y=0; y<v_BorderTBSize; y++)
+            {
+                v_NewImage.setRGB(x ,y ,i_BGColor);
+            }
+            
+            // 绘制底部边线
+            for (int y=i_NewHeight - v_BorderTBSize; y<i_NewHeight; y++)
+            {
+                v_NewImage.setRGB(x ,y ,i_BGColor);
+            }
+        }
+        
+        for (int y=0; y<i_NewHeight; y++)
+        {
+            // 绘制左部边线
+            for (int x=0; x<v_BorderLRSize; x++)
+            {
+                v_NewImage.setRGB(x ,y ,i_BGColor);
+            }
+            
+            // 绘制右部边线
+            for (int x=i_NewWidth - v_BorderLRSize; x<i_NewWidth; x++)
+            {
+                v_NewImage.setRGB(x ,y ,i_BGColor);
+            }
+        }
+        
+        for (int y=0; y<i_Image.getHeight(); y++)
+        {
+            for (int x=0; x<i_Image.getWidth(); x++)
+            {
+                int v_OrgRGB = i_Image.getRGB(x, y);
+                
+                // 抠图复制对应颜色值
+                v_NewImage.setRGB(x + v_BorderLRSize ,y + v_BorderTBSize ,v_OrgRGB);
+            }
+        }
+        
+        return v_NewImage;
     }
     
     
