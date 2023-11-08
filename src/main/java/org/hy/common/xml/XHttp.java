@@ -58,6 +58,7 @@ import org.hy.common.xml.log.Logger;
  *           V5.0  2020-06-24  添加1：通过日志引擎规范输出日志
  *           V6.0  2020-12-22  添加1：请求体中的独立数据与动态请求数据共存的请求处理功能
  *           v7.0  2022-04-01  添加1：连接超时时长 和 读取数据的超时时长（建议人：王力）
+ *           v8.0  2023-11-08  添加1：Get请求也允许Body体发数据
  */
 public final class XHttp extends SerializableDef implements XJavaID
 {
@@ -448,6 +449,26 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLConn.setConnectTimeout(this.connectTimeout);
                 v_URLConn.setReadTimeout(this.readTimeout);
                 
+                v_URLOut = v_URLConn.getOutputStream();
+                if ( v_URLOut != null )
+                {
+                    if ( !Help.isNull(i_BodyData) )
+                    {
+                        v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                    }
+                    
+                    try
+                    {
+                        v_URLOut.flush();
+                        v_URLOut.close();
+                    }
+                    catch (Exception exce)
+                    {
+                        // Nothing.
+                    }
+                    
+                    v_URLOut = null;
+                }
                 
                 // 获取GET方式下，真实的客户端SessionID Add 2015-03-04
                 String v_SessionID = "";
@@ -808,6 +829,26 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLConn.setConnectTimeout(this.connectTimeout);
                 v_URLConn.setReadTimeout(this.readTimeout);
                 
+                v_URLOut = v_URLConn.getOutputStream();
+                if ( v_URLOut != null )
+                {
+                    if ( !Help.isNull(i_BodyData) )
+                    {
+                        v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                    }
+                    
+                    try
+                    {
+                        v_URLOut.flush();
+                        v_URLOut.close();
+                    }
+                    catch (Exception exce)
+                    {
+                        // Nothing.
+                    }
+                    
+                    v_URLOut = null;
+                }
                 
                 // 获取GET方式下，真实的客户端SessionID Add 2015-03-04
                 String v_SessionID = "";
@@ -1163,6 +1204,27 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLConn.setRequestProperty("Cookie"       ,this.cookie.toString());
                 v_URLConn.setConnectTimeout(this.connectTimeout);
                 v_URLConn.setReadTimeout(this.readTimeout);
+                
+                v_URLOut = v_URLConn.getOutputStream();
+                if ( v_URLOut != null )
+                {
+                    if ( !Help.isNull(i_BodyData) )
+                    {
+                        v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                    }
+                    
+                    try
+                    {
+                        v_URLOut.flush();
+                        v_URLOut.close();
+                    }
+                    catch (Exception exce)
+                    {
+                        // Nothing.
+                    }
+                    
+                    v_URLOut = null;
+                }
                 
                 
                 // 获取GET方式下，真实的客户端SessionID Add 2015-03-04
