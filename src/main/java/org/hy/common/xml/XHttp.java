@@ -378,25 +378,43 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLOut = v_URLConn.getOutputStream();
                 if ( v_URLOut != null )
                 {
-                    if ( !Help.isNull(i_BodyData) )
-                    {
-                        v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
-                    }
-                    else
-                    {
-                        v_URLOut.write(v_ParamsUrl.getBytes(this.getCharset()));
-                    }
-                    
                     try
                     {
-                        v_URLOut.flush();
-                        v_URLOut.close();
+                        if ( !Help.isNull(i_BodyData) )
+                        {
+                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                        }
+                        else
+                        {
+                            v_URLOut.write(v_ParamsUrl.getBytes(this.getCharset()));
+                        }
                     }
                     catch (Exception exce)
                     {
-                        // Nothing.
+                        $Logger.error(exce);
+                        return v_Ret.set(false).exception(exce);
                     }
-                    
+                    finally
+                    {
+                        try
+                        {
+                            v_URLOut.flush();
+                        }
+                        catch (Exception exce)
+                        {
+                            $Logger.error(exce);
+                            return v_Ret.set(false).exception(exce);
+                        }
+                        try
+                        {
+                            v_URLOut.close();
+                        }
+                        catch (Exception exce)
+                        {
+                            $Logger.error(exce);
+                            return v_Ret.set(false).exception(exce);
+                        }
+                    }
                     v_URLOut = null;
                 }
             }
@@ -449,25 +467,43 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLConn.setConnectTimeout(this.connectTimeout);
                 v_URLConn.setReadTimeout(this.readTimeout);
                 
-                v_URLOut = v_URLConn.getOutputStream();
-                if ( v_URLOut != null )
+                if ( !Help.isNull(i_BodyData) )
                 {
-                    if ( !Help.isNull(i_BodyData) )
+                    v_URLOut = v_URLConn.getOutputStream();
+                    if ( v_URLOut != null )
                     {
-                        v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                        try
+                        {
+                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                        }
+                        catch (Exception exce)
+                        {
+                            $Logger.error(exce);
+                            return v_Ret.set(false).exception(exce);
+                        }
+                        finally
+                        {
+                            try
+                            {
+                                v_URLOut.flush();
+                            }
+                            catch (Exception exce)
+                            {
+                                $Logger.error(exce);
+                                return v_Ret.set(false).exception(exce);
+                            }
+                            try
+                            {
+                                v_URLOut.close();
+                            }
+                            catch (Exception exce)
+                            {
+                                $Logger.error(exce);
+                                return v_Ret.set(false).exception(exce);
+                            }
+                        }
+                        v_URLOut = null;
                     }
-                    
-                    try
-                    {
-                        v_URLOut.flush();
-                        v_URLOut.close();
-                    }
-                    catch (Exception exce)
-                    {
-                        // Nothing.
-                    }
-                    
-                    v_URLOut = null;
                 }
                 
                 // 获取GET方式下，真实的客户端SessionID Add 2015-03-04
@@ -751,25 +787,43 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLOut = v_URLConn.getOutputStream();
                 if ( v_URLOut != null )
                 {
-                    if ( !Help.isNull(i_BodyData) )
-                    {
-                        v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
-                    }
-                    else
-                    {
-                        v_URLOut.write(v_ParamsUrl.getBytes(this.getCharset()));
-                    }
-                    
                     try
                     {
-                        v_URLOut.flush();
-                        v_URLOut.close();
+                        if ( !Help.isNull(i_BodyData) )
+                        {
+                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                        }
+                        else
+                        {
+                            v_URLOut.write(v_ParamsUrl.getBytes(this.getCharset()));
+                        }
                     }
                     catch (Exception exce)
                     {
-                        // Nothing.
+                        $Logger.error(exce);
+                        return v_Ret.set(false).exception(exce);
                     }
-                    
+                    finally
+                    {
+                        try
+                        {
+                            v_URLOut.flush();
+                        }
+                        catch (Exception exce)
+                        {
+                            $Logger.error(exce);
+                            return v_Ret.set(false).exception(exce);
+                        }
+                        try
+                        {
+                            v_URLOut.close();
+                        }
+                        catch (Exception exce)
+                        {
+                            $Logger.error(exce);
+                            return v_Ret.set(false).exception(exce);
+                        }
+                    }
                     v_URLOut = null;
                 }
             }
@@ -829,25 +883,43 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLConn.setConnectTimeout(this.connectTimeout);
                 v_URLConn.setReadTimeout(this.readTimeout);
                 
-                v_URLOut = v_URLConn.getOutputStream();
-                if ( v_URLOut != null )
+                if ( !Help.isNull(i_BodyData) )
                 {
-                    if ( !Help.isNull(i_BodyData) )
+                    v_URLOut = v_URLConn.getOutputStream();
+                    if ( v_URLOut != null )
                     {
-                        v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                        try
+                        {
+                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                        }
+                        catch (Exception exce)
+                        {
+                            $Logger.error(exce);
+                            return v_Ret.set(false).exception(exce);
+                        }
+                        finally
+                        {
+                            try
+                            {
+                                v_URLOut.flush();
+                            }
+                            catch (Exception exce)
+                            {
+                                $Logger.error(exce);
+                                return v_Ret.set(false).exception(exce);
+                            }
+                            try
+                            {
+                                v_URLOut.close();
+                            }
+                            catch (Exception exce)
+                            {
+                                $Logger.error(exce);
+                                return v_Ret.set(false).exception(exce);
+                            }
+                        }
+                        v_URLOut = null;
                     }
-                    
-                    try
-                    {
-                        v_URLOut.flush();
-                        v_URLOut.close();
-                    }
-                    catch (Exception exce)
-                    {
-                        // Nothing.
-                    }
-                    
-                    v_URLOut = null;
                 }
                 
                 // 获取GET方式下，真实的客户端SessionID Add 2015-03-04
@@ -1134,25 +1206,43 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLOut = v_URLConn.getOutputStream();
                 if ( v_URLOut != null )
                 {
-                    if ( !Help.isNull(i_BodyData) )
-                    {
-                        v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
-                    }
-                    else
-                    {
-                        v_URLOut.write(v_ParamsUrl.getBytes(this.getCharset()));
-                    }
-                    
                     try
                     {
-                        v_URLOut.flush();
-                        v_URLOut.close();
+                        if ( !Help.isNull(i_BodyData) )
+                        {
+                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                        }
+                        else
+                        {
+                            v_URLOut.write(v_ParamsUrl.getBytes(this.getCharset()));
+                        }
                     }
                     catch (Exception exce)
                     {
-                        // Nothing.
+                        $Logger.error(exce);
+                        return v_Ret.set(false).exception(exce);
                     }
-                    
+                    finally
+                    {
+                        try
+                        {
+                            v_URLOut.flush();
+                        }
+                        catch (Exception exce)
+                        {
+                            $Logger.error(exce);
+                            return v_Ret.set(false).exception(exce);
+                        }
+                        try
+                        {
+                            v_URLOut.close();
+                        }
+                        catch (Exception exce)
+                        {
+                            $Logger.error(exce);
+                            return v_Ret.set(false).exception(exce);
+                        }
+                    }
                     v_URLOut = null;
                 }
             }
@@ -1205,27 +1295,44 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLConn.setConnectTimeout(this.connectTimeout);
                 v_URLConn.setReadTimeout(this.readTimeout);
                 
-                v_URLOut = v_URLConn.getOutputStream();
-                if ( v_URLOut != null )
+                if ( !Help.isNull(i_BodyData) )
                 {
-                    if ( !Help.isNull(i_BodyData) )
+                    v_URLOut = v_URLConn.getOutputStream();
+                    if ( v_URLOut != null )
                     {
-                        v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                        try
+                        {
+                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
+                        }
+                        catch (Exception exce)
+                        {
+                            $Logger.error(exce);
+                            return v_Ret.set(false).exception(exce);
+                        }
+                        finally
+                        {
+                            try
+                            {
+                                v_URLOut.flush();
+                            }
+                            catch (Exception exce)
+                            {
+                                $Logger.error(exce);
+                                return v_Ret.set(false).exception(exce);
+                            }
+                            try
+                            {
+                                v_URLOut.close();
+                            }
+                            catch (Exception exce)
+                            {
+                                $Logger.error(exce);
+                                return v_Ret.set(false).exception(exce);
+                            }
+                        }
+                        v_URLOut = null;
                     }
-                    
-                    try
-                    {
-                        v_URLOut.flush();
-                        v_URLOut.close();
-                    }
-                    catch (Exception exce)
-                    {
-                        // Nothing.
-                    }
-                    
-                    v_URLOut = null;
                 }
-                
                 
                 // 获取GET方式下，真实的客户端SessionID Add 2015-03-04
                 String v_SessionID = "";
