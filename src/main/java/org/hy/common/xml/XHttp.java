@@ -469,6 +469,7 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 if ( !Help.isNull(i_BodyData) )
                 {
+                    v_URLConn.setDoOutput(true);
                     v_URLOut = v_URLConn.getOutputStream();
                     if ( v_URLOut != null )
                     {
@@ -885,6 +886,7 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 if ( !Help.isNull(i_BodyData) )
                 {
+                    v_URLConn.setDoOutput(true);
                     v_URLOut = v_URLConn.getOutputStream();
                     if ( v_URLOut != null )
                     {
@@ -1297,6 +1299,7 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 if ( !Help.isNull(i_BodyData) )
                 {
+                    v_URLConn.setDoOutput(true);
                     v_URLOut = v_URLConn.getOutputStream();
                     if ( v_URLOut != null )
                     {
