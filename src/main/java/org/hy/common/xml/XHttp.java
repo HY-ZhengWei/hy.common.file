@@ -59,6 +59,7 @@ import org.hy.common.xml.log.Logger;
  *           V6.0  2020-12-22  添加1：请求体中的独立数据与动态请求数据共存的请求处理功能
  *           v7.0  2022-04-01  添加1：连接超时时长 和 读取数据的超时时长（建议人：王力）
  *           v8.0  2023-11-08  添加1：Get请求也允许Body体发数据
+ *                             添加2：返回真实完整的请求URL
  */
 public final class XHttp extends SerializableDef implements XJavaID
 {
@@ -168,6 +169,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      * 发起Http请求 -- 无参数的
      * 
      * @return  返回是否请求成功
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      */
@@ -201,6 +203,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      2. 当为Post请求时，表示请求体中的请求数据
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -229,6 +232,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -258,6 +262,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -298,6 +303,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -309,7 +315,7 @@ public final class XHttp extends SerializableDef implements XJavaID
             throw new NullPointerException("XHttp ip is null.");
         }
         
-        Return<?>         v_Ret        = new Return<Object>().paramStr("");
+        Return<Object>    v_Ret        = new Return<Object>().paramStr("");
         URL               v_URL        = null;
         HttpURLConnection v_URLConn    = null;
         OutputStream      v_URLOut     = null;
@@ -344,10 +350,12 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 if ( this.getPort() == 0 )
                 {
-                    v_URL = new URL(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
+                    v_URL = new URL(v_Ret.getParamObj().toString());
                 }
                 else
                 {
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
                     v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
                 }
                 
@@ -437,10 +445,12 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 if ( this.getPort() == 0 )
                 {
-                    v_URL = new URL(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + v_ParamsUrl);
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + v_ParamsUrl);
+                    v_URL = new URL(v_Ret.paramObj.toString());
                 }
                 else
                 {
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + v_ParamsUrl);
                     v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + v_ParamsUrl);
                 }
                 
@@ -605,6 +615,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      2. 当为Post请求时，表示请求体中的请求数据
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -633,6 +644,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -661,6 +673,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -701,6 +714,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -712,7 +726,7 @@ public final class XHttp extends SerializableDef implements XJavaID
             throw new NullPointerException("XHttp ip is null.");
         }
         
-        Return<?>         v_Ret        = new Return<Object>().paramStr("");
+        Return<Object>    v_Ret        = new Return<Object>().paramStr("");
         URL               v_URL        = null;
         HttpURLConnection v_URLConn    = null;
         OutputStream      v_URLOut     = null;
@@ -754,10 +768,12 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 if ( this.getPort() == 0 )
                 {
-                    v_URL = new URL(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
+                    v_URL = new URL(v_Ret.paramObj.toString());
                 }
                 else
                 {
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
                     v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
                 }
                 
@@ -854,10 +870,12 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 if ( this.getPort() == 0 )
                 {
-                    v_URL = new URL(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + v_ParamsUrl);
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + v_ParamsUrl);
+                    v_URL = new URL(v_Ret.paramObj.toString());
                 }
                 else
                 {
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + v_ParamsUrl);
                     v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + v_ParamsUrl);
                 }
                 
@@ -1022,6 +1040,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      2. 当为Post请求时，表示请求体中的请求数据
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -1051,6 +1070,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -1080,6 +1100,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -1121,6 +1142,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *                      3. 只用于Post请求
      * 
      * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
      *          Return.paramStr  保存响应信息
      *          Return.exception 保存异常信息
      * @return
@@ -1132,7 +1154,7 @@ public final class XHttp extends SerializableDef implements XJavaID
             throw new NullPointerException("XHttp ip is null.");
         }
         
-        Return<?>         v_Ret        = new Return<Object>().paramStr("");
+        Return<Object>    v_Ret        = new Return<Object>().paramStr("");
         URL               v_URL        = null;
         HttpURLConnection v_URLConn    = null;
         OutputStream      v_URLOut     = null;
@@ -1174,10 +1196,12 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 if ( this.getPort() == 0 )
                 {
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
                     v_URL = new URL(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
                 }
                 else
                 {
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
                     v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
                 }
                 
@@ -1267,10 +1291,12 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 if ( this.getPort() == 0 )
                 {
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + v_ParamsUrl);
                     v_URL = new URL(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + v_ParamsUrl);
                 }
                 else
                 {
+                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + v_ParamsUrl);
                     v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + v_ParamsUrl);
                 }
                 
