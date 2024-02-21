@@ -1,5 +1,8 @@
 package org.hy.common.ftp;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
 import org.apache.commons.net.ftp.FTPClient;
 import org.hy.common.Help;
 
@@ -18,10 +21,10 @@ public class FTPInfo extends FTPClient implements Cloneable
 {
     
     /** 连接超时时长 */
-    public static final int $ConnectTimeOut = 30 * 1000;
+    public static final int      $ConnectTimeOut = 30 * 1000;
     
     /** 读取文件的超时时长 */
-    public static final int $ReadTimeOut    = 2 * 60 * 1000; 
+    public static final Duration $ReadTimeOut    = Duration.of(2 * 60 ,ChronoUnit.SECONDS);
     
     
     
@@ -41,10 +44,10 @@ public class FTPInfo extends FTPClient implements Cloneable
     private String           initPath;
     
     /** 本地是否被动模式 */
-    private boolean          isLocalPassiveMode; 
+    private boolean          isLocalPassiveMode;
     
     /** 远程服务是否被动模式 */
-    private boolean          isRemotePassiveMode;  
+    private boolean          isRemotePassiveMode;
     
     /** 安全接口 */
     private FTPSecurity      security;
@@ -83,14 +86,14 @@ public class FTPInfo extends FTPClient implements Cloneable
 
 
 
-    public String getIp() 
+    public String getIp()
     {
         return ip;
     }
 
 
 
-    public void setIp(String ip) 
+    public void setIp(String ip)
     {
         this.ip = ip;
     }
@@ -104,7 +107,7 @@ public class FTPInfo extends FTPClient implements Cloneable
     
     
     
-    public String getPassword() 
+    public String getPassword()
     {
         if ( this.security != null && !Help.isNull(this.user) )
         {
@@ -125,7 +128,7 @@ public class FTPInfo extends FTPClient implements Cloneable
 
 
 
-    public void setPassword(String i_Password) 
+    public void setPassword(String i_Password)
     {
         if (  this.security != null && !Help.isNull(this.user) )
         {
@@ -153,14 +156,14 @@ public class FTPInfo extends FTPClient implements Cloneable
 
 
 
-    public int getPort() 
+    public int getPort()
     {
         return port;
     }
 
 
 
-    public void setPort(int port) 
+    public void setPort(int port)
     {
         this.port = port;
     }
@@ -174,35 +177,35 @@ public class FTPInfo extends FTPClient implements Cloneable
 
 
     
-    public void setUser(String user) 
+    public void setUser(String user)
     {
         this.user = user;
     }
 
 
 
-    public String getInitPath() 
+    public String getInitPath()
     {
         return Help.NVL(initPath ,"/");
     }
     
     
     
-    public void setInitPath(String initPath) 
+    public void setInitPath(String initPath)
     {
         this.initPath = initPath;
     }
 
 
     
-    public FTPSecurity getSecurity() 
+    public FTPSecurity getSecurity()
     {
         return security;
     }
     
     
     
-    public void setSecurity(FTPSecurity security) 
+    public void setSecurity(FTPSecurity security)
     {
         this.security = security;
     }
@@ -232,7 +235,7 @@ public class FTPInfo extends FTPClient implements Cloneable
     /**
      * 设置：本地是否被动模式
      * 
-     * @param isLocalPassiveMode 
+     * @param isLocalPassiveMode
      */
     public void setLocalPassiveMode(boolean isLocalPassiveMode)
     {
@@ -244,7 +247,7 @@ public class FTPInfo extends FTPClient implements Cloneable
     /**
      * 设置：远程服务是否被动模式
      * 
-     * @param isRemotePassiveMode 
+     * @param isRemotePassiveMode
      */
     public void setRemotePassiveMode(boolean isRemotePassiveMode)
     {
@@ -256,9 +259,9 @@ public class FTPInfo extends FTPClient implements Cloneable
     /**
      * 获取：读取文件的超时时长
      */
-    public int getDataTimeout()
+    public int getDataTimeoutMillis()
     {
-        return dataTimeout;
+        return super.getDataTimeout().toMillisPart();
     }
 
 
@@ -266,11 +269,11 @@ public class FTPInfo extends FTPClient implements Cloneable
     /**
      * 设置：读取文件的超时时长
      * 
-     * @param dataTimeout 
+     * @param dataTimeout
      */
-    public void setDataTimeout(int dataTimeout)
+    @SuppressWarnings("deprecation")
+    public void setDataTimeoutMillis(int dataTimeout)
     {
-        this.dataTimeout = dataTimeout;
         super.setDataTimeout(this.dataTimeout);
     }
     
@@ -281,6 +284,7 @@ public class FTPInfo extends FTPClient implements Cloneable
      * @return the size, or -1 if not initialised
      * @since 3.0
      */
+    @Override
     public int getReceiveBufferSize()
     {
         return super.getReceiveBufferSize();
@@ -293,6 +297,7 @@ public class FTPInfo extends FTPClient implements Cloneable
      * @return the size, or -1 if not initialised
      * @since 3.0
      */
+    @Override
     public int getSendBufferSize()
     {
         return super.getSendBufferSize();
@@ -303,7 +308,8 @@ public class FTPInfo extends FTPClient implements Cloneable
     /**
      * 克隆
      */
-    public FTPInfo clone() 
+    @Override
+    public FTPInfo clone()
     {
         FTPInfo v_Clone = new FTPInfo(this.ip ,this.port ,this.user ,this.password);
         

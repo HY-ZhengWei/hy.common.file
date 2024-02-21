@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import org.apache.commons.net.ftp.FTPClient;
-
 import org.hy.common.ByteHelp;
 import org.hy.common.ExpireMap;
 import org.hy.common.Help;
@@ -38,9 +37,9 @@ import org.hy.common.ftp.event.FTPListener;
  *                             添加：3. FileDataPacket 文件的数据包的上传（默认开启断点续传）
  *                             添加：4. 创建FTP目录。可连续创建多级目录
  *                             添加：5. 支持中文目录及中文文件
- *                                   
+ * 
  */
-public final class FTPHelp 
+public final class FTPHelp
 {
     /** 缓存大小 */
     private static final int $BufferSize     = 4 * 1024;
@@ -102,7 +101,7 @@ public final class FTPHelp
             return "Fpt info is null.";
         }
         
-        try 
+        try
         {
             if ( this.ftpClient != null )
             {
@@ -116,8 +115,8 @@ public final class FTPHelp
             this.ftpClient.setProxy(                       this.ftpInfo.getProxy());
             this.ftpClient.setDefaultTimeout(              this.ftpInfo.getDefaultTimeout());
             this.ftpClient.setConnectTimeout(              this.ftpInfo.getConnectTimeout());
-            this.ftpClient.setControlKeepAliveReplyTimeout(this.ftpInfo.getControlKeepAliveReplyTimeout());
-            this.ftpClient.setControlKeepAliveTimeout(     this.ftpInfo.getControlKeepAliveTimeout());
+            this.ftpClient.setControlKeepAliveReplyTimeout(this.ftpInfo.getControlKeepAliveReplyTimeoutDuration());
+            this.ftpClient.setControlKeepAliveTimeout(     this.ftpInfo.getControlKeepAliveTimeoutDuration());
             this.ftpClient.setDataTimeout(                 this.ftpInfo.getDataTimeout());
             
             this.ftpClient.connect(this.ftpInfo.getIp()   ,this.ftpInfo.getPort());
@@ -150,8 +149,8 @@ public final class FTPHelp
             this.ftpClient.setAutodetectUTF8(              this.ftpInfo.getAutodetectUTF8());
             this.ftpClient.setCharset(                     this.ftpInfo.getCharset());
             this.ftpClient.changeWorkingDirectory(         this.ftpInfo.getInitPath());
-        } 
-        catch (Exception exce) 
+        }
+        catch (Exception exce)
         {
             this.ftpClient = null;
             exce.printStackTrace();
@@ -170,12 +169,12 @@ public final class FTPHelp
     {
         if ( this.ftpClient != null )
         {
-            try 
+            try
             {
                 this.ftpClient.logout();
                 this.ftpClient.disconnect();
-            } 
-            catch (IOException e) 
+            }
+            catch (IOException e)
             {
                 e.printStackTrace();
             }
@@ -228,7 +227,7 @@ public final class FTPHelp
         
         v_Event.setActionType(2);
         
-        try 
+        try
         {
             v_Input          = this.ftpClient.retrieveFileStream(new String(i_RemoteFullName.getBytes("GBK") ,"ISO-8859-1"));
             v_DataInput      = new DataInputStream(v_Input);
@@ -250,7 +249,7 @@ public final class FTPHelp
                     
                     v_Event.setCompleteSize(v_FTPingSize);
                     v_IsContinue = this.fireFTPingListener(v_Event);
-                } 
+                }
             }
             else
             {
@@ -262,7 +261,7 @@ public final class FTPHelp
                     
                     v_Event.setCompleteSize(v_FTPingSize);
                     v_IsContinue = this.fireFTPingListener(v_Event);
-                }   
+                }
             }
             
             v_SaveFileOutput.flush();
@@ -273,8 +272,8 @@ public final class FTPHelp
             this.ftpClient.completePendingCommand();
             
             v_Event.setSucceedFinish();
-        } 
-        catch (Exception e) 
+        }
+        catch (Exception e)
         {
             v_Event.setEndTime();
             return e.toString();
@@ -283,11 +282,11 @@ public final class FTPHelp
         {
             if ( v_SaveFileOutput != null )
             {
-                try 
+                try
                 {
                     v_SaveFileOutput.close();
-                } 
-                catch (Exception e) 
+                }
+                catch (Exception e)
                 {
                     // Nothing.
                 }
@@ -297,11 +296,11 @@ public final class FTPHelp
             
             if ( v_DataInput != null )
             {
-                try 
+                try
                 {
                     v_DataInput.close();
-                } 
-                catch (Exception e) 
+                }
+                catch (Exception e)
                 {
                     // Nothing.
                 }
@@ -373,7 +372,7 @@ public final class FTPHelp
         
         v_Event.setActionType(2);
         
-        try 
+        try
         {
             v_Input          = this.ftpClient.retrieveFileStream(new String(i_RemoteFullName.getBytes("GBK") ,"ISO-8859-1"));
             v_DataInput      = new DataInputStream(v_Input);
@@ -393,7 +392,7 @@ public final class FTPHelp
                     
                     v_Event.setCompleteSize(v_FTPingSize);
                     v_IsContinue = this.fireFTPingListener(v_Event);
-                } 
+                }
             }
             else
             {
@@ -405,15 +404,15 @@ public final class FTPHelp
                     
                     v_Event.setCompleteSize(v_FTPingSize);
                     v_IsContinue = this.fireFTPingListener(v_Event);
-                }   
+                }
             }
             
             // 此语句十分关键，如果没有此句，只能下载第一个文件，其后的所有文件都将失败
             this.ftpClient.completePendingCommand();
             
             v_Event.setSucceedFinish();
-        } 
-        catch (Exception e) 
+        }
+        catch (Exception e)
         {
             v_Event.setEndTime();
             return e.toString();
@@ -422,11 +421,11 @@ public final class FTPHelp
         {
             if ( v_DataInput != null )
             {
-                try 
+                try
                 {
                     v_DataInput.close();
-                } 
-                catch (Exception e) 
+                }
+                catch (Exception e)
                 {
                     // Nothing.
                 }
@@ -485,14 +484,14 @@ public final class FTPHelp
         FileInputStream v_Input      = null;
         DataInputStream v_DataInput  = null;
         
-        try 
+        try
         {
             v_Input     = new FileInputStream(i_LocalFullName);
             v_DataInput = new DataInputStream(v_Input);
             
             return this.upload(v_DataInput ,v_File.length() ,i_RemoteFullName ,i_IsAppend);
-        } 
-        catch (Exception e) 
+        }
+        catch (Exception e)
         {
             return e.toString();
         }
@@ -500,11 +499,11 @@ public final class FTPHelp
         {
             if ( v_DataInput != null )
             {
-                try 
+                try
                 {
                     v_DataInput.close();
-                } 
-                catch (Exception e) 
+                }
+                catch (Exception e)
                 {
                     // Nothing.
                 }
@@ -538,7 +537,7 @@ public final class FTPHelp
      * @version     v1.0
      *
      * @param i_FileDataPacket  文件的数据包（默认开启断点续传）
-     * @return                  本次数据包上传结果。请参考 FileHelp.$Upload_* 的系列说明 
+     * @return                  本次数据包上传结果。请参考 FileHelp.$Upload_* 的系列说明
      */
     public int upload(FileDataPacket i_FileDataPacket)
     {
@@ -555,7 +554,7 @@ public final class FTPHelp
             }
         }
         
-        try 
+        try
         {
             v_UploadRet = this.upload(v_DataInput ,i_FileDataPacket.getDataByte().length ,i_FileDataPacket.getName() ,true);
         }
@@ -563,11 +562,11 @@ public final class FTPHelp
         {
             if ( v_DataInput != null )
             {
-                try 
+                try
                 {
                     v_DataInput.close();
-                } 
-                catch (Exception e) 
+                }
+                catch (Exception e)
                 {
                     // Nothing.
                 }
@@ -639,7 +638,7 @@ public final class FTPHelp
         
         v_Event.setActionType(1);
         
-        try 
+        try
         {
             if ( !Help.isNull(i_RemoteFullName) )
             {
@@ -654,7 +653,7 @@ public final class FTPHelp
             int     v_RSize  = 0;
             
             if ( i_IsAppend )
-            {                                              
+            {
                 v_Output = this.ftpClient.appendFileStream(new String(i_RemoteFullName.getBytes("GBK") ,"ISO-8859-1"));
             }
             else
@@ -674,7 +673,7 @@ public final class FTPHelp
                     
                     v_Event.setCompleteSize(v_FTPingSize);
                     v_IsContinue = this.fireFTPingListener(v_Event);
-                } 
+                }
             }
             else
             {
@@ -686,7 +685,7 @@ public final class FTPHelp
                     
                     v_Event.setCompleteSize(v_FTPingSize);
                     v_IsContinue = this.fireFTPingListener(v_Event);
-                } 
+                }
             }
             
             v_Output.flush();
@@ -701,7 +700,7 @@ public final class FTPHelp
             
 //          下面注解的代码，可直接上传文件，不用读写数据流。
 //          boolean v_Ret = this.ftpClient.storeFile(i_RemoteFullName ,v_Input);
-//          
+//
 //          if ( v_Ret )
 //          {
 //              System.out.println("upLoad is succeed.");
@@ -710,8 +709,8 @@ public final class FTPHelp
 //          {
 //              System.out.println("upload is faild.");
 //          }
-        } 
-        catch (Exception e) 
+        }
+        catch (Exception e)
         {
             e.printStackTrace();
             v_Event.setEndTime();
@@ -721,11 +720,11 @@ public final class FTPHelp
         {
             if ( v_Output != null )
             {
-                try 
+                try
                 {
                     v_Output.close();
-                } 
-                catch (Exception e) 
+                }
+                catch (Exception e)
                 {
                     // Nothing.
                 }
@@ -929,7 +928,7 @@ public final class FTPHelp
         Iterator<FTPListener> v_Iter       = this.ftpListeners.iterator();
         boolean               v_IsContinue = true;
 
-        while ( v_IsContinue && v_Iter.hasNext() ) 
+        while ( v_IsContinue && v_Iter.hasNext() )
         {
             v_IsContinue = v_Iter.next().ftpBefore(i_Event);
         }
@@ -947,9 +946,9 @@ public final class FTPHelp
     private boolean notifyFTPingListeners(FTPEvent i_Event)
     {
         Iterator<FTPListener> v_Iter       = this.ftpListeners.iterator();
-        boolean               v_IsContinue = true; 
+        boolean               v_IsContinue = true;
 
-        while ( v_IsContinue && v_Iter.hasNext() ) 
+        while ( v_IsContinue && v_Iter.hasNext() )
         {
             v_IsContinue = v_Iter.next().ftpProcess(i_Event);
         }
@@ -968,7 +967,7 @@ public final class FTPHelp
     {
         Iterator<FTPListener> v_Iter = this.ftpListeners.iterator();
 
-        while ( v_Iter.hasNext() ) 
+        while ( v_Iter.hasNext() )
         {
             v_Iter.next().ftpAfter(i_Event);
         }
@@ -976,14 +975,14 @@ public final class FTPHelp
     
     
     
-    public boolean isDataSafe() 
+    public boolean isDataSafe()
     {
         return dataSafe;
     }
 
 
 
-    public void setDataSafe(boolean dataSafe) 
+    public void setDataSafe(boolean dataSafe)
     {
         this.dataSafe = dataSafe;
     }
@@ -991,7 +990,7 @@ public final class FTPHelp
 
 
     @Override
-    protected void finalize() throws Throwable 
+    protected void finalize() throws Throwable
     {
         this.close();
         
@@ -1000,8 +999,6 @@ public final class FTPHelp
             this.ftpListeners.clear();
             this.ftpListeners = null;
         }
-        
-        super.finalize();
     }
     
 }

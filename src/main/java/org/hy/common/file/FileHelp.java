@@ -63,6 +63,7 @@ import org.hy.common.file.event.FileReadEvent;
 import org.hy.common.file.event.FileReadListener;
 import org.hy.common.file.event.UnCompressZipEvent;
 import org.hy.common.file.event.UnCompressZipListener;
+import org.hy.common.xml.log.Logger;
 
 import net.lingala.zip4j.model.UnzipParameters;
 import net.lingala.zip4j.model.ZipParameters;
@@ -114,6 +115,7 @@ import net.lingala.zip4j.util.Zip4jConstants;
  */
 public final class FileHelp
 {
+    private static final Logger                            $Logger = new Logger(FileHelp.class);
     
     /** 上传中 */
     public  static final int                               $Upload_GoOn       = 0;
@@ -3720,7 +3722,7 @@ public final class FileHelp
             // 设置编码方式
             i_Response.setContentType(i_ContentType);
             // 写明要下载的文件的大小
-            i_Response.setHeader("Content-Length" ,new Long(i_File.length()).toString());
+            i_Response.setHeader("Content-Length" ,i_File.length() + "");
             // 设置附加文件名。转码是为了防止文件名称中文时乱码的情况
             i_Response.setHeader("Content-Disposition" ,"attachment;filename=" + StringHelp.toCharEncoding(Help.NVL(i_FileName ,i_File.getName()) ,i_ContentType ,"ISO-8859-1"));
             i_Response.setStatus(HttpServletResponse.SC_OK);
@@ -5931,52 +5933,64 @@ public final class FileHelp
         }
         
         
-        
-        ZipFile        v_ZipFileObject = new ZipFile(v_ZipFile);
-        Enumeration<?> v_ZipEntries    = v_ZipFileObject.entries();
-        StringBuilder  v_Buffer        = new StringBuilder();
-        
-        
-        for ( ;v_ZipEntries.hasMoreElements(); )
+        ZipFile       v_ZipFileObject = null;
+        StringBuilder v_Buffer        = new StringBuilder();
+        try
         {
-            ZipEntry v_ZipEntry = (ZipEntry)v_ZipEntries.nextElement();
+            v_ZipFileObject = new ZipFile(v_ZipFile);
+            Enumeration<?> v_ZipEntries = v_ZipFileObject.entries();
             
-            if ( !v_ZipEntry.isDirectory() && i_ReadFileName.equalsIgnoreCase(v_ZipEntry.getName()) && v_ZipEntry.getSize() > 0 )
+            for ( ;v_ZipEntries.hasMoreElements(); )
             {
-                BufferedReader v_SourceInput = null;
-                try
+                ZipEntry v_ZipEntry = (ZipEntry)v_ZipEntries.nextElement();
+                
+                if ( !v_ZipEntry.isDirectory() && i_ReadFileName.equalsIgnoreCase(v_ZipEntry.getName()) && v_ZipEntry.getSize() > 0 )
                 {
-                    v_SourceInput = new BufferedReader(new InputStreamReader(v_ZipFileObject.getInputStream(v_ZipEntry) ,i_CharEncoding));
-                    String v_Line = "";
-                    while ( (v_Line = v_SourceInput.readLine()) != null )
-                    {
-                        v_Buffer.append(v_Line).append(Help.getSysLineSeparator());
-                    }
-                }
-                catch (Exception exce)
-                {
-                    throw new IOException(exce.getMessage());
-                }
-                finally
-                {
+                    BufferedReader v_SourceInput = null;
                     try
                     {
-                        v_SourceInput.close();
+                        v_SourceInput = new BufferedReader(new InputStreamReader(v_ZipFileObject.getInputStream(v_ZipEntry) ,i_CharEncoding));
+                        String v_Line = "";
+                        while ( (v_Line = v_SourceInput.readLine()) != null )
+                        {
+                            v_Buffer.append(v_Line).append(Help.getSysLineSeparator());
+                        }
                     }
                     catch (Exception exce)
                     {
-                        // Nothing.
+                        throw new IOException(exce.getMessage());
                     }
-                    
-                    v_SourceInput  = null;
+                    finally
+                    {
+                        try
+                        {
+                            v_SourceInput.close();
+                        }
+                        catch (Exception exce)
+                        {
+                            // Nothing.
+                        }
+                        
+                        v_SourceInput  = null;
+                    }
                 }
             }
+            
+            v_ZipEntries = null;
+            v_ZipFile    = null;
         }
-        
-        v_ZipEntries = null;
-        v_ZipFileObject.close();
-        v_ZipFileObject = null;
-        v_ZipFile       = null;
+        catch (Exception exce)
+        {
+            $Logger.error(exce);
+        }
+        finally
+        {
+            if ( v_ZipFileObject != null )
+            {
+                v_ZipFileObject.close();
+                v_ZipFileObject = null;
+            }
+        }
         
         return v_Buffer.toString();
     }
@@ -6693,68 +6707,82 @@ public final class FileHelp
         
         
         
-        ZipFile        v_XDFileObject  = new ZipFile(v_XDFile);
-        Enumeration<?> v_XDEntries     = v_XDFileObject.entries();
-        StringBuilder  v_Buffer        = new StringBuilder();
+        ZipFile       v_XDFileObject = null;
+        StringBuilder v_Buffer       = new StringBuilder();
         
-        
-        for ( ;v_XDEntries.hasMoreElements(); )
+        try
         {
-            ZipEntry v_XDEntry = (ZipEntry)v_XDEntries.nextElement();
+            v_XDFileObject = new ZipFile(v_XDFile);
+            Enumeration<?> v_XDEntries = v_XDFileObject.entries();
             
-            if ( !v_XDEntry.isDirectory() && i_ReadName.equalsIgnoreCase(v_XDEntry.getName()) && v_XDEntry.getSize() > 0 )
+            for ( ;v_XDEntries.hasMoreElements(); )
             {
-                InputStream v_SourceInput = v_XDFileObject.getInputStream(v_XDEntry);
-                byte []     v_ByteBuffer  = new byte[bufferSize];
-                long        v_MaxLen      = v_XDEntry.getSize();
-                long        v_ReadIndex   = 0;
+                ZipEntry v_XDEntry = (ZipEntry)v_XDEntries.nextElement();
                 
-                try
+                if ( !v_XDEntry.isDirectory() && i_ReadName.equalsIgnoreCase(v_XDEntry.getName()) && v_XDEntry.getSize() > 0 )
                 {
-                    while ( true )
-                    {
-                        if ( v_ReadIndex + bufferSize <= v_MaxLen )
-                        {
-                            v_SourceInput.read(v_ByteBuffer);
-                            v_Buffer.append(new String(ByteHelp.xorMV(v_ByteBuffer) ,i_CharEncoding));
-                            
-                            v_ReadIndex += bufferSize;
-                        }
-                        else
-                        {
-                            v_ByteBuffer = new byte[(int)(v_MaxLen - v_ReadIndex)];
-                            
-                            v_SourceInput.read(v_ByteBuffer);
-                            v_Buffer.append(new String(ByteHelp.xorMV(v_ByteBuffer) ,i_CharEncoding));
-                            
-                            break;
-                        }
-                    }
-                }
-                catch (Exception exce)
-                {
-                    throw new IOException(exce.getMessage());
-                }
-                finally
-                {
+                    InputStream v_SourceInput = v_XDFileObject.getInputStream(v_XDEntry);
+                    byte []     v_ByteBuffer  = new byte[bufferSize];
+                    long        v_MaxLen      = v_XDEntry.getSize();
+                    long        v_ReadIndex   = 0;
+                    
                     try
                     {
-                        v_SourceInput.close();
+                        while ( true )
+                        {
+                            if ( v_ReadIndex + bufferSize <= v_MaxLen )
+                            {
+                                v_SourceInput.read(v_ByteBuffer);
+                                v_Buffer.append(new String(ByteHelp.xorMV(v_ByteBuffer) ,i_CharEncoding));
+                                
+                                v_ReadIndex += bufferSize;
+                            }
+                            else
+                            {
+                                v_ByteBuffer = new byte[(int)(v_MaxLen - v_ReadIndex)];
+                                
+                                v_SourceInput.read(v_ByteBuffer);
+                                v_Buffer.append(new String(ByteHelp.xorMV(v_ByteBuffer) ,i_CharEncoding));
+                                
+                                break;
+                            }
+                        }
                     }
                     catch (Exception exce)
                     {
-                        // Nothing.
+                        throw new IOException(exce.getMessage());
                     }
-                    
-                    v_SourceInput  = null;
+                    finally
+                    {
+                        try
+                        {
+                            v_SourceInput.close();
+                        }
+                        catch (Exception exce)
+                        {
+                            // Nothing.
+                        }
+                        
+                        v_SourceInput  = null;
+                    }
                 }
             }
+            
+            v_XDEntries = null;
+            v_XDFile    = null;
         }
-        
-        v_XDEntries    = null;
-        v_XDFileObject.close();
-        v_XDFileObject = null;
-        v_XDFile       = null;
+        catch (Exception exce)
+        {
+            $Logger.error(exce);
+        }
+        finally
+        {
+            if ( v_XDFileObject != null )
+            {
+                v_XDFileObject.close();
+                v_XDFileObject = null;
+            }
+        }
         
         return v_Buffer.toString();
     }
@@ -6965,8 +6993,6 @@ public final class FileHelp
             this.unCompressZipListeners.clear();
             this.unCompressZipListeners = null;
         }
-        
-        super.finalize();
     }
     
 }
