@@ -117,7 +117,7 @@ public final class FTPHelp
             this.ftpClient.setConnectTimeout(              this.ftpInfo.getConnectTimeout());
             this.ftpClient.setControlKeepAliveReplyTimeout(this.ftpInfo.getControlKeepAliveReplyTimeoutDuration());
             this.ftpClient.setControlKeepAliveTimeout(     this.ftpInfo.getControlKeepAliveTimeoutDuration());
-            this.ftpClient.setDataTimeout(                 this.ftpInfo.getDataTimeout());
+            this.ftpClient.setDataTimeout(                 this.ftpInfo.getDataTimeoutMillis());
             
             this.ftpClient.connect(this.ftpInfo.getIp()   ,this.ftpInfo.getPort());
             this.ftpClient.login(  this.ftpInfo.getUser() ,this.ftpInfo.getPassword());
