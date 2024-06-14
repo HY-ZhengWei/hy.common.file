@@ -67,7 +67,9 @@ import org.hy.common.xml.log.Logger;
 
 import net.lingala.zip4j.model.UnzipParameters;
 import net.lingala.zip4j.model.ZipParameters;
-import net.lingala.zip4j.util.Zip4jConstants;
+import net.lingala.zip4j.model.enums.CompressionLevel;
+import net.lingala.zip4j.model.enums.CompressionMethod;
+import net.lingala.zip4j.model.enums.EncryptionMethod;
 
 
 
@@ -112,6 +114,8 @@ import net.lingala.zip4j.util.Zip4jConstants;
  *                             6.添加：将图片转成Base64字符，用于浏览器的显示
  *                             7.添加：为图片描边上色
  *           v13.0 2023-09-06  1.添加：扩大图片的画布大小（从中心点扩大）
+ *           v14.0 2024-06-14  1.添加：图片数据转二进制数据
+ *                             2.升级：Zip4j从1.x升级为2.x的版本
  */
 public final class FileHelp
 {
@@ -2665,6 +2669,44 @@ public final class FileHelp
         }
         
         return v_Output.toByteArray();
+    }
+    
+    
+    
+    /**
+     * 图片数据转二进制数据
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-06-14
+     * @version     v1.0
+     *
+     * @param i_ImageDatas  图片数据
+     * @param i_ImageType   图片类型。如 png
+     * @return
+     * @throws IOException
+     */
+    public static byte[] toBytes(BufferedImage i_ImageDatas ,String i_ImageType) throws IOException
+    {
+        ByteArrayOutputStream v_BytesOutput = new ByteArrayOutputStream();
+        try
+        {
+            ImageIO.write(i_ImageDatas, i_ImageType, v_BytesOutput);
+            v_BytesOutput.flush();
+            
+            return v_BytesOutput.toByteArray();
+        }
+        catch (IOException exce)
+        {
+            throw exce;
+        }
+        catch (Exception exce)
+        {
+            throw exce;
+        }
+        finally
+        {
+            v_BytesOutput.close();
+        }
     }
     
     
@@ -5999,7 +6041,7 @@ public final class FileHelp
     
     
     /**
-     * 创建Zip的压缩文件 (压缩级别为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * 创建Zip的压缩文件 (压缩级别为：CompressionLevel.NORMAL)
      * 
      * @author      ZhengWei(HY)
      * @createDate  2018-04-09
@@ -6017,7 +6059,7 @@ public final class FileHelp
     
     
     /**
-     * 创建Zip的压缩文件 (压缩级别为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * 创建Zip的压缩文件 (压缩级别为：CompressionLevel.NORMAL)
      * 
      * @author      ZhengWei(HY)
      * @createDate  2018-04-09
@@ -6030,7 +6072,7 @@ public final class FileHelp
      */
     public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName) throws IOException
     {
-        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,i_HaveRootName ,null ,Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,i_HaveRootName ,null ,CompressionLevel.NORMAL);
     }
     
     
@@ -6055,7 +6097,7 @@ public final class FileHelp
     
     
     /**
-     * 创建Zip的压缩文件 (压缩级别为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * 创建Zip的压缩文件 (压缩级别为：CompressionLevel.NORMAL)
      * 
      * @author      ZhengWei(HY)
      * @createDate  2018-04-09
@@ -6069,7 +6111,7 @@ public final class FileHelp
      */
     public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName ,String i_Password) throws IOException
     {
-        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,i_HaveRootName ,i_Password ,Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,i_HaveRootName ,i_Password ,CompressionLevel.NORMAL);
     }
     
     
@@ -6083,10 +6125,10 @@ public final class FileHelp
      * 
      * @param i_SaveZipFullName        保存Zip压缩文件全名称
      * @param i_ZipFile                要压缩的原文件或目录
-     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @param i_CompressionLevel       压缩级别(默认为：CompressionLevel.NORMAL)
      * @throws IOException
      */
-    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,int i_CompressionLevel) throws IOException
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,CompressionLevel i_CompressionLevel) throws IOException
     {
         this.createZip4j(i_SaveZipFullName ,i_ZipFile ,true ,i_CompressionLevel);
     }
@@ -6103,10 +6145,10 @@ public final class FileHelp
      * @param i_SaveZipFullName        保存Zip压缩文件全名称
      * @param i_ZipFile                要压缩的原文件或目录
      * @param i_HaveRootName           是否须要根目录节点
-     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @param i_CompressionLevel       压缩级别(默认为：CompressionLevel.NORMAL)
      * @throws IOException
      */
-    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName ,int i_CompressionLevel) throws IOException
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName ,CompressionLevel i_CompressionLevel) throws IOException
     {
         this.createZip4j(i_SaveZipFullName ,i_ZipFile ,i_HaveRootName ,null ,i_CompressionLevel);
     }
@@ -6123,10 +6165,10 @@ public final class FileHelp
      * @param i_SaveZipFullName        保存Zip压缩文件全名称
      * @param i_ZipFile                要压缩的原文件或目录
      * @param i_Password               加密密码
-     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @param i_CompressionLevel       压缩级别(默认为：CompressionLevel.NORMAL)
      * @throws IOException
      */
-    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,String i_Password ,int i_CompressionLevel) throws IOException
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,String i_Password ,CompressionLevel i_CompressionLevel) throws IOException
     {
         this.createZip4j(i_SaveZipFullName ,i_ZipFile ,true ,i_Password ,i_CompressionLevel);
     }
@@ -6144,10 +6186,10 @@ public final class FileHelp
      * @param i_ZipFile                要压缩的原文件或目录
      * @param i_HaveRootName           是否须要根目录节点
      * @param i_Password               加密密码
-     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @param i_CompressionLevel       压缩级别(默认为：CompressionLevel.NORMAL)
      * @throws IOException
      */
-    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName ,String i_Password ,int i_CompressionLevel) throws IOException
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile ,boolean i_HaveRootName ,String i_Password ,CompressionLevel i_CompressionLevel) throws IOException
     {
         if ( Help.isNull(i_ZipFile) )
         {
@@ -6175,10 +6217,11 @@ public final class FileHelp
      * @param i_ZipFile                要压缩的原文件或目录
      * @param i_HaveRootName           是否须要根目录节点
      * @param i_Password               加密密码
-     * @param i_CompressionLevel       压缩级别(默认为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * @param i_CompressionLevel       压缩级别(默认为：CompressionLevel.NORMAL)
      * @throws IOException
      */
-    public void createZip4j(File i_SaveZipFile ,File i_ZipFile ,boolean i_HaveRootName ,String i_Password ,int i_CompressionLevel) throws IOException
+    @SuppressWarnings("resource")
+    public void createZip4j(File i_SaveZipFile ,File i_ZipFile ,boolean i_HaveRootName ,String i_Password ,CompressionLevel i_CompressionLevel) throws IOException
     {
         if ( !i_ZipFile.exists() )
         {
@@ -6204,20 +6247,27 @@ public final class FileHelp
         
         
         ZipParameters v_ZipParams = new ZipParameters();
-        v_ZipParams.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);           // 压缩方式
+        v_ZipParams.setCompressionMethod(CompressionMethod.DEFLATE);             // 压缩方式
         v_ZipParams.setCompressionLevel( i_CompressionLevel);                    // 压缩级别
         if ( i_Password != null && !"".equals(i_Password) )
         {
             v_ZipParams.setEncryptFiles(true);
-            v_ZipParams.setEncryptionMethod(Zip4jConstants.ENC_METHOD_STANDARD); // 加密方式
-            v_ZipParams.setPassword(i_Password.toCharArray());
+            v_ZipParams.setEncryptionMethod(EncryptionMethod.AES); // 加密方式
         }
         
         
         try
         {
-            net.lingala.zip4j.core.ZipFile v_ZipWriter = new net.lingala.zip4j.core.ZipFile(i_SaveZipFile);
-            v_ZipWriter.setFileNameCharset(this.charEncoding.toUpperCase().replace("UTF-8" ,"UTF8"));
+            net.lingala.zip4j.ZipFile v_ZipWriter = null;
+            if ( i_Password != null && !"".equals(i_Password) )
+            {
+                v_ZipWriter = new net.lingala.zip4j.ZipFile(i_SaveZipFile ,i_Password.toCharArray());
+            }
+            else
+            {
+                v_ZipWriter = new net.lingala.zip4j.ZipFile(i_SaveZipFile);
+            }
+            v_ZipWriter.setCharset(Charset.forName(this.charEncoding));
             
             if ( i_ZipFile.isDirectory() )
             {
@@ -6342,12 +6392,11 @@ public final class FileHelp
             v_UnCompressDir.mkdirs();
         }
         
-        
-        net.lingala.zip4j.core.ZipFile v_ZipFile = null;
+        net.lingala.zip4j.ZipFile v_ZipFile = null;
         try
         {
-            v_ZipFile = new net.lingala.zip4j.core.ZipFile(i_ZipFile);
-            v_ZipFile.setFileNameCharset(this.charEncoding.toUpperCase().replace("UTF-8" ,"UTF8"));
+            v_ZipFile = new net.lingala.zip4j.ZipFile(i_ZipFile);
+            v_ZipFile.setCharset(Charset.forName(this.charEncoding));
         }
         catch (Exception exce)
         {
@@ -6377,12 +6426,15 @@ public final class FileHelp
             
             UnzipParameters v_UnzipParameters = new UnzipParameters();
             
+            /*
+            下面是1.x版本的，2.x版本没有下面的参数了
             v_UnzipParameters.setIgnoreAllFileAttributes(    false);
             v_UnzipParameters.setIgnoreDateTimeAttributes(   false);
             v_UnzipParameters.setIgnoreArchiveFileAttribute( false);
             v_UnzipParameters.setIgnoreHiddenFileAttribute(  false);
             v_UnzipParameters.setIgnoreReadOnlyFileAttribute(false);
             v_UnzipParameters.setIgnoreSystemFileAttribute(  false);
+            */
             
             v_ZipFile.extractAll(i_UnCompressDir.trim() ,v_UnzipParameters);
         }
