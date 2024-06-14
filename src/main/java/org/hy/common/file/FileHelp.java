@@ -6379,6 +6379,7 @@ public final class FileHelp
      * @param i_Passwd         加密密码
      * @throws IOException
      */
+    @SuppressWarnings("resource")
     public void UnCompressZip4j(File i_ZipFile ,String i_UnCompressDir ,String i_Passwd) throws IOException
     {
         if ( Help.isNull(i_UnCompressDir) )
