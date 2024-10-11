@@ -60,6 +60,8 @@ import org.hy.common.xml.log.Logger;
  *           v7.0  2022-04-01  添加1：连接超时时长 和 读取数据的超时时长（建议人：王力）
  *           v8.0  2023-11-08  添加1：Get请求也允许Body体发数据
  *                             添加2：返回真实完整的请求URL
+ *           v9.0  2024-10-10  添加1：整合request()方法的冗余代码
+ *                             添加2：支持自定义的请求头的传参
  */
 public final class XHttp extends SerializableDef implements XJavaID
 {
@@ -248,6 +250,37 @@ public final class XHttp extends SerializableDef implements XJavaID
      * 发起Http请求 -- 对象参数
      * 
      * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     * 
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(Object i_UrlData ,Map<String ,?> i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
+        return this.request(i_UrlData ,this.getParamsUrl(i_BodyData) ,i_HeadDatas);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 对象参数
+     * 
+     * @author      ZhengWei(HY)
      * @createDate  2013-08-06
      * @version     v1.0
      *              v2.0  2020-12-22  添加：请求体中的独立数据与动态请求数据共存的请求处理功能
@@ -277,10 +310,54 @@ public final class XHttp extends SerializableDef implements XJavaID
         }
         catch (Exception exce)
         {
-            exce.printStackTrace();
+            $Logger.error(exce);
+            return new Return<Object>().paramStr("").set(false).exception(exce);
         }
         
         return this.request(i_UrlData ,v_BodyData);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 对象参数
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     *                      
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(Object i_UrlData ,Object i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
+        String v_BodyData = "";
+        
+        try
+        {
+            v_BodyData = this.getParamsUrl(i_BodyData);
+        }
+        catch (Exception exce)
+        {
+            $Logger.error(exce);
+            return new Return<Object>().paramStr("").set(false).exception(exce);
+        }
+        
+        return this.request(i_UrlData ,v_BodyData ,i_HeadDatas);
     }
     
     
@@ -310,295 +387,54 @@ public final class XHttp extends SerializableDef implements XJavaID
      */
     public Return<?> request(Object i_UrlData ,String i_BodyData)
     {
-        if ( Help.isNull(this.getIp()) )
-        {
-            throw new NullPointerException("XHttp ip is null.");
-        }
-        
-        Return<Object>    v_Ret        = new Return<Object>().paramStr("");
-        URL               v_URL        = null;
-        HttpURLConnection v_URLConn    = null;
-        OutputStream      v_URLOut     = null;
-        InputStream       v_URLInput   = null;
-        BufferedReader    v_Reader     = null;
-        StringBuilder     v_RespBuffer = new StringBuilder();
-        
         try
         {
-            String v_ParamsUrl = this.getParamsUrl(i_UrlData);
-            
-            if ( this.requestType == $Request_Type_Post )
-            {
-                String v_URLParamStr = this.getUrl();
-                
-                if ( !Help.isNull(i_BodyData) )
-                {
-                    if ( this.isToUnicode )
-                    {
-                        v_ParamsUrl = StringHelp.escape_toUnicode(v_ParamsUrl ,$NotInString);
-                    }
-                    else if ( this.isEncode )
-                    {
-                        v_ParamsUrl = StringHelp.encode(v_ParamsUrl ,this.getCharset() ,$NotInString);
-                    }
-                    
-                    if ( this.haveQuestionMark && v_URLParamStr.indexOf('?') < 0 )
-                    {
-                        v_URLParamStr = v_URLParamStr + "?";
-                    }
-                }
-                
-                if ( this.getPort() == 0 )
-                {
-                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
-                    v_URL = new URL(v_Ret.getParamObj().toString());
-                }
-                else
-                {
-                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
-                    v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
-                }
-                
-                if ( this.proxy != null )
-                {
-                    v_URLConn = (HttpURLConnection)v_URL.openConnection(this.proxy);
-                }
-                else
-                {
-                    v_URLConn = (HttpURLConnection)v_URL.openConnection();
-                }
-                
-                if ( "https".equals(this.getProtocol()) )
-                {
-                    ((HttpsURLConnection)v_URLConn).setSSLSocketFactory(getSSLContext().getSocketFactory());
-                    ((HttpsURLConnection)v_URLConn).setHostnameVerifier(new TrustAnyHostnameVerifier());
-                }
-                
-                v_URLConn.setUseCaches(false);
-                v_URLConn.setDoOutput(true);
-                v_URLConn.setRequestMethod("POST");
-                v_URLConn.setRequestProperty("Content-Type" ,this.getContentType() + "; charset=" + this.getCharset());
-                v_URLConn.setRequestProperty("User-Agent"   ,"Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
-                v_URLConn.setRequestProperty("Cookie"       ,this.cookie.toString());
-                v_URLConn.setConnectTimeout(this.connectTimeout);
-                v_URLConn.setReadTimeout(this.readTimeout);
-                
-                v_URLOut = v_URLConn.getOutputStream();
-                if ( v_URLOut != null )
-                {
-                    try
-                    {
-                        if ( !Help.isNull(i_BodyData) )
-                        {
-                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
-                        }
-                        else
-                        {
-                            v_URLOut.write(v_ParamsUrl.getBytes(this.getCharset()));
-                        }
-                    }
-                    catch (Exception exce)
-                    {
-                        $Logger.error(exce);
-                        return v_Ret.set(false).exception(exce);
-                    }
-                    finally
-                    {
-                        try
-                        {
-                            v_URLOut.flush();
-                        }
-                        catch (Exception exce)
-                        {
-                            $Logger.error(exce);
-                            return v_Ret.set(false).exception(exce);
-                        }
-                        try
-                        {
-                            v_URLOut.close();
-                        }
-                        catch (Exception exce)
-                        {
-                            $Logger.error(exce);
-                            return v_Ret.set(false).exception(exce);
-                        }
-                    }
-                    v_URLOut = null;
-                }
-            }
-            else
-            {
-                if ( this.isToUnicode )
-                {
-                    v_ParamsUrl = StringHelp.escape_toUnicode(v_ParamsUrl ,$NotInString);
-                }
-                else if ( this.isEncode )
-                {
-                    v_ParamsUrl = StringHelp.encode(v_ParamsUrl ,this.getCharset() ,$NotInString);
-                }
-                
-                String v_URLParamStr = this.getUrl();
-                if ( this.haveQuestionMark && v_URLParamStr.indexOf('?') < 0 )
-                {
-                    v_URLParamStr = v_URLParamStr + "?";
-                }
-                
-                if ( this.getPort() == 0 )
-                {
-                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + v_ParamsUrl);
-                    v_URL = new URL(v_Ret.paramObj.toString());
-                }
-                else
-                {
-                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + v_ParamsUrl);
-                    v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + v_ParamsUrl);
-                }
-                
-                if ( this.proxy != null )
-                {
-                    v_URLConn = (HttpURLConnection)v_URL.openConnection(this.proxy);
-                }
-                else
-                {
-                    v_URLConn = (HttpURLConnection)v_URL.openConnection();
-                }
-                
-                if ( "https".equals(this.getProtocol()) )
-                {
-                    ((HttpsURLConnection)v_URLConn).setSSLSocketFactory(getSSLContext().getSocketFactory());
-                    ((HttpsURLConnection)v_URLConn).setHostnameVerifier(new TrustAnyHostnameVerifier());
-                }
-                
-                v_URLConn.setUseCaches(false);
-                v_URLConn.setRequestMethod("GET");
-                v_URLConn.setRequestProperty("Content-Type" ,this.getContentType() + "; charset=" + this.getCharset());
-                v_URLConn.setRequestProperty("User-Agent"   ,"Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
-                v_URLConn.setRequestProperty("Cookie"       ,this.cookie.toString());
-                v_URLConn.setConnectTimeout(this.connectTimeout);
-                v_URLConn.setReadTimeout(this.readTimeout);
-                
-                if ( !Help.isNull(i_BodyData) )
-                {
-                    v_URLConn.setDoOutput(true);
-                    v_URLOut = v_URLConn.getOutputStream();
-                    if ( v_URLOut != null )
-                    {
-                        try
-                        {
-                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
-                        }
-                        catch (Exception exce)
-                        {
-                            $Logger.error(exce);
-                            return v_Ret.set(false).exception(exce);
-                        }
-                        finally
-                        {
-                            try
-                            {
-                                v_URLOut.flush();
-                            }
-                            catch (Exception exce)
-                            {
-                                $Logger.error(exce);
-                                return v_Ret.set(false).exception(exce);
-                            }
-                            try
-                            {
-                                v_URLOut.close();
-                            }
-                            catch (Exception exce)
-                            {
-                                $Logger.error(exce);
-                                return v_Ret.set(false).exception(exce);
-                            }
-                        }
-                        v_URLOut = null;
-                    }
-                }
-                
-                // 获取GET方式下，真实的客户端SessionID Add 2015-03-04
-                String v_SessionID = "";
-                String v_Key       = "";
-                for (int v_KeyIndex=1; (v_Key = v_URLConn.getHeaderFieldKey(v_KeyIndex)) != null; v_KeyIndex++)
-                {
-                    if ( v_Key.equalsIgnoreCase("set-cookie") )
-                    {
-                        String v_CookieVal = v_URLConn.getHeaderField(v_KeyIndex);
-                        v_CookieVal = v_CookieVal.substring(0 ,v_CookieVal.indexOf(';') > -1 ? v_CookieVal.indexOf(';') : v_CookieVal.length() - 1);
-                        v_SessionID = v_SessionID + v_CookieVal + ";";
-                        
-                        String [] v_CookieArr = v_CookieVal.split("=");
-                        this.cookie.put(v_CookieArr[0] ,v_CookieArr[1]);
-                    }
-                }
-            }
-            
-            
-            v_URLInput = v_URLConn.getInputStream();
-            v_Reader   = new BufferedReader(new InputStreamReader(v_URLInput ,this.getCharset()));
-            String v_LineData = "";
-            
-            while ( (v_LineData = v_Reader.readLine()) != null )
-            {
-                v_RespBuffer.append(v_LineData);
-            }
+            return this.request_core(this.getParamsUrl(i_UrlData) ,i_BodyData ,null);
         }
         catch (Exception exce)
         {
             $Logger.error(exce);
-            return v_Ret.set(false).exception(exce);
+            return new Return<Object>().paramStr("").set(false).exception(exce);
         }
-        finally
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 对象参数
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     *                      
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(Object i_UrlData ,String i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
+        try
         {
-            if ( v_URLOut != null )
-            {
-                try
-                {
-                    v_URLOut.flush();
-                    v_URLOut.close();
-                }
-                catch (IOException exce)
-                {
-                    // Nothing.
-                }
-                
-                v_URLOut = null;
-            }
-            
-            if ( v_Reader != null )
-            {
-                try
-                {
-                    v_Reader.close();
-                }
-                catch (IOException exce)
-                {
-                    // Nothing.
-                }
-                
-                v_Reader = null;
-            }
-            
-            if ( v_URLInput != null )
-            {
-                try
-                {
-                    v_URLInput.close();
-                }
-                catch (IOException exce)
-                {
-                    
-                }
-                
-                v_URLInput = null;
-            }
-            
-            v_URLConn = null;
-            v_URL     = null;
+            return this.request_core(this.getParamsUrl(i_UrlData) ,i_BodyData ,i_HeadDatas);
         }
-
-        return v_Ret.paramStr(v_RespBuffer.toString().trim()).set(true);
+        catch (Exception exce)
+        {
+            $Logger.error(exce);
+            return new Return<Object>().paramStr("").set(false).exception(exce);
+        }
     }
     
     
@@ -649,7 +485,7 @@ public final class XHttp extends SerializableDef implements XJavaID
      *          Return.exception 保存异常信息
      * @return
      */
-    public Return<?> request(Map<String ,?> i_UrlData ,Map<String ,?>  i_BodyData)
+    public Return<?> request(Map<String ,?> i_UrlData ,Map<String ,?> i_BodyData)
     {
         return this.request(i_UrlData ,this.getParamsUrl(i_BodyData));
     }
@@ -660,7 +496,38 @@ public final class XHttp extends SerializableDef implements XJavaID
      * 发起Http请求 -- 集合参数
      * 
      * @author      ZhengWei(HY)
-     * @createDate  020-12-22
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      1. 当为Get请求时，表示请求URL的动态请求参数
+     *                      2. 当为Post请求时，表示请求体中的请求数据
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     *                      
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(Map<String ,?> i_UrlData ,Map<String ,?> i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
+        return this.request(i_UrlData ,this.getParamsUrl(i_BodyData) ,i_HeadDatas);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 集合参数
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2020-12-22
      * @version     v1.0
      *
      * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
@@ -688,10 +555,54 @@ public final class XHttp extends SerializableDef implements XJavaID
         }
         catch (Exception exce)
         {
-            exce.printStackTrace();
+            $Logger.error(exce);
+            return new Return<Object>().paramStr("").set(false).exception(exce);
         }
         
         return this.request(i_UrlData ,v_BodyData);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 集合参数
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     *                      
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(Map<String ,?> i_UrlData ,Object i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
+        String v_BodyData = "";
+        
+        try
+        {
+            v_BodyData = this.getParamsUrl(i_BodyData);
+        }
+        catch (Exception exce)
+        {
+            $Logger.error(exce);
+            return new Return<Object>().paramStr("").set(false).exception(exce);
+        }
+        
+        return this.request(i_UrlData ,v_BodyData ,i_HeadDatas);
     }
     
     
@@ -721,6 +632,332 @@ public final class XHttp extends SerializableDef implements XJavaID
      */
     public Return<?> request(Map<String ,?> i_UrlData ,String i_BodyData)
     {
+        return this.request_core(this.getParamsUrl(i_UrlData) ,i_BodyData ,null);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 集合参数
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     *                      
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(Map<String ,?> i_UrlData ,String i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
+        return this.request_core(this.getParamsUrl(i_UrlData) ,i_BodyData ,i_HeadDatas);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 参数字符串
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2013-08-06
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      这个字符串已被外界拼接好了。
+     *                      1. 当为Get请求时，表示请求URL的动态请求参加
+     *                      2. 当为Post请求时，表示请求体中的请求数据
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(String i_UrlData)
+    {
+        return this.request(i_UrlData ,(String)null);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 参数字符串
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2020-12-22
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      这个字符串已被外界拼接好了。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(String i_UrlData ,Map<String ,?> i_BodyData)
+    {
+        return this.request(i_UrlData ,this.getParamsUrl(i_BodyData));
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 参数字符串
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      这个字符串已被外界拼接好了。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     *                      
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(String i_UrlData ,Map<String ,?> i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
+        return this.request(i_UrlData ,this.getParamsUrl(i_BodyData) ,i_HeadDatas);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 参数字符串
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2020-12-22
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      这个字符串已被外界拼接好了。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(String i_UrlData ,Object i_BodyData)
+    {
+        String v_BodyData = "";
+        
+        try
+        {
+            v_BodyData = this.getParamsUrl(i_BodyData);
+        }
+        catch (Exception exce)
+        {
+            $Logger.error(exce);
+            return new Return<Object>().paramStr("").set(false).exception(exce);
+        }
+        
+        return this.request(i_UrlData ,v_BodyData);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 参数字符串
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      这个字符串已被外界拼接好了。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     *                      
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(String i_UrlData ,Object i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
+        String v_BodyData = "";
+        
+        try
+        {
+            v_BodyData = this.getParamsUrl(i_BodyData);
+        }
+        catch (Exception exce)
+        {
+            $Logger.error(exce);
+            return new Return<Object>().paramStr("").set(false).exception(exce);
+        }
+        
+        return this.request(i_UrlData ,v_BodyData ,i_HeadDatas);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 参数字符串
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2013-08-06
+     * @version     v1.0
+     *              v2.0  2020-12-22  添加：请求体中的独立数据与动态请求数据共存的请求处理功能
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      这个字符串已被外界拼接好了。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(String i_UrlData ,String i_BodyData)
+    {
+        return this.request_core(i_UrlData ,i_BodyData ,null);
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 参数字符串
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     * 
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      这个字符串已被外界拼接好了。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     *                      
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    public Return<?> request(String i_UrlData ,String i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
+        return this.request_core(i_UrlData ,i_BodyData ,i_HeadDatas);
+    }
+    
+    
+    
+    /**
+     * 设置请求头信息
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param io_URLConn   连接对象
+     * @param i_HeadDatas  请求头参数
+     */
+    private void setHeadDatas(HttpURLConnection io_URLConn ,Map<String ,String> i_HeadDatas)
+    {
+        if ( Help.isNull(i_HeadDatas) )
+        {
+            return;
+        }
+        else
+        {
+            for (Map.Entry<String ,String> v_Item : i_HeadDatas.entrySet())
+            {
+                io_URLConn.setRequestProperty(v_Item.getKey() ,v_Item.getValue());
+            }
+        }
+    }
+    
+    
+    
+    /**
+     * 发起Http请求 -- 参数字符串
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2024-10-10
+     * @version     v1.0
+     *
+     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
+     *                      这个字符串已被外界拼接好了。
+     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
+     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
+     * 
+     * @param   i_BodyData  请求体中的数据
+     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
+     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
+     *                      3. 只用于Post请求
+     *                      
+     * @param   i_HeadDatas 请求头数据。Map.key为请求头参数名称，Map.value为请求参数值
+     * 
+     * @return  返回是否请求成功。
+     *          Return.paramObj  真实完整的请求URL
+     *          Return.paramStr  保存响应信息
+     *          Return.exception 保存异常信息
+     * @return
+     */
+    private Return<?> request_core(String i_UrlData ,String i_BodyData ,Map<String ,String> i_HeadDatas)
+    {
         if ( Help.isNull(this.getIp()) )
         {
             throw new NullPointerException("XHttp ip is null.");
@@ -736,7 +973,7 @@ public final class XHttp extends SerializableDef implements XJavaID
         
         try
         {
-            String v_ParamsUrl = this.getParamsUrl(i_UrlData);
+            String v_ParamsUrl = i_UrlData.trim();
             
             if ( this.requestType == $Request_Type_Post )
             {
@@ -796,10 +1033,11 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLConn.setDoOutput(true);
                 v_URLConn.setRequestMethod("POST");
                 v_URLConn.setRequestProperty("Content-Type" ,this.getContentType() + "; charset=" + this.getCharset());
-                v_URLConn.setRequestProperty("User-Agent"   ,"Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
+                v_URLConn.setRequestProperty("User-Agent"   ,"Mozilla/5.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
                 v_URLConn.setRequestProperty("Cookie"       ,this.cookie.toString());
                 v_URLConn.setConnectTimeout(this.connectTimeout);
                 v_URLConn.setReadTimeout(this.readTimeout);
+                this.setHeadDatas(v_URLConn ,i_HeadDatas);
                 
                 v_URLOut = v_URLConn.getOutputStream();
                 if ( v_URLOut != null )
@@ -897,431 +1135,11 @@ public final class XHttp extends SerializableDef implements XJavaID
                 v_URLConn.setUseCaches(false);
                 v_URLConn.setRequestMethod("GET");
                 v_URLConn.setRequestProperty("Content-Type" ,this.getContentType() + "; charset=" + this.getCharset());
-                v_URLConn.setRequestProperty("User-Agent"   ,"Mozilla/5.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
-                v_URLConn.setRequestProperty("Cookie"       ,this.cookie.toString());
-                v_URLConn.setConnectTimeout(this.connectTimeout);
-                v_URLConn.setReadTimeout(this.readTimeout);
-                
-                if ( !Help.isNull(i_BodyData) )
-                {
-                    v_URLConn.setDoOutput(true);
-                    v_URLOut = v_URLConn.getOutputStream();
-                    if ( v_URLOut != null )
-                    {
-                        try
-                        {
-                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
-                        }
-                        catch (Exception exce)
-                        {
-                            $Logger.error(exce);
-                            return v_Ret.set(false).exception(exce);
-                        }
-                        finally
-                        {
-                            try
-                            {
-                                v_URLOut.flush();
-                            }
-                            catch (Exception exce)
-                            {
-                                $Logger.error(exce);
-                                return v_Ret.set(false).exception(exce);
-                            }
-                            try
-                            {
-                                v_URLOut.close();
-                            }
-                            catch (Exception exce)
-                            {
-                                $Logger.error(exce);
-                                return v_Ret.set(false).exception(exce);
-                            }
-                        }
-                        v_URLOut = null;
-                    }
-                }
-                
-                // 获取GET方式下，真实的客户端SessionID Add 2015-03-04
-                String v_SessionID = "";
-                String v_Key       = "";
-                for (int v_KeyIndex=1; (v_Key = v_URLConn.getHeaderFieldKey(v_KeyIndex)) != null; v_KeyIndex++)
-                {
-                    if ( v_Key.equalsIgnoreCase("set-cookie") )
-                    {
-                        String v_CookieVal = v_URLConn.getHeaderField(v_KeyIndex);
-                        v_CookieVal = v_CookieVal.substring(0 ,v_CookieVal.indexOf(';') > -1 ? v_CookieVal.indexOf(';') : v_CookieVal.length() - 1);
-                        v_SessionID = v_SessionID + v_CookieVal + ";";
-                        
-                        String [] v_CookieArr = v_CookieVal.split("=");
-                        this.cookie.put(v_CookieArr[0] ,v_CookieArr[1]);
-                    }
-                }
-            }
-            
-            v_URLInput = v_URLConn.getInputStream();
-            v_Reader   = new BufferedReader(new InputStreamReader(v_URLInput ,this.getCharset()));
-            String v_LineData = "";
-            
-            while ( (v_LineData = v_Reader.readLine()) != null )
-            {
-                v_RespBuffer.append(v_LineData);
-            }
-        }
-        catch (Exception exce)
-        {
-            $Logger.error(exce);
-            return v_Ret.set(false).exception(exce);
-        }
-        finally
-        {
-            if ( v_URLOut != null )
-            {
-                try
-                {
-                    v_URLOut.flush();
-                    v_URLOut.close();
-                }
-                catch (IOException exce)
-                {
-                    // Nothing.
-                }
-                
-                v_URLOut = null;
-            }
-            
-            if ( v_Reader != null )
-            {
-                try
-                {
-                    v_Reader.close();
-                }
-                catch (IOException exce)
-                {
-                    // Nothing.
-                }
-                
-                v_Reader = null;
-            }
-            
-            if ( v_URLInput != null )
-            {
-                try
-                {
-                    v_URLInput.close();
-                }
-                catch (IOException exce)
-                {
-                    
-                }
-                
-                v_URLInput = null;
-            }
-            
-            v_URLConn = null;
-            v_URL     = null;
-        }
-        
-        return v_Ret.paramStr(v_RespBuffer.toString().trim()).set(true);
-    }
-    
-    
-    
-    /**
-     * 发起Http请求 -- 参数字符串
-     * 
-     * @author      ZhengWei(HY)
-     * @createDate  2013-08-06
-     * @version     v1.0
-     *
-     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
-     *                      这个字符串已被外界拼接好了。
-     *                      1. 当为Get请求时，表示请求URL的动态请求参加
-     *                      2. 当为Post请求时，表示请求体中的请求数据
-     * 
-     * @return  返回是否请求成功。
-     *          Return.paramObj  真实完整的请求URL
-     *          Return.paramStr  保存响应信息
-     *          Return.exception 保存异常信息
-     * @return
-     */
-    public Return<?> request(String i_UrlData)
-    {
-        return this.request(i_UrlData ,(String)null);
-    }
-    
-    
-    
-    /**
-     * 发起Http请求 -- 参数字符串
-     * 
-     * @author      ZhengWei(HY)
-     * @createDate  020-12-22
-     * @version     v1.0
-     *
-     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
-     *                      这个字符串已被外界拼接好了。
-     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
-     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
-     * 
-     * @param   i_BodyData  请求体中的数据
-     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
-     *                      3. 只用于Post请求
-     * 
-     * @return  返回是否请求成功。
-     *          Return.paramObj  真实完整的请求URL
-     *          Return.paramStr  保存响应信息
-     *          Return.exception 保存异常信息
-     * @return
-     */
-    public Return<?> request(String i_UrlData ,Map<String ,?> i_BodyData)
-    {
-        return this.request(i_UrlData ,this.getParamsUrl(i_BodyData));
-    }
-    
-    
-    
-    /**
-     * 发起Http请求 -- 参数字符串
-     * 
-     * @author      ZhengWei(HY)
-     * @createDate  020-12-22
-     * @version     v1.0
-     *
-     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
-     *                      这个字符串已被外界拼接好了。
-     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
-     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参加
-     * 
-     * @param   i_BodyData  请求体中的数据
-     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
-     *                      3. 只用于Post请求
-     * 
-     * @return  返回是否请求成功。
-     *          Return.paramObj  真实完整的请求URL
-     *          Return.paramStr  保存响应信息
-     *          Return.exception 保存异常信息
-     * @return
-     */
-    public Return<?> request(String i_UrlData ,Object i_BodyData)
-    {
-        String v_BodyData = "";
-        
-        try
-        {
-            v_BodyData = this.getParamsUrl(i_BodyData);
-        }
-        catch (Exception exce)
-        {
-            exce.printStackTrace();
-        }
-        
-        return this.request(i_UrlData ,v_BodyData);
-    }
-    
-    
-    
-    /**
-     * 发起Http请求 -- 参数字符串
-     * 
-     * @author      ZhengWei(HY)
-     * @createDate  2013-08-06
-     * @version     v1.0
-     *              v2.0  2020-12-22  添加：请求体中的独立数据与动态请求数据共存的请求处理功能
-     *
-     * @param   i_UrlData   请求URL路径中的参数，即普通的请求参数。
-     *                      这个字符串已被外界拼接好了。
-     *                      1. 当i_BodyData为空时，请求URL的参加不追加 i_UrlData
-     *                      2. 当i_BodyData有值时，请求URL的参加追加   i_UrlData为新的请求参数
-     * 
-     * @param   i_BodyData  请求体中的数据
-     *                      1. 当i_BodyData为空时，请求体中的数据使用 i_UrlData
-     *                      2. 当i_BodyData有值时，请求体中的数据使用 i_BodyData
-     *                      3. 只用于Post请求
-     * 
-     * @return  返回是否请求成功。
-     *          Return.paramObj  真实完整的请求URL
-     *          Return.paramStr  保存响应信息
-     *          Return.exception 保存异常信息
-     * @return
-     */
-    public Return<?> request(String i_UrlData ,String i_BodyData)
-    {
-        if ( Help.isNull(this.getIp()) )
-        {
-            throw new NullPointerException("XHttp ip is null.");
-        }
-        
-        Return<Object>    v_Ret        = new Return<Object>().paramStr("");
-        URL               v_URL        = null;
-        HttpURLConnection v_URLConn    = null;
-        OutputStream      v_URLOut     = null;
-        InputStream       v_URLInput   = null;
-        BufferedReader    v_Reader     = null;
-        StringBuilder     v_RespBuffer = new StringBuilder();
-        
-        try
-        {
-            String v_ParamsUrl = i_UrlData.trim();
-            
-            if ( this.requestType == $Request_Type_Post )
-            {
-                String v_URLParamStr = this.getUrl();
-                
-                if ( !Help.isNull(i_BodyData) )
-                {
-                    if ( this.isToUnicode )
-                    {
-                        v_ParamsUrl = StringHelp.escape_toUnicode(v_ParamsUrl ,$NotInString);
-                    }
-                    else if ( this.isEncode )
-                    {
-                        v_ParamsUrl = StringHelp.encode(v_ParamsUrl ,this.getCharset() ,$NotInString);
-                    }
-                    
-                    if ( this.haveQuestionMark && v_URLParamStr.indexOf('?') < 0 )
-                    {
-                        v_URLParamStr = v_URLParamStr + "?";
-                    }
-                    else
-                    {
-                        if ( !Help.isNull(v_ParamsUrl) )
-                        {
-                            v_ParamsUrl = "&" + v_ParamsUrl;
-                        }
-                    }
-                }
-                
-                if ( this.getPort() == 0 )
-                {
-                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
-                    v_URL = new URL(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
-                }
-                else
-                {
-                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
-                    v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + (!Help.isNull(i_BodyData) ? v_ParamsUrl : ""));
-                }
-                
-                if ( this.proxy != null )
-                {
-                    v_URLConn = (HttpURLConnection)v_URL.openConnection(this.proxy);
-                }
-                else
-                {
-                    v_URLConn = (HttpURLConnection)v_URL.openConnection();
-                }
-                
-                if ( "https".equals(this.getProtocol()) )
-                {
-                    ((HttpsURLConnection)v_URLConn).setSSLSocketFactory(getSSLContext().getSocketFactory());
-                    ((HttpsURLConnection)v_URLConn).setHostnameVerifier(new TrustAnyHostnameVerifier());
-                }
-                
-                v_URLConn.setUseCaches(false);
-                v_URLConn.setDoOutput(true);
-                v_URLConn.setRequestMethod("POST");
-                v_URLConn.setRequestProperty("Content-Type" ,this.getContentType() + "; charset=" + this.getCharset());
                 v_URLConn.setRequestProperty("User-Agent"   ,"Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
                 v_URLConn.setRequestProperty("Cookie"       ,this.cookie.toString());
                 v_URLConn.setConnectTimeout(this.connectTimeout);
                 v_URLConn.setReadTimeout(this.readTimeout);
-                
-                v_URLOut = v_URLConn.getOutputStream();
-                if ( v_URLOut != null )
-                {
-                    try
-                    {
-                        if ( !Help.isNull(i_BodyData) )
-                        {
-                            v_URLOut.write(i_BodyData.getBytes(this.getCharset()));
-                        }
-                        else
-                        {
-                            v_URLOut.write(v_ParamsUrl.getBytes(this.getCharset()));
-                        }
-                    }
-                    catch (Exception exce)
-                    {
-                        $Logger.error(exce);
-                        return v_Ret.set(false).exception(exce);
-                    }
-                    finally
-                    {
-                        try
-                        {
-                            v_URLOut.flush();
-                        }
-                        catch (Exception exce)
-                        {
-                            $Logger.error(exce);
-                            return v_Ret.set(false).exception(exce);
-                        }
-                        try
-                        {
-                            v_URLOut.close();
-                        }
-                        catch (Exception exce)
-                        {
-                            $Logger.error(exce);
-                            return v_Ret.set(false).exception(exce);
-                        }
-                    }
-                    v_URLOut = null;
-                }
-            }
-            else
-            {
-                if ( this.isToUnicode )
-                {
-                    v_ParamsUrl = StringHelp.escape_toUnicode(v_ParamsUrl ,$NotInString);
-                }
-                else if ( this.isEncode )
-                {
-                    v_ParamsUrl = StringHelp.encode(v_ParamsUrl ,this.getCharset() ,$NotInString);
-                }
-                
-                String v_URLParamStr = this.getUrl();
-                if ( this.haveQuestionMark && v_URLParamStr.indexOf('?') < 0 )
-                {
-                    v_URLParamStr = v_URLParamStr + "?";
-                }
-                
-                if ( this.getPort() == 0 )
-                {
-                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + v_ParamsUrl);
-                    v_URL = new URL(this.getProtocol() + "://" + this.getIp() + v_URLParamStr + v_ParamsUrl);
-                }
-                else
-                {
-                    v_Ret.setParamObj(this.getProtocol() + "://" + this.getIp() + ":" + this.getPort() + v_URLParamStr + v_ParamsUrl);
-                    v_URL = new URL(this.getProtocol() ,this.getIp() ,this.getPort() ,v_URLParamStr + v_ParamsUrl);
-                }
-                
-                if ( this.proxy != null )
-                {
-                    v_URLConn = (HttpURLConnection)v_URL.openConnection(this.proxy);
-                }
-                else
-                {
-                    v_URLConn = (HttpURLConnection)v_URL.openConnection();
-                }
-                
-                if ( "https".equals(this.getProtocol()) )
-                {
-                    ((HttpsURLConnection)v_URLConn).setSSLSocketFactory(getSSLContext().getSocketFactory());
-                    ((HttpsURLConnection)v_URLConn).setHostnameVerifier(new TrustAnyHostnameVerifier());
-                }
-                
-                v_URLConn.setUseCaches(false);
-                v_URLConn.setRequestMethod("GET");
-                v_URLConn.setRequestProperty("Content-Type" ,this.getContentType() + "; charset=" + this.getCharset());
-                v_URLConn.setRequestProperty("User-Agent"   ,"Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
-                v_URLConn.setRequestProperty("Cookie"       ,this.cookie.toString());
-                v_URLConn.setConnectTimeout(this.connectTimeout);
-                v_URLConn.setReadTimeout(this.readTimeout);
+                this.setHeadDatas(v_URLConn ,i_HeadDatas);
                 
                 if ( !Help.isNull(i_BodyData) )
                 {
