@@ -997,7 +997,7 @@ public final class XHttp extends SerializableDef implements XJavaID
                     }
                     else
                     {
-                        if ( !Help.isNull(v_ParamsUrl) && v_ParamsUrl.indexOf("?") > 0 )
+                        if ( !Help.isNull(v_ParamsUrl) && v_ParamsUrl.indexOf('?') > 0 )
                         {
                             v_ParamsUrl = "&" + v_ParamsUrl;
                         }
@@ -1106,7 +1106,7 @@ public final class XHttp extends SerializableDef implements XJavaID
                 }
                 else
                 {
-                    if ( !Help.isNull(v_ParamsUrl) && v_ParamsUrl.indexOf("?") > 0 )
+                    if ( !Help.isNull(v_ParamsUrl) && v_ParamsUrl.indexOf('?') > 0 )
                     {
                         v_ParamsUrl = "&" + v_ParamsUrl;
                     }
