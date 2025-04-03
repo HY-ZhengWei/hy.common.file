@@ -62,6 +62,7 @@ import org.hy.common.xml.log.Logger;
  *                             添加2：返回真实完整的请求URL
  *           v9.0  2024-10-10  添加1：整合request()方法的冗余代码
  *                             添加2：支持自定义的请求头的传参
+ *           v10.0 2025-04-03  添加1：简约的URL。简约而不简单。即是否为没有？和&的地址
  */
 public final class XHttp extends SerializableDef implements XJavaID
 {
@@ -996,9 +997,14 @@ public final class XHttp extends SerializableDef implements XJavaID
                     }
                     else
                     {
-                        if ( !Help.isNull(v_ParamsUrl) )
+                        if ( !Help.isNull(v_ParamsUrl) && v_ParamsUrl.indexOf("?") > 0 )
                         {
                             v_ParamsUrl = "&" + v_ParamsUrl;
+                        }
+                        else
+                        {
+                            // 简约的URL。简约而不简单。即是否为没有？和&的地址
+                            // Nothing.
                         }
                     }
                 }
@@ -1100,9 +1106,14 @@ public final class XHttp extends SerializableDef implements XJavaID
                 }
                 else
                 {
-                    if ( !Help.isNull(v_ParamsUrl) )
+                    if ( !Help.isNull(v_ParamsUrl) && v_ParamsUrl.indexOf("?") > 0 )
                     {
                         v_ParamsUrl = "&" + v_ParamsUrl;
+                    }
+                    else
+                    {
+                        // 简约的URL。简约而不简单。即是否为没有？和&的地址
+                        // Nothing.
                     }
                 }
                 
@@ -1842,7 +1853,7 @@ public final class XHttp extends SerializableDef implements XJavaID
         v_Buffer.append(":");
         v_Buffer.append(this.getPort());
         v_Buffer.append(this.getUrl());
-        if ( this.haveQuestionMark && !this.getUrl().endsWith("?") )
+        if ( this.haveQuestionMark && this.getUrl().indexOf('?') < 0 )
         {
             v_Buffer.append("?");
         }
@@ -1878,7 +1889,7 @@ public final class XHttp extends SerializableDef implements XJavaID
         v_Buffer.append(":");
         v_Buffer.append(this.getPort());
         v_Buffer.append(this.getUrl());
-        if ( this.haveQuestionMark && !this.getUrl().endsWith("?") )
+        if ( this.haveQuestionMark && this.getUrl().indexOf('?') < 0 )
         {
             v_Buffer.append("?");
         }
@@ -1912,7 +1923,7 @@ public final class XHttp extends SerializableDef implements XJavaID
             v_Buffer.append(this.getPort());
         }
         v_Buffer.append(this.getUrl());
-        if ( this.haveQuestionMark && !this.getUrl().endsWith("?") )
+        if ( this.haveQuestionMark && this.getUrl().indexOf('?') < 0 )
         {
             v_Buffer.append("?");
         }
