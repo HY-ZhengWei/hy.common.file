@@ -6058,6 +6058,24 @@ public final class FileHelp
      * 
      * @param i_SaveZipFullName        保存Zip压缩文件全名称
      * @param i_ZipFile                要压缩的原文件或目录
+     * @throws IOException
+     */
+    public void createZip4j(String i_SaveZipFullName ,String i_ZipFile) throws IOException
+    {
+        this.createZip4j(i_SaveZipFullName ,i_ZipFile ,true ,null);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件 (压缩级别为：Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFullName        保存Zip压缩文件全名称
+     * @param i_ZipFile                要压缩的原文件或目录
      * @param i_Password               加密密码
      * @throws IOException
      */
@@ -6135,6 +6153,24 @@ public final class FileHelp
         }
         
         this.createZip4j(new File(i_SaveZipFullName) ,new File(i_ZipFile) ,i_HaveRootName ,i_Password ,i_CompressionLevel);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2018-04-09
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFile            保存Zip压缩文件
+     * @param i_ZipFile                要压缩的原文件或目录
+     * @throws IOException
+     */
+    public void createZip4j(File i_SaveZipFile ,File i_ZipFile) throws IOException
+    {
+        this.createZip4j(i_SaveZipFile ,i_ZipFile ,true ,null ,CompressionLevel.NORMAL);
     }
     
     
@@ -6322,6 +6358,63 @@ public final class FileHelp
      * 
      * @param i_SaveZipFile            保存Zip压缩文件
      * @param i_ZipFiles               要压缩的原文件或目录的集合
+     * @throws IOException
+     */
+    public void createZip4j(File i_SaveZipFile ,List<File> i_ZipFiles) throws IOException
+    {
+        this.createZip4j(i_SaveZipFile ,i_ZipFiles ,true ,null ,CompressionLevel.NORMAL);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2025-09-12
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFile            保存Zip压缩文件
+     * @param i_ZipFiles               要压缩的原文件或目录的集合
+     * @param i_Password               加密密码
+     * @throws IOException
+     */
+    public void createZip4j(File i_SaveZipFile ,List<File> i_ZipFiles ,String i_Password) throws IOException
+    {
+        this.createZip4j(i_SaveZipFile ,i_ZipFiles ,true ,i_Password ,CompressionLevel.NORMAL);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2025-09-12
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFile            保存Zip压缩文件
+     * @param i_ZipFiles               要压缩的原文件或目录的集合
+     * @param i_Password               加密密码
+     * @param i_CompressionLevel       压缩级别(默认为：CompressionLevel.NORMAL)
+     * @throws IOException
+     */
+    public void createZip4j(File i_SaveZipFile ,List<File> i_ZipFiles ,String i_Password ,CompressionLevel i_CompressionLevel) throws IOException
+    {
+        this.createZip4j(i_SaveZipFile ,i_ZipFiles ,true ,i_Password ,i_CompressionLevel);
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2025-09-12
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFile            保存Zip压缩文件
+     * @param i_ZipFiles               要压缩的原文件或目录的集合
      * @param i_HaveRootName           是否须要根目录节点
      * @param i_Password               加密密码
      * @param i_CompressionLevel       压缩级别(默认为：CompressionLevel.NORMAL)
@@ -6486,6 +6579,24 @@ public final class FileHelp
             
             this.fireCreateZipAfterListener(v_Event);
         }
+    }
+    
+    
+    
+    /**
+     * 创建Zip的压缩文件流
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2025-09-15
+     * @version     v1.0
+     * 
+     * @param i_SaveZipFile            保存Zip压缩文件
+     * @param i_ZipStream              要压缩的原文件数据流
+     * @throws IOException
+     */
+    public void createZip4j(File i_SaveZipFile ,InputStream i_ZipStream) throws IOException
+    {
+        this.createZip4j(i_SaveZipFile ,i_ZipStream ,null ,CompressionLevel.NORMAL);
     }
     
     
