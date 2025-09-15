@@ -6,13 +6,13 @@
 
     <groupId>org</groupId>
     <artifactId>hy.common.file</artifactId>
-    <version>1.3.6</version>
+    <version>1.3.7</version>
     <packaging>jar</packaging>
 
     <name>org.hy.common.file</name>
     <!-- https://gitee.com/HY-ZhengWei/hy.common.file -->
     <url>https://github.com/HY-ZhengWei/hy.common.file</url>
-    <description>org.hy.common.file</description>
+    <description>通用文件组件（Common File Components）</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -40,7 +40,7 @@
         <dependency>
             <groupId>org</groupId>
             <artifactId>hy.common.base</artifactId>
-            <version>1.0.194</version>
+            <version>1.0.202</version>
             <scope>provided</scope>
         </dependency>
         

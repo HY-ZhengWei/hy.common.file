@@ -6,13 +6,13 @@
 
     <groupId>cn.openapis</groupId>
     <artifactId>hy.common.file</artifactId>
-    <version>1.3.6</version>
+    <version>1.3.7</version>
     <packaging>jar</packaging>
 
     <name>cn.openapis.hy.common.file</name>
     <!-- https://gitee.com/HY-ZhengWei/hy.common.file -->
     <url>https://github.com/HY-ZhengWei/hy.common.file</url>
-    <description>cn.openapis.hy.common.file</description>
+    <description>通用文件组件（Common File Components）</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -54,7 +54,7 @@
         <dependency>
             <groupId>cn.openapis</groupId>
             <artifactId>hy.common.base</artifactId>
-            <version>1.0.194</version>
+            <version>1.0.202</version>
             <scope>provided</scope>
         </dependency>
         
@@ -381,7 +381,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.6.0</version>
+                <version>0.8.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
