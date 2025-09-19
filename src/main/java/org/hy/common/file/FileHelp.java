@@ -119,6 +119,7 @@ import net.lingala.zip4j.model.enums.EncryptionMethod;
  *           v15.0 2025-09-15  1.添加：是否忽略错误的控制参数
  *                             2.添加：批量文件的加密压缩
  *                             3.添加：数据流的加密压缩
+ *           v15.1 2025-09-19  1.添加：读取的文件内容是否包含 “回车换行” 符的控制参数
  */
 public final class FileHelp
 {
@@ -157,6 +158,9 @@ public final class FileHelp
     
     /** 是否忽略错误 */
     private boolean                              ignoreError   = false;
+
+    /** 读取的文件内容是否包含 “回车换行” 符 */
+    private boolean                              haveNewLine   = false;
     
     /** 编码类型 */
     private String                               charEncoding  = "UTF-8";
@@ -1933,7 +1937,7 @@ public final class FileHelp
      */
     public String getContent(JarFile i_Jar ,String i_FileName) throws IOException
     {
-        return this.getContent(i_Jar ,i_FileName ,this.charEncoding ,false);
+        return this.getContent(i_Jar ,i_FileName ,this.charEncoding ,this.haveNewLine);
     }
     
     
@@ -1957,7 +1961,7 @@ public final class FileHelp
      */
     public String getContent(JarFile i_Jar ,String i_FileName ,String i_CharEncoding) throws IOException
     {
-        return this.getContent(i_Jar ,i_FileName ,i_CharEncoding ,false);
+        return this.getContent(i_Jar ,i_FileName ,i_CharEncoding ,this.haveNewLine);
     }
     
     
@@ -2034,7 +2038,7 @@ public final class FileHelp
      */
     public String getContent(String i_FileName ,String i_CharEncoding) throws IOException, ClassNotFoundException
     {
-        return getContent(i_FileName ,i_CharEncoding ,false);
+        return getContent(i_FileName ,i_CharEncoding ,this.haveNewLine);
     }
     
     
@@ -2110,7 +2114,7 @@ public final class FileHelp
      */
     public String getContent(File i_SourceFile ,String i_CharEncoding) throws IOException
     {
-        return this.getContent(i_SourceFile ,i_CharEncoding ,false);
+        return this.getContent(i_SourceFile ,i_CharEncoding ,this.haveNewLine);
     }
     
     
@@ -2193,7 +2197,7 @@ public final class FileHelp
      */
     public String getContent(URL i_FileURL ,String i_CharEncoding) throws IOException
     {
-        return this.getContent(i_FileURL ,i_CharEncoding ,false);
+        return this.getContent(i_FileURL ,i_CharEncoding ,this.haveNewLine);
     }
     
     
@@ -2289,7 +2293,7 @@ public final class FileHelp
      */
     public String getContent(InputStream i_SourceInput ,String i_CharEncoding) throws IOException
     {
-        return getContent(i_SourceInput ,i_CharEncoding ,false);
+        return getContent(i_SourceInput ,i_CharEncoding ,this.haveNewLine);
     }
     
     
@@ -6644,6 +6648,7 @@ public final class FileHelp
         ZipParameters             v_ZipParams = new ZipParameters();
         v_ZipParams.setCompressionMethod(CompressionMethod.DEFLATE);             // 压缩方式
         v_ZipParams.setCompressionLevel( i_CompressionLevel);                    // 压缩级别
+        v_ZipParams.setFileNameInZip(i_SaveZipFile.getName());                   // 设置文件名
         if ( i_Password != null && !"".equals(i_Password) )
         {
             v_ZipParams.setEncryptFiles(true);
@@ -7321,6 +7326,28 @@ public final class FileHelp
     public void setIgnoreError(boolean i_IgnoreError)
     {
         this.ignoreError = i_IgnoreError;
+    }
+
+
+    
+    /**
+     * 获取：读取的文件内容是否包含 “回车换行” 符
+     */
+    public boolean isHaveNewLine()
+    {
+        return haveNewLine;
+    }
+
+
+    
+    /**
+     * 设置：读取的文件内容是否包含 “回车换行” 符
+     * 
+     * @param i_HaveNewLine 读取的文件内容是否包含 “回车换行” 符
+     */
+    public void setHaveNewLine(boolean i_HaveNewLine)
+    {
+        this.haveNewLine = i_HaveNewLine;
     }
 
 
