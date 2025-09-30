@@ -52,6 +52,7 @@ import org.hy.common.file.FileHelp;
  *              v6.0  2020-06-20  添加：通过方法内两次及以上的多次日志输出，尝试计算出方法执行用时。
  *                                      建议人：李浩; 解决方案：程志华
  *              v7.0  2020-06-25  添加：无日志组件的日志输出提示
+ *              v8.0  2025-09-30  修正：有日志类无日志配置时是否采用System.out
  */
 public class Logger
 {
@@ -545,11 +546,12 @@ public class Logger
             
             if ( this.log != null )
             {
+                boolean v_HaveLogger = false;
                 try
                 {
                     if ( $LogType == $LogType_SLF4J )
                     {
-                        initSLF4JMethod(this.log);
+                        v_HaveLogger = initSLF4JMethod(this.log);
                         initSLF4JLevels();
                         
                         $FatalIsEnabled = null;
@@ -561,7 +563,7 @@ public class Logger
                     }
                     else if ( $LogType == $LogType_Log4J )
                     {
-                        initLog4JMethod(this.log);
+                        v_HaveLogger = initLog4JMethod(this.log);
                         initLog4JLevels();
                         
                         if ( $LogVersion == 1 )
@@ -587,6 +589,23 @@ public class Logger
                 catch (Exception exce)
                 {
                     exce.printStackTrace();
+                }
+                
+                if ( !v_HaveLogger && ($IsEnabled_Print && i_IsPrintln == null) || (i_IsPrintln !=null && i_IsPrintln.booleanValue()) )
+                {
+                    try
+                    {
+                        this.logClass = Help.forName(i_ClassName);
+                        
+                        if ( $LogMethod != $LogMethodNull )
+                        {
+                            $LogMethod = $LogMethodNull;
+                        }
+                    }
+                    catch (ClassNotFoundException e)
+                    {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -625,14 +644,17 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-15
      * @version     v1.0
+     *              v2.0  2025-09-30  添加：返回值，是否有日志对象及日志配置
      * 
      * @param i_Log     日志类库的具体的实现类
+     * @return          是否有日志对象及日志配置
      */
-    public static void showLoggerInfo(Object i_Log)
+    public static boolean showLoggerInfo(Object i_Log)
     {
         FileHelp      v_FileHelp = new FileHelp();
         StringBuilder v_Buffer   = new StringBuilder();
         InputStream   v_LogInput = null;
+        boolean       v_Ret      = true;
         
         try
         {
@@ -644,6 +666,7 @@ public class Logger
                     v_LogInput = Logger.class.getResourceAsStream("SFL4J_NoLogger.txt");
                     v_Buffer.append("Loading logger is SLF4J ,but not any implementation (").append(Date.getNowTime().getFullMilli()).append(")\n");
                     v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
+                    v_Ret = false;
                 }
                 else if ( "ch.qos.logback.classic.Logger".equalsIgnoreCase(v_LoggerName) )
                 {
@@ -657,6 +680,10 @@ public class Logger
                     v_Buffer.append("Loading logger is SLF4J & Log4J (").append(Date.getNowTime().getFullMilli()).append(")\n");
                     v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
                 }
+                else
+                {
+                    v_Ret = false;
+                }
             }
             else if ( $LogType == $LogType_Log4J )
             {
@@ -667,6 +694,7 @@ public class Logger
             else if ( i_Log != null )
             {
                 v_Buffer.append("Loading logger is System.out (").append(Date.getNowTime().getFullMilli()).append(")\n\n");
+                v_Ret = false;
             }
             else
             {
@@ -678,6 +706,7 @@ public class Logger
         catch (Exception exce)
         {
             exce.printStackTrace();
+            v_Ret = false;
         }
         finally
         {
@@ -697,6 +726,7 @@ public class Logger
         }
         
         System.out.print(v_Buffer.toString());
+        return v_Ret;
     }
     
     
@@ -779,17 +809,19 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-11
      * @version     v1.0
+     *              v2.0  2025-09-30  添加：返回值，是否有日志对象及日志配置
      *
-     * @param i_Log         SLF4J实现类
+     * @param i_Log  SLF4J实现类
+     * @return       是否有日志对象及日志配置
      */
-    private static synchronized void initSLF4JMethod(Object i_Log)
+    private static synchronized boolean initSLF4JMethod(Object i_Log)
     {
         if ( $LogMethod != null )
         {
-            return;
+            return false;
         }
         
-        showLoggerInfo(i_Log);
+        boolean v_HaveLogger = showLoggerInfo(i_Log);
         
         Method [] v_Methods = i_Log.getClass().getMethods();
         
@@ -830,13 +862,14 @@ public class Logger
                     if ( Throwable.class.equals(v_MPamams[5]) )
                     {
                         $LogMethod = v_Method;
-                        return;
+                        return v_HaveLogger;
                     }
                 }
             }
         }
         
         $LogMethod = $LogMethodNull;
+        return v_HaveLogger;
     }
     
     
@@ -847,17 +880,19 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-11
      * @version     v1.0
+     *              v2.0  2025-09-30  添加：返回值，是否有日志对象及日志配置
      *
-     * @param i_Log         Log4J实现类
+     * @param i_Log   Log4J实现类
+     * @return        是否有日志对象及日志配置
      */
-    private static synchronized void initLog4JMethod(Object i_Log)
+    private static synchronized boolean initLog4JMethod(Object i_Log)
     {
         if ( $LogMethod != null )
         {
-            return;
+            return false;
         }
         
-        showLoggerInfo(i_Log);
+        boolean v_HaveLogger = showLoggerInfo(i_Log);
         
         Method [] v_Methods = i_Log.getClass().getMethods();
         
@@ -883,7 +918,7 @@ public class Logger
                     if ( Throwable.class.equals(v_MPamams[3]) )
                     {
                         $LogMethod = v_Method;
-                        return;
+                        return v_HaveLogger;
                     }
                 }
             }
@@ -935,13 +970,14 @@ public class Logger
                     if ( Throwable.class.equals(v_MPamams[4]) )
                     {
                         $LogMethod_Log4j2Throwable = v_Method;
-                        return;
+                        return v_HaveLogger;
                     }
                 }
             }
         }
         
         $LogMethod = $LogMethodNull;
+        return v_HaveLogger;
     }
     
     
