@@ -818,7 +818,7 @@ public class Logger
     {
         if ( $LogMethod != null )
         {
-            return false;
+            return true;
         }
         
         boolean v_HaveLogger = showLoggerInfo(i_Log);
@@ -889,7 +889,7 @@ public class Logger
     {
         if ( $LogMethod != null )
         {
-            return false;
+            return true;
         }
         
         boolean v_HaveLogger = showLoggerInfo(i_Log);
