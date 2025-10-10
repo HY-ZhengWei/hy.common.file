@@ -1,13 +1,14 @@
 package org.hy.common.xml.log;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 
 import org.hy.common.Date;
 import org.hy.common.Help;
 import org.hy.common.StaticReflect;
-import org.hy.common.file.FileHelp;
 
 
 
@@ -42,6 +43,8 @@ public class LoggerSync
     private static Class<?>                            $LogClass;
     
     private static Class<?>                            $LogManager;
+    
+    private static boolean                             $HaveLogger = false;
     
     
     
@@ -275,7 +278,7 @@ public class LoggerSync
     {
         if ( $LogMethod != null )
         {
-            return true;
+            return $HaveLogger;
         }
         
         Method [] v_Methods = i_Log.getClass().getMethods();
@@ -316,15 +319,17 @@ public class LoggerSync
                     
                     if ( Throwable.class.equals(v_MPamams[5]) )
                     {
-                        $LogMethod = v_Method;
-                        return showLoggerInfo(i_Log);
+                        $LogMethod  = v_Method;
+                        $HaveLogger = showLoggerInfo(i_Log);
+                        return $HaveLogger;
                     }
                 }
             }
         }
         
-        $LogMethod = getLogMethodNull();
-        return showLoggerInfo(i_Log);
+        $LogMethod  = getLogMethodNull();
+        $HaveLogger = showLoggerInfo(i_Log);
+        return $HaveLogger;
     }
     
     
@@ -344,7 +349,7 @@ public class LoggerSync
     {
         if ( $LogMethod != null )
         {
-            return true;
+            return $HaveLogger;
         }
         
         Method [] v_Methods = i_Log.getClass().getMethods();
@@ -370,8 +375,9 @@ public class LoggerSync
                     
                     if ( Throwable.class.equals(v_MPamams[3]) )
                     {
-                        $LogMethod = v_Method;
-                        return showLoggerInfo(i_Log);
+                        $LogMethod  = v_Method;
+                        $HaveLogger = showLoggerInfo(i_Log);
+                        return $HaveLogger;
                     }
                 }
             }
@@ -423,14 +429,16 @@ public class LoggerSync
                     if ( Throwable.class.equals(v_MPamams[4]) )
                     {
                         $LogMethod_Log4j2Throwable = v_Method;
-                        return showLoggerInfo(i_Log);
+                        $HaveLogger = showLoggerInfo(i_Log);
+                        return $HaveLogger;
                     }
                 }
             }
         }
         
-        $LogMethod = getLogMethodNull();
-        return showLoggerInfo(i_Log);
+        $LogMethod  = getLogMethodNull();
+        $HaveLogger = showLoggerInfo(i_Log);
+        return $HaveLogger;
     }
     
     
@@ -520,7 +528,6 @@ public class LoggerSync
      */
     public boolean showLoggerInfo(Object i_Log)
     {
-        FileHelp      v_FileHelp = new FileHelp();
         StringBuilder v_Buffer   = new StringBuilder();
         InputStream   v_LogInput = null;
         boolean       v_Ret      = true;
@@ -534,20 +541,20 @@ public class LoggerSync
                 {
                     v_LogInput = Logger.class.getResourceAsStream("SFL4J_NoLogger.txt");
                     v_Buffer.append("Loading logger is SLF4J ,but not any implementation (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                    v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
+                    v_Buffer.append(getContent(v_LogInput ,"UTF-8" ,true));
                     v_Ret = false;
                 }
                 else if ( "ch.qos.logback.classic.Logger".equalsIgnoreCase(v_LoggerName) )
                 {
                     v_LogInput = Logger.class.getResourceAsStream("SFL4J_Logback.txt");
                     v_Buffer.append("Loading logger is SLF4J & Logback (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                    v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
+                    v_Buffer.append(getContent(v_LogInput ,"UTF-8" ,true));
                 }
                 else if ( "org.apache.logging.slf4j.Log4jLogger".equalsIgnoreCase(v_LoggerName) )
                 {
                     v_LogInput = Logger.class.getResourceAsStream("SFL4J_Log4J.txt");
                     v_Buffer.append("Loading logger is SLF4J & Log4J (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                    v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
+                    v_Buffer.append(getContent(v_LogInput ,"UTF-8" ,true));
                 }
                 else
                 {
@@ -558,7 +565,7 @@ public class LoggerSync
             {
                 v_LogInput = Logger.class.getResourceAsStream("Log4J.txt");
                 v_Buffer.append("Loading logger is Log4J " + $LogVersion + ".x (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
+                v_Buffer.append(getContent(v_LogInput ,"UTF-8" ,true));
             }
             else if ( i_Log != null )
             {
@@ -569,7 +576,7 @@ public class LoggerSync
             {
                 v_LogInput = Logger.class.getResourceAsStream("NoLogger.txt");
                 v_Buffer.append("Loading logger is not any implementation (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
+                v_Buffer.append(getContent(v_LogInput ,"UTF-8" ,true));
             }
         }
         catch (Exception exce)
@@ -663,6 +670,110 @@ public class LoggerSync
             $LogLevelDebug = new Level(StaticReflect.getStaticValue("org.apache.logging.log4j.Level.DEBUG"));
             $LogLevelTrace = new Level(StaticReflect.getStaticValue("org.apache.logging.log4j.Level.TRACE"));
         }
+    }
+    
+    
+    
+    /**
+     * 注意：不能直接使用FileHelp.getContent()方法，因为FileHelp类中有初始Logger的代码。
+     * 
+     * 获取文件内容。
+     * 
+     * 主要针对小文件。文件内容为正常文字的文件。
+     * 
+     * 执行完成(或异常)后会关闭i_SourceInput输入流
+     * 
+     * 2018-03-15  添加：事件处理机制
+     *             添加：是否返回文件内容的功能 -- isReturnContent
+     * 
+     * @param i_SourceInput   文件的输入流
+     * @param i_CharEncoding  文件的编码
+     * @param i_HaveNewLine   生成的文件内容是否包含 “回车换行” 符
+     */
+    private String getContent(InputStream i_SourceInput ,String i_CharEncoding ,boolean i_HaveNewLine) throws IOException
+    {
+        if ( i_SourceInput == null )
+        {
+            throw new NullPointerException("Source inputstream is null.");
+        }
+        
+        InputStreamReader    v_ReaderIO   = null;
+        BufferedReader       v_Reader     = null;
+        StringBuilder        v_Buffer     = new StringBuilder();
+        String               v_LineData   = null;
+        
+        try
+        {
+            v_ReaderIO   = new InputStreamReader(i_SourceInput ,i_CharEncoding);
+            v_Reader     = new BufferedReader(v_ReaderIO);
+            
+            if ( i_HaveNewLine )
+            {
+                while ( (v_LineData = v_Reader.readLine()) != null )
+                {
+                    // 读取事件的所有监听器，均可以影响读取结果  ZhengWei Add 2021-06-27
+                    v_Buffer.append(v_LineData + "\r\n");
+                }
+            }
+            else
+            {
+                while ( (v_LineData = v_Reader.readLine()) != null )
+                {
+                    // 读取事件的所有监听器，均可以影响读取结果  ZhengWei Add 2021-06-27
+                    v_Buffer.append(v_LineData);
+                }
+            }
+            
+        }
+        catch (Exception exce)
+        {
+            throw new IOException(exce.getMessage());
+        }
+        finally
+        {
+            if ( v_Reader != null )
+            {
+                try
+                {
+                    v_Reader.close();
+                }
+                catch (Exception exce)
+                {
+                    // Nothing.
+                }
+            }
+            v_Reader = null;
+            
+            
+            if ( v_ReaderIO != null )
+            {
+                try
+                {
+                    v_ReaderIO.close();
+                }
+                catch (Exception exce)
+                {
+                    // Nothing.
+                }
+            }
+            v_ReaderIO = null;
+            
+            
+            if ( i_SourceInput != null )
+            {
+                try
+                {
+                    i_SourceInput.close();
+                }
+                catch (Exception exce)
+                {
+                    // Nothing.
+                }
+            }
+            i_SourceInput = null;
+        }
+        
+        return v_Buffer.toString();
     }
     
 }
