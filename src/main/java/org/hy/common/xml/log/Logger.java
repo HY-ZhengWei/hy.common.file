@@ -1,8 +1,5 @@
 package org.hy.common.xml.log;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,11 +8,9 @@ import org.hy.common.Counter;
 import org.hy.common.Date;
 import org.hy.common.Help;
 import org.hy.common.PartitionMap;
-import org.hy.common.StaticReflect;
 import org.hy.common.StringHelp;
 import org.hy.common.TablePartition;
 import org.hy.common.TablePartitionBusway;
-import org.hy.common.file.FileHelp;
 
 
 
@@ -53,20 +48,10 @@ import org.hy.common.file.FileHelp;
  *                                      建议人：李浩; 解决方案：程志华
  *              v7.0  2020-06-25  添加：无日志组件的日志输出提示
  *              v8.0  2025-09-30  修正：有日志类无日志配置时是否采用System.out
+ *              v9.0  2025-10-10  移除：日志创建初始独立出来，防止并发锁的问题
  */
 public class Logger
 {
-    
-    /** 全局控制参数：是否启用SLF4J。目标对象实例化前的有效，日志对象实例化后，修改是没有任何效果的 */
-    private static boolean                             $IsEnabled_SLF4J = true;
-    
-    /** 全局控制参数：是否启用Log4J。目标对象实例化前的有效，日志对象实例化后，修改是没有任何效果的 */
-    private static boolean                             $IsEnabled_Log4J = true;
-    
-    /** 全局控制参数：是否启用System.out.println输出日志。目标对象实例化前的有效，日志对象实例化后，修改是没有任何效果的 */
-    private static boolean                             $IsEnabled_Print = false;
-    
-    
     
     /** 常量：日志引擎的类型为：SLF4J */
     public static final int                            $LogType_SLF4J = 1;
@@ -76,63 +61,16 @@ public class Logger
     
     private static final String                        $FQCN = Logger.class.getName();
     
-    
-    
-    /** 日志实现类库的类型（1：SLF4J  2：Log4J） */
-    private static int                                 $LogType    = -1;
-                                                       
-    /** 日志实现类库的版本 */
-    private static int                                 $LogVersion = -1;
-                                                       
-    private static Class<?>                            $LogClass;
-                                                       
-    private static Class<?>                            $LogManager;
-    
-    /** 指出每个严重的错误事件将会导致应用程序的退出。这个级别比较高了。重大错误，这种级别你可以直接停止程序了 */
-    private static Level                               $LogLevelFatal;
-                          
-    /** 指出虽然发生错误事件，但仍然不影响系统的继续运行。打印错误和异常信息，如果不想输出太多的日志，可以使用这个级别 */
-    private static Level                               $LogLevelError;
-                          
-    /** 表明会出现潜在错误的情形，有些信息不是错误信息，但是也要给程序员的一些提示。 */
-    private static Level                               $LogLevelWarn;
-                          
-    /** 消息在粗粒度级别上突出强调应用程序的运行过程。打印一些你感兴趣的或者重要的信息 */
-    private static Level                               $LogLevelInfo;
-                          
-    /** 指出细粒度信息事件对调试应用程序是非常有帮助的，主要用于开发过程中打印一些运行信息 */
-    private static Level                               $LogLevelDebug;
-                                                       
-    /** 最低的日志级别 */
-    private static Level                               $LogLevelTrace;
-                                                       
-    private static Method                              $FatalIsEnabled;
-                                                       
-    private static Method                              $ErrorIsEnabled;
-                                                       
-    private static Method                              $WarnIsEnabled;
-                                                       
-    private static Method                              $InfoIsEnabled;
-                                                       
-    private static Method                              $DebugIsEnabled;
-                                                       
-    private static Method                              $TraceIsEnabled;
-                                                       
-    private static Method                              $LogMethodNull;
-                                                       
-    private static Method                              $LogMethod;
-                                                       
-    private static Method                              $LogMethod_Log4j2Throwable;
-                                                       
     /**
      * 全部日志处理类的集合。可用于日志分析
      * 
      * Map.key  为分区标示。为使用日志引擎的类名称
      */
     private static PartitionMap<String ,Logger>        $Loggers = new TablePartition<String ,Logger>();
+          
+    
                                                        
-                                                       
-                                                       
+    /** 获取日志对象 */
     private Object                                     log;
     
     /** 没有任何Log4j版本时，是否采用System.out.println()方法输出 */
@@ -202,20 +140,6 @@ public class Logger
     
     
     
-    static
-    {
-        try
-        {
-            $LogMethodNull = Logger.class.getMethod("toString");
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-    }
-    
-    
-    
     /**
      * 使用SLF4J输出日志。
      * 
@@ -229,9 +153,9 @@ public class Logger
      */
     public static void useSLF4J()
     {
-        $IsEnabled_SLF4J = true;
-        $IsEnabled_Log4J = false;
-        $IsEnabled_Print = false;
+        LoggerSync.$IsEnabled_SLF4J = true;
+        LoggerSync.$IsEnabled_Log4J = false;
+        LoggerSync.$IsEnabled_Print = false;
     }
     
     
@@ -249,9 +173,9 @@ public class Logger
      */
     public static void useLogback()
     {
-        $IsEnabled_SLF4J = true;
-        $IsEnabled_Log4J = false;
-        $IsEnabled_Print = false;
+        LoggerSync.$IsEnabled_SLF4J = true;
+        LoggerSync.$IsEnabled_Log4J = false;
+        LoggerSync.$IsEnabled_Print = false;
     }
     
     
@@ -269,9 +193,9 @@ public class Logger
      */
     public static void useLog4J()
     {
-        $IsEnabled_SLF4J = false;
-        $IsEnabled_Log4J = true;
-        $IsEnabled_Print = false;
+        LoggerSync.$IsEnabled_SLF4J = false;
+        LoggerSync.$IsEnabled_Log4J = true;
+        LoggerSync.$IsEnabled_Print = false;
     }
     
     
@@ -289,9 +213,9 @@ public class Logger
      */
     public static void usePrint()
     {
-        $IsEnabled_SLF4J = false;
-        $IsEnabled_Log4J = false;
-        $IsEnabled_Print = true;
+        LoggerSync.$IsEnabled_SLF4J = false;
+        LoggerSync.$IsEnabled_Log4J = false;
+        LoggerSync.$IsEnabled_Print = true;
     }
     
     
@@ -307,7 +231,7 @@ public class Logger
      */
     public static Object getLevelFatal()
     {
-        return $LogLevelFatal;
+        return LoggerSync.$LogLevelFatal;
     }
     
     
@@ -323,7 +247,7 @@ public class Logger
      */
     public static Object getLevelError()
     {
-        return $LogLevelError;
+        return LoggerSync.$LogLevelError;
     }
     
     
@@ -339,7 +263,7 @@ public class Logger
      */
     public static Object getLevelWarn()
     {
-        return $LogLevelWarn;
+        return LoggerSync.$LogLevelWarn;
     }
     
     
@@ -355,7 +279,7 @@ public class Logger
      */
     public static Object getLevelnfo()
     {
-        return $LogLevelInfo;
+        return LoggerSync.$LogLevelInfo;
     }
     
     
@@ -371,7 +295,7 @@ public class Logger
      */
     public static Object getLevelDebug()
     {
-        return $LogLevelDebug;
+        return LoggerSync.$LogLevelDebug;
     }
     
     
@@ -387,7 +311,7 @@ public class Logger
      */
     public static Object getLevelTrace()
     {
-        return $LogLevelTrace;
+        return LoggerSync.$LogLevelTrace;
     }
     
     
@@ -530,525 +454,55 @@ public class Logger
         this.methodExecLastime = new ConcurrentHashMap<String ,Long>();
         this.addLogger();
         
-        initLogTypeVersion();
-        
-        if ( $LogManager != null )
-        {
-            try
-            {
-                Method v_Methd = $LogManager.getMethod("getLogger" ,String.class);
-                this.log = StaticReflect.invoke(v_Methd ,i_ClassName);
-            }
-            catch (Exception exce)
-            {
-                exce.printStackTrace();
-            }
-            
-            if ( this.log != null )
-            {
-                boolean v_HaveLogger = false;
-                try
-                {
-                    if ( $LogType == $LogType_SLF4J )
-                    {
-                        v_HaveLogger = initSLF4JMethod(this.log);
-                        initSLF4JLevels();
-                        
-                        $FatalIsEnabled = null;
-                        $ErrorIsEnabled = null;
-                        $WarnIsEnabled  = null;
-                        $InfoIsEnabled  = null;
-                        $DebugIsEnabled = null;
-                        $TraceIsEnabled = null;
-                    }
-                    else if ( $LogType == $LogType_Log4J )
-                    {
-                        v_HaveLogger = initLog4JMethod(this.log);
-                        initLog4JLevels();
-                        
-                        if ( $LogVersion == 1 )
-                        {
-                            $FatalIsEnabled = null;
-                            $ErrorIsEnabled = null;
-                            $WarnIsEnabled  = null;
-                            $InfoIsEnabled  = null;
-                            $DebugIsEnabled = $LogClass.getMethod("isDebugEnabled");
-                            $TraceIsEnabled = null;
-                        }
-                        else if ( $LogVersion == 2 )
-                        {
-                            $FatalIsEnabled = $LogClass.getMethod("isFatalEnabled");
-                            $ErrorIsEnabled = $LogClass.getMethod("isErrorEnabled");
-                            $WarnIsEnabled  = $LogClass.getMethod("isWarnEnabled");
-                            $InfoIsEnabled  = $LogClass.getMethod("isInfoEnabled");
-                            $DebugIsEnabled = $LogClass.getMethod("isDebugEnabled");
-                            $TraceIsEnabled = $LogClass.getMethod("isTraceEnabled");
-                        }
-                    }
-                }
-                catch (Exception exce)
-                {
-                    exce.printStackTrace();
-                }
-                
-                if ( !v_HaveLogger && ($IsEnabled_Print && i_IsPrintln == null) || (i_IsPrintln !=null && i_IsPrintln.booleanValue()) )
-                {
-                    try
-                    {
-                        this.logClass = Help.forName(i_ClassName);
-                        
-                        if ( $LogMethod != $LogMethodNull )
-                        {
-                            $LogMethod = $LogMethodNull;
-                        }
-                    }
-                    catch (ClassNotFoundException e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-        else if ( ($IsEnabled_Print && i_IsPrintln == null) || (i_IsPrintln !=null && i_IsPrintln.booleanValue()) )
-        {
-            try
-            {
-                this.logClass = Help.forName(i_ClassName);
-                
-                if ( $LogMethod != $LogMethodNull )
-                {
-                    showLoggerInfo(this.logClass);
-                    $LogMethod = $LogMethodNull;
-                }
-            }
-            catch (ClassNotFoundException e)
-            {
-                e.printStackTrace();
-            }
-        }
-        else
-        {
-            if ( $LogMethod != $LogMethodNull )
-            {
-                showLoggerInfo(null);
-                $LogMethod = $LogMethodNull;
-            }
-        }
+        LoggerSync.getInstance().init(this ,i_ClassName ,i_IsPrintln);
     }
     
     
     
     /**
-     * 显示启用的日志引擎
-     * 
-     * @author      ZhengWei(HY)
-     * @createDate  2020-06-15
-     * @version     v1.0
-     *              v2.0  2025-09-30  添加：返回值，是否有日志对象及日志配置
-     * 
-     * @param i_Log     日志类库的具体的实现类
-     * @return          是否有日志对象及日志配置
+     * 获取：获取日志对象
      */
-    public static boolean showLoggerInfo(Object i_Log)
+    protected Object getLog()
     {
-        FileHelp      v_FileHelp = new FileHelp();
-        StringBuilder v_Buffer   = new StringBuilder();
-        InputStream   v_LogInput = null;
-        boolean       v_Ret      = true;
-        
-        try
-        {
-            if ( $LogType == $LogType_SLF4J )
-            {
-                String v_LoggerName = i_Log.getClass().getName();
-                if ( "org.slf4j.helpers.NOPLogger".equalsIgnoreCase(v_LoggerName) )
-                {
-                    v_LogInput = Logger.class.getResourceAsStream("SFL4J_NoLogger.txt");
-                    v_Buffer.append("Loading logger is SLF4J ,but not any implementation (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                    v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
-                    v_Ret = false;
-                }
-                else if ( "ch.qos.logback.classic.Logger".equalsIgnoreCase(v_LoggerName) )
-                {
-                    v_LogInput = Logger.class.getResourceAsStream("SFL4J_Logback.txt");
-                    v_Buffer.append("Loading logger is SLF4J & Logback (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                    v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
-                }
-                else if ( "org.apache.logging.slf4j.Log4jLogger".equalsIgnoreCase(v_LoggerName) )
-                {
-                    v_LogInput = Logger.class.getResourceAsStream("SFL4J_Log4J.txt");
-                    v_Buffer.append("Loading logger is SLF4J & Log4J (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                    v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
-                }
-                else
-                {
-                    v_Ret = false;
-                }
-            }
-            else if ( $LogType == $LogType_Log4J )
-            {
-                v_LogInput = Logger.class.getResourceAsStream("Log4J.txt");
-                v_Buffer.append("Loading logger is Log4J " + $LogVersion + ".x (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
-            }
-            else if ( i_Log != null )
-            {
-                v_Buffer.append("Loading logger is System.out (").append(Date.getNowTime().getFullMilli()).append(")\n\n");
-                v_Ret = false;
-            }
-            else
-            {
-                v_LogInput = Logger.class.getResourceAsStream("NoLogger.txt");
-                v_Buffer.append("Loading logger is not any implementation (").append(Date.getNowTime().getFullMilli()).append(")\n");
-                v_Buffer.append(v_FileHelp.getContent(v_LogInput ,"UTF-8" ,true));
-            }
-        }
-        catch (Exception exce)
-        {
-            exce.printStackTrace();
-            v_Ret = false;
-        }
-        finally
-        {
-            if ( v_LogInput != null )
-            {
-                try
-                {
-                    v_LogInput.close();
-                }
-                catch (IOException exce)
-                {
-                    // Nothing.
-                }
-                
-                v_LogInput = null;
-            }
-        }
-        
-        System.out.print(v_Buffer.toString());
-        return v_Ret;
+        return log;
     }
-    
-    
+
+
     
     /**
-     * 初始化日志的种类及版本信息
+     * 设置：获取日志对象
      * 
-     * @author      ZhengWei(HY)
-     * @createDate  2020-06-11
-     * @version     v1.0
-     *
+     * @param i_Log 获取日志对象
      */
-    private static synchronized void initLogTypeVersion()
+    protected void setLog(Object i_Log)
     {
-        if ( $LogClass != null )
-        {
-            return;
-        }
-        
-        if ( $IsEnabled_SLF4J )
-        {
-            try
-            {
-                // SLF4J
-                // v_MarkerClass = Help.forName("org.slf4j.Marker");
-                $LogClass     = Help.forName("org.slf4j.Logger");
-                $LogManager   = Help.forName("org.slf4j.LoggerFactory");
-                $LogType      = $LogType_SLF4J;
-                $LogVersion   = 1;
-            }
-            catch (Exception exce)
-            {
-                // Nothing.
-            }
-        }
-        
-        if ( $IsEnabled_Log4J )
-        {
-            if ( $LogClass == null )
-            {
-                try
-                {
-                    // Log4j 2.x 的版本
-                    // v_MarkerClass = Help.forName("org.apache.logging.log4j.Marker");
-                    $LogClass     = Help.forName("org.apache.logging.log4j.Logger");
-                    $LogManager   = Help.forName("org.apache.logging.log4j.LogManager");
-                    $LogType      = $LogType_Log4J;
-                    $LogVersion   = 2;
-                }
-                catch (Exception exce)
-                {
-                    // Nothing.
-                }
-            }
-            
-            if ( $LogClass == null )
-            {
-                try
-                {
-                    // Log4j 1.x 的版本
-                    // v_MarkerClass = null;
-                    $LogClass     = Help.forName("org.apache.log4j.Logger");
-                    $LogManager   = Help.forName("org.apache.log4j.LogManager");
-                    $LogType      = $LogType_Log4J;
-                    $LogVersion   = 1;
-                }
-                catch (Exception exce)
-                {
-                    // Nothing.
-                }
-            }
-        }
+        this.log = i_Log;
     }
-    
-    
+
+
     
     /**
-     * 初始化SLF4J的日志输出方法
-     * 
-     * @author      ZhengWei(HY)
-     * @createDate  2020-06-11
-     * @version     v1.0
-     *              v2.0  2025-09-30  添加：返回值，是否有日志对象及日志配置
-     *
-     * @param i_Log  SLF4J实现类
-     * @return       是否有日志对象及日志配置
+     * 获取：没有任何Log4j版本时，是否采用System.out.println()方法输出
      */
-    private static synchronized boolean initSLF4JMethod(Object i_Log)
+    protected Class<?> getLogClass()
     {
-        if ( $LogMethod != null )
-        {
-            return true;
-        }
-        
-        boolean v_HaveLogger = showLoggerInfo(i_Log);
-        
-        Method [] v_Methods = i_Log.getClass().getMethods();
-        
-        if ( $LogVersion >= 0 )
-        {
-            // public void log(Marker marker, String fqcn, int level, String message, Object[] params, Throwable throwable)
-            for (Method v_Method : v_Methods)
-            {
-                if ( "log".equals(v_Method.getName()) )
-                {
-                    Class<?> [] v_MPamams = v_Method.getParameterTypes();
-                    
-                    if ( v_MPamams.length != 6 )
-                    {
-                        continue;
-                    }
-                    
-                    if ( !String.class.equals(v_MPamams[1]) )
-                    {
-                        continue;
-                    }
-                    
-                    if ( !int.class.equals(v_MPamams[2]) )
-                    {
-                        continue;
-                    }
-                    
-                    if ( !String.class.equals(v_MPamams[3]) )
-                    {
-                        continue;
-                    }
-                    
-                    if ( !Object[].class.equals(v_MPamams[4]) )
-                    {
-                        continue;
-                    }
-                    
-                    if ( Throwable.class.equals(v_MPamams[5]) )
-                    {
-                        $LogMethod = v_Method;
-                        return v_HaveLogger;
-                    }
-                }
-            }
-        }
-        
-        $LogMethod = $LogMethodNull;
-        return v_HaveLogger;
+        return logClass;
     }
-    
-    
+
+
     
     /**
-     * 初始化Log4J的日志输出方法
+     * 设置：没有任何Log4j版本时，是否采用System.out.println()方法输出
      * 
-     * @author      ZhengWei(HY)
-     * @createDate  2020-06-11
-     * @version     v1.0
-     *              v2.0  2025-09-30  添加：返回值，是否有日志对象及日志配置
-     *
-     * @param i_Log   Log4J实现类
-     * @return        是否有日志对象及日志配置
+     * @param i_LogClass 没有任何Log4j版本时，是否采用System.out.println()方法输出
      */
-    private static synchronized boolean initLog4JMethod(Object i_Log)
+    protected void setLogClass(Class<?> i_LogClass)
     {
-        if ( $LogMethod != null )
-        {
-            return true;
-        }
-        
-        boolean v_HaveLogger = showLoggerInfo(i_Log);
-        
-        Method [] v_Methods = i_Log.getClass().getMethods();
-        
-        if ( $LogVersion == 1 )
-        {
-            // public void log(String FQCN, Priority level, Object message, Throwable t)
-            for (Method v_Method : v_Methods)
-            {
-                if ( "log".equals(v_Method.getName()) )
-                {
-                    Class<?> [] v_MPamams = v_Method.getParameterTypes();
-                    
-                    if ( v_MPamams.length != 4 )
-                    {
-                        continue;
-                    }
-                    
-                    if ( !Object.class.equals(v_MPamams[2]) )
-                    {
-                        continue;
-                    }
-                    
-                    if ( Throwable.class.equals(v_MPamams[3]) )
-                    {
-                        $LogMethod = v_Method;
-                        return v_HaveLogger;
-                    }
-                }
-            }
-        }
-        else
-        {
-            // logIfEnabled(String FQCN ,Level level ,Marker marker ,String message ,Object [] argument)
-            for (Method v_Method : v_Methods)
-            {
-                if ( "logIfEnabled".equals(v_Method.getName()) )
-                {
-                    Class<?> [] v_MPamams = v_Method.getParameterTypes();
-                    
-                    if ( v_MPamams.length != 5 )
-                    {
-                        continue;
-                    }
-                    
-                    if ( !String.class.equals(v_MPamams[3]) )
-                    {
-                        continue;
-                    }
-                    
-                    if ( Object[].class.equals(v_MPamams[4]) )
-                    {
-                        $LogMethod = v_Method;
-                        break;
-                    }
-                }
-            }
-            
-            // public void logIfEnabled(String fqcn, Level level, Marker marker, String message, Throwable t)
-            for (Method v_Method : v_Methods)
-            {
-                if ( "logIfEnabled".equals(v_Method.getName()) )
-                {
-                    Class<?> [] v_MPamams = v_Method.getParameterTypes();
-                    
-                    if ( v_MPamams.length != 5 )
-                    {
-                        continue;
-                    }
-                    
-                    if ( !String.class.equals(v_MPamams[3]) )
-                    {
-                        continue;
-                    }
-                    
-                    if ( Throwable.class.equals(v_MPamams[4]) )
-                    {
-                        $LogMethod_Log4j2Throwable = v_Method;
-                        return v_HaveLogger;
-                    }
-                }
-            }
-        }
-        
-        $LogMethod = $LogMethodNull;
-        return v_HaveLogger;
+        this.logClass = i_LogClass;
     }
-    
-    
-    
-    /**
-     * 初始化SLF4J日志级别
-     * 
-     * @author      ZhengWei(HY)
-     * @createDate  2020-06-11
-     * @version     v1.0
-     *
-     * @param i_LogVersion  日志类库的版本
-     */
-    private static synchronized void initSLF4JLevels()
-    {
-        if ( $LogLevelFatal != null )
-        {
-            return;
-        }
-        
-        if ( $LogVersion >= 0 )
-        {
-            $LogLevelFatal = new Level(StaticReflect.getStaticValue("org.slf4j.event.EventConstants.ERROR_INT"));
-            $LogLevelError = new Level(StaticReflect.getStaticValue("org.slf4j.event.EventConstants.ERROR_INT"));  // 有意创建两个对象，方便日结级别名称的识别
-            $LogLevelWarn  = new Level(StaticReflect.getStaticValue("org.slf4j.event.EventConstants.WARN_INT"));
-            $LogLevelInfo  = new Level(StaticReflect.getStaticValue("org.slf4j.event.EventConstants.INFO_INT"));
-            $LogLevelDebug = new Level(StaticReflect.getStaticValue("org.slf4j.event.EventConstants.DEBUG_INT"));
-            $LogLevelTrace = new Level(StaticReflect.getStaticValue("org.slf4j.event.EventConstants.TRACE_INT"));
-        }
-    }
-    
-    
-    
-    /**
-     * 初始化Log4J日志级别
-     * 
-     * @author      ZhengWei(HY)
-     * @createDate  2020-06-11
-     * @version     v1.0
-     *
-     * @param i_LogVersion  日志类库的版本
-     */
-    private static synchronized void initLog4JLevels()
-    {
-        if ( $LogLevelFatal != null )
-        {
-            return;
-        }
-        
-        if ( $LogVersion == 1 )
-        {
-            $LogLevelFatal = new Level(StaticReflect.getStaticValue("org.apache.log4j.Level.FATAL"));
-            $LogLevelError = new Level(StaticReflect.getStaticValue("org.apache.log4j.Level.ERROR"));
-            $LogLevelWarn  = new Level(StaticReflect.getStaticValue("org.apache.log4j.Level.WARN"));
-            $LogLevelInfo  = new Level(StaticReflect.getStaticValue("org.apache.log4j.Level.INFO"));
-            $LogLevelDebug = new Level(StaticReflect.getStaticValue("org.apache.log4j.Level.DEBUG"));
-            $LogLevelTrace = new Level(StaticReflect.getStaticValue("org.apache.log4j.Level.DEBUG"));  // 有意创建两个对象，方便日结级别名称的识别
-        }
-        else
-        {
-            $LogLevelFatal = new Level(StaticReflect.getStaticValue("org.apache.logging.log4j.Level.FATAL"));
-            $LogLevelError = new Level(StaticReflect.getStaticValue("org.apache.logging.log4j.Level.ERROR"));
-            $LogLevelWarn  = new Level(StaticReflect.getStaticValue("org.apache.logging.log4j.Level.WARN"));
-            $LogLevelInfo  = new Level(StaticReflect.getStaticValue("org.apache.logging.log4j.Level.INFO"));
-            $LogLevelDebug = new Level(StaticReflect.getStaticValue("org.apache.logging.log4j.Level.DEBUG"));
-            $LogLevelTrace = new Level(StaticReflect.getStaticValue("org.apache.logging.log4j.Level.TRACE"));
-        }
-    }
-    
-    
-    
+
+
+
     /**
      * 获取日志级别的名称
      * 
@@ -1061,32 +515,32 @@ public class Logger
      */
     public static String getLevelName(final Object i_Level)
     {
-        if ( $LogLevelFatal == null )
+        if ( LoggerSync.$LogLevelFatal == null )
         {
             return "--";
         }
         
-        if ( $LogLevelFatal.equals(i_Level) )
+        if ( LoggerSync.$LogLevelFatal.equals(i_Level) )
         {
             return "fatal";
         }
-        else if ( $LogLevelError.equals(i_Level) )
+        else if ( LoggerSync.$LogLevelError.equals(i_Level) )
         {
             return "error";
         }
-        else if ( $LogLevelWarn.equals(i_Level) )
+        else if ( LoggerSync.$LogLevelWarn.equals(i_Level) )
         {
             return "warn";
         }
-        else if ( $LogLevelInfo.equals(i_Level) )
+        else if ( LoggerSync.$LogLevelInfo.equals(i_Level) )
         {
             return "info";
         }
-        else if ( $LogLevelDebug.equals(i_Level) )
+        else if ( LoggerSync.$LogLevelDebug.equals(i_Level) )
         {
             return "debug";
         }
-        else if ( $LogLevelTrace.equals(i_Level) )
+        else if ( LoggerSync.$LogLevelTrace.equals(i_Level) )
         {
             return "trace";
         }
@@ -1215,7 +669,7 @@ public class Logger
             this.requestCount.put(v_Key ,1L);
             this.requestTime .put(v_Key ,Date.getNowTime().getTime());
             
-            if ( i_Level == $LogLevelWarn || i_Level == $LogLevelError || i_Level == $LogLevelFatal )
+            if ( i_Level == LoggerSync.$LogLevelWarn || i_Level == LoggerSync.$LogLevelError || i_Level == LoggerSync.$LogLevelFatal )
             {
                 synchronized ( this )
                 {
@@ -1320,11 +774,11 @@ public class Logger
      */
     public boolean isFatalEnabled()
     {
-        if ( $FatalIsEnabled != null )
+        if ( LoggerSync.$FatalIsEnabled != null )
         {
             try
             {
-                return (boolean)$FatalIsEnabled.invoke(this.log);
+                return (boolean)LoggerSync.$FatalIsEnabled.invoke(this.log);
             }
             catch (Exception exce)
             {
@@ -1348,11 +802,11 @@ public class Logger
      */
     public boolean isErrorEnabled()
     {
-        if ( $ErrorIsEnabled != null )
+        if ( LoggerSync.$ErrorIsEnabled != null )
         {
             try
             {
-                return (boolean)$ErrorIsEnabled.invoke(this.log);
+                return (boolean)LoggerSync.$ErrorIsEnabled.invoke(this.log);
             }
             catch (Exception exce)
             {
@@ -1376,11 +830,11 @@ public class Logger
      */
     public boolean isWarnEnabled()
     {
-        if ( $WarnIsEnabled != null )
+        if ( LoggerSync.$WarnIsEnabled != null )
         {
             try
             {
-                return (boolean)$WarnIsEnabled.invoke(this.log);
+                return (boolean) LoggerSync.$WarnIsEnabled.invoke(this.log);
             }
             catch (Exception exce)
             {
@@ -1404,11 +858,11 @@ public class Logger
      */
     public boolean isInfoEnabled()
     {
-        if ( $InfoIsEnabled != null )
+        if ( LoggerSync.$InfoIsEnabled != null )
         {
             try
             {
-                return (boolean)$InfoIsEnabled.invoke(this.log);
+                return (boolean) LoggerSync.$InfoIsEnabled.invoke(this.log);
             }
             catch (Exception exce)
             {
@@ -1432,11 +886,11 @@ public class Logger
      */
     public boolean isDebugEnabled()
     {
-        if ( $DebugIsEnabled != null )
+        if ( LoggerSync.$DebugIsEnabled != null )
         {
             try
             {
-                return (boolean)$DebugIsEnabled.invoke(this.log);
+                return (boolean) LoggerSync.$DebugIsEnabled.invoke(this.log);
             }
             catch (Exception exce)
             {
@@ -1460,11 +914,11 @@ public class Logger
      */
     public boolean isTraceEnabled()
     {
-        if ( $TraceIsEnabled != null )
+        if ( LoggerSync.$TraceIsEnabled != null )
         {
             try
             {
-                return (boolean)$TraceIsEnabled.invoke(this.log);
+                return (boolean) LoggerSync.$TraceIsEnabled.invoke(this.log);
             }
             catch (Exception exce)
             {
@@ -1494,31 +948,31 @@ public class Logger
     {
         this.request(i_Level ,getLevelName(i_Level) ,i_Message, i_Throwable);
         
-        if ( this.log != null && $LogMethod != $LogMethodNull )
+        if ( this.log != null && LoggerSync.$LogMethod != LoggerSync.$LogMethodNull )
         {
             try
             {
                 if ( i_Marker == null || i_Marker != null && i_Marker.getClass().getName().endsWith("Marker") )
                 {
-                    if ( $LogType == $LogType_SLF4J )
+                    if ( LoggerSync.$LogType == $LogType_SLF4J )
                     {
-                        $LogMethod.invoke(this.log ,i_Marker ,$FQCN ,i_Level.getLevel() ,i_Message ,i_Arguments ,i_Throwable);
+                        LoggerSync.$LogMethod.invoke(this.log ,i_Marker ,$FQCN ,i_Level.getLevel() ,i_Message ,i_Arguments ,i_Throwable);
                     }
-                    else if ( $LogType == $LogType_Log4J )
+                    else if ( LoggerSync.$LogType == $LogType_Log4J )
                     {
-                        if ( $LogVersion == 1 )
+                        if ( LoggerSync.$LogVersion == 1 )
                         {
-                            $LogMethod.invoke(this.log ,$FQCN ,i_Level.getLevel() ,i_Message + StringHelp.toString(i_Arguments) ,i_Throwable);
+                            LoggerSync.$LogMethod.invoke(this.log ,$FQCN ,i_Level.getLevel() ,i_Message + StringHelp.toString(i_Arguments) ,i_Throwable);
                         }
                         else
                         {
                             if ( i_Throwable == null )
                             {
-                                $LogMethod.invoke(this.log ,$FQCN ,i_Level.getLevel() ,i_Marker ,i_Message ,i_Arguments);
+                                LoggerSync.$LogMethod.invoke(this.log ,$FQCN ,i_Level.getLevel() ,i_Marker ,i_Message ,i_Arguments);
                             }
                             else
                             {
-                                $LogMethod_Log4j2Throwable.invoke(this.log ,$FQCN ,i_Level.getLevel() ,i_Marker ,i_Message + StringHelp.toString(i_Arguments) ,i_Throwable);
+                                LoggerSync.$LogMethod_Log4j2Throwable.invoke(this.log ,$FQCN ,i_Level.getLevel() ,i_Marker ,i_Message + StringHelp.toString(i_Arguments) ,i_Throwable);
                             }
                         }
                     }
@@ -1531,25 +985,25 @@ public class Logger
                     v_Arguments[0] = i_Message;
                     Help.fillArray(i_Arguments ,v_Arguments ,1);
                     
-                    if ( $LogType == $LogType_SLF4J )
+                    if ( LoggerSync.$LogType == $LogType_SLF4J )
                     {
-                        $LogMethod.invoke(this.log ,null ,$FQCN ,i_Level.getLevel() ,v_Message ,v_Arguments ,i_Throwable);
+                        LoggerSync.$LogMethod.invoke(this.log ,null ,$FQCN ,i_Level.getLevel() ,v_Message ,v_Arguments ,i_Throwable);
                     }
-                    else if ( $LogType == $LogType_Log4J )
+                    else if ( LoggerSync.$LogType == $LogType_Log4J )
                     {
-                        if ( $LogVersion == 1 )
+                        if ( LoggerSync.$LogVersion == 1 )
                         {
-                            $LogMethod.invoke(this.log ,$FQCN ,i_Level.getLevel() ,v_Message + StringHelp.toString(v_Arguments) ,i_Throwable);
+                            LoggerSync.$LogMethod.invoke(this.log ,$FQCN ,i_Level.getLevel() ,v_Message + StringHelp.toString(v_Arguments) ,i_Throwable);
                         }
                         else
                         {
                             if ( i_Throwable == null )
                             {
-                                $LogMethod.invoke(this.log ,$FQCN ,i_Level.getLevel() ,null ,v_Message ,v_Arguments);
+                                LoggerSync.$LogMethod.invoke(this.log ,$FQCN ,i_Level.getLevel() ,null ,v_Message ,v_Arguments);
                             }
                             else
                             {
-                                $LogMethod_Log4j2Throwable.invoke(this.log ,$FQCN ,i_Level.getLevel() ,null ,v_Message + StringHelp.toString(v_Arguments) ,i_Throwable);
+                                LoggerSync.$LogMethod_Log4j2Throwable.invoke(this.log ,$FQCN ,i_Level.getLevel() ,null ,v_Message + StringHelp.toString(v_Arguments) ,i_Throwable);
                             }
                         }
                     }
@@ -1596,7 +1050,7 @@ public class Logger
      */
     public void fatal(final String i_Message)
     {
-        this.log(null ,$LogLevelFatal ,i_Message ,null ,null);
+        this.log(null ,LoggerSync.$LogLevelFatal ,i_Message ,null ,null);
     }
     
     
@@ -1613,7 +1067,7 @@ public class Logger
      */
     public void fatal(final String i_Message ,final String i_Argument)
     {
-        this.log(null ,$LogLevelFatal ,i_Message ,new Object[] {i_Argument} ,null);
+        this.log(null ,LoggerSync.$LogLevelFatal ,i_Message ,new Object[] {i_Argument} ,null);
     }
     
     
@@ -1631,7 +1085,7 @@ public class Logger
     {
         if ( i_Message != null )
         {
-            this.log(null ,$LogLevelFatal ,i_Message.toString() ,null ,null);
+            this.log(null ,LoggerSync.$LogLevelFatal ,i_Message.toString() ,null ,null);
         }
     }
     
@@ -1649,7 +1103,7 @@ public class Logger
      */
     public void fatal(final String i_Message, final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelFatal ,i_Message ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelFatal ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -1665,7 +1119,7 @@ public class Logger
      */
     public void fatal(final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelFatal ,"" ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelFatal ,"" ,null ,i_Throwable);
     }
     
     
@@ -1683,7 +1137,7 @@ public class Logger
      */
     public void fatal(final Object i_Marker ,String i_Message, final Object ... i_Arguments)
     {
-        this.log(i_Marker ,$LogLevelFatal ,i_Message ,i_Arguments ,null);
+        this.log(i_Marker ,LoggerSync.$LogLevelFatal ,i_Message ,i_Arguments ,null);
     }
     
     
@@ -1701,7 +1155,7 @@ public class Logger
      */
     public void fatal(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
-        this.log(i_Marker ,$LogLevelFatal ,i_Message ,null ,i_Throwable);
+        this.log(i_Marker ,LoggerSync.$LogLevelFatal ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -1717,7 +1171,7 @@ public class Logger
      */
     public void error(final String i_Message)
     {
-        this.log(null ,$LogLevelError ,i_Message ,null ,null);
+        this.log(null ,LoggerSync.$LogLevelError ,i_Message ,null ,null);
     }
     
     
@@ -1734,7 +1188,7 @@ public class Logger
      */
     public void error(final String i_Message ,final String i_Argument)
     {
-        this.log(null ,$LogLevelError ,i_Message ,new Object[] {i_Argument} ,null);
+        this.log(null ,LoggerSync.$LogLevelError ,i_Message ,new Object[] {i_Argument} ,null);
     }
     
     
@@ -1752,7 +1206,7 @@ public class Logger
     {
         if ( i_Message != null )
         {
-            this.log(null ,$LogLevelError ,i_Message.toString() ,null ,null);
+            this.log(null ,LoggerSync.$LogLevelError ,i_Message.toString() ,null ,null);
         }
     }
     
@@ -1770,7 +1224,7 @@ public class Logger
      */
     public void error(final String i_Message, final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelError ,i_Message ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelError ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -1786,7 +1240,7 @@ public class Logger
      */
     public void error(final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelError ,"" ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelError ,"" ,null ,i_Throwable);
     }
     
     
@@ -1804,7 +1258,7 @@ public class Logger
      */
     public void error(final Object i_Marker ,String i_Message, final Object ... i_Arguments)
     {
-        this.log(i_Marker ,$LogLevelError ,i_Message ,i_Arguments ,null);
+        this.log(i_Marker ,LoggerSync.$LogLevelError ,i_Message ,i_Arguments ,null);
     }
     
     
@@ -1822,7 +1276,7 @@ public class Logger
      */
     public void error(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
-        this.log(i_Marker ,$LogLevelError ,i_Message ,null ,i_Throwable);
+        this.log(i_Marker ,LoggerSync.$LogLevelError ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -1838,7 +1292,7 @@ public class Logger
      */
     public void warn(final String i_Message)
     {
-        this.log(null ,$LogLevelWarn ,i_Message ,null ,null);
+        this.log(null ,LoggerSync.$LogLevelWarn ,i_Message ,null ,null);
     }
     
     
@@ -1855,7 +1309,7 @@ public class Logger
      */
     public void warn(final String i_Message ,final String i_Argument)
     {
-        this.log(null ,$LogLevelWarn ,i_Message ,new Object[] {i_Argument} ,null);
+        this.log(null ,LoggerSync.$LogLevelWarn ,i_Message ,new Object[] {i_Argument} ,null);
     }
     
     
@@ -1873,7 +1327,7 @@ public class Logger
     {
         if ( i_Message != null )
         {
-            this.log(null ,$LogLevelWarn ,i_Message.toString() ,null ,null);
+            this.log(null ,LoggerSync.$LogLevelWarn ,i_Message.toString() ,null ,null);
         }
     }
     
@@ -1891,7 +1345,7 @@ public class Logger
      */
     public void warn(final String i_Message, final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelWarn ,i_Message ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelWarn ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -1907,7 +1361,7 @@ public class Logger
      */
     public void warn(final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelWarn ,"" ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelWarn ,"" ,null ,i_Throwable);
     }
     
     
@@ -1925,7 +1379,7 @@ public class Logger
      */
     public void warn(final Object i_Marker ,String i_Message, final Object ... i_Arguments)
     {
-        this.log(i_Marker ,$LogLevelWarn ,i_Message ,i_Arguments ,null);
+        this.log(i_Marker ,LoggerSync.$LogLevelWarn ,i_Message ,i_Arguments ,null);
     }
     
     
@@ -1943,7 +1397,7 @@ public class Logger
      */
     public void warn(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
-        this.log(i_Marker ,$LogLevelWarn ,i_Message ,null ,i_Throwable);
+        this.log(i_Marker ,LoggerSync.$LogLevelWarn ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -1959,7 +1413,7 @@ public class Logger
      */
     public void info(final String i_Message)
     {
-        this.log(null ,$LogLevelInfo ,i_Message ,null ,null);
+        this.log(null ,LoggerSync.$LogLevelInfo ,i_Message ,null ,null);
     }
     
     
@@ -1976,7 +1430,7 @@ public class Logger
      */
     public void info(final String i_Message ,final String i_Argument)
     {
-        this.log(null ,$LogLevelInfo ,i_Message ,new Object[] {i_Argument} ,null);
+        this.log(null ,LoggerSync.$LogLevelInfo ,i_Message ,new Object[] {i_Argument} ,null);
     }
     
     
@@ -1994,7 +1448,7 @@ public class Logger
     {
         if ( i_Message != null )
         {
-            this.log(null ,$LogLevelInfo ,i_Message.toString() ,null ,null);
+            this.log(null ,LoggerSync.$LogLevelInfo ,i_Message.toString() ,null ,null);
         }
 
     }
@@ -2013,7 +1467,7 @@ public class Logger
      */
     public void info(final String i_Message, final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelInfo ,i_Message ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelInfo ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -2029,7 +1483,7 @@ public class Logger
      */
     public void info(final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelInfo ,"" ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelInfo ,"" ,null ,i_Throwable);
     }
     
     
@@ -2047,7 +1501,7 @@ public class Logger
      */
     public void info(final Object i_Marker ,String i_Message, final Object ... i_Arguments)
     {
-        this.log(i_Marker ,$LogLevelInfo ,i_Message ,i_Arguments ,null);
+        this.log(i_Marker ,LoggerSync.$LogLevelInfo ,i_Message ,i_Arguments ,null);
     }
     
     
@@ -2065,7 +1519,7 @@ public class Logger
      */
     public void info(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
-        this.log(i_Marker ,$LogLevelInfo ,i_Message ,null ,i_Throwable);
+        this.log(i_Marker ,LoggerSync.$LogLevelInfo ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -2081,7 +1535,7 @@ public class Logger
      */
     public void debug(final String i_Message)
     {
-        this.log(null ,$LogLevelDebug ,i_Message ,null ,null);
+        this.log(null ,LoggerSync.$LogLevelDebug ,i_Message ,null ,null);
     }
     
     
@@ -2098,7 +1552,7 @@ public class Logger
      */
     public void debug(final String i_Message ,final String i_Argument)
     {
-        this.log(null ,$LogLevelDebug ,i_Message ,new Object[] {i_Argument} ,null);
+        this.log(null ,LoggerSync.$LogLevelDebug ,i_Message ,new Object[] {i_Argument} ,null);
     }
     
     
@@ -2116,7 +1570,7 @@ public class Logger
     {
         if ( i_Message != null )
         {
-            this.log(null ,$LogLevelDebug ,i_Message.toString() ,null ,null);
+            this.log(null ,LoggerSync.$LogLevelDebug ,i_Message.toString() ,null ,null);
         }
     }
     
@@ -2134,7 +1588,7 @@ public class Logger
      */
     public void debug(final String i_Message, final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelDebug ,i_Message ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelDebug ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -2150,7 +1604,7 @@ public class Logger
      */
     public void debug(final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelDebug ,"" ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelDebug ,"" ,null ,i_Throwable);
     }
     
     
@@ -2168,7 +1622,7 @@ public class Logger
      */
     public void debug(final Object i_Marker ,String i_Message, final Object ... i_Arguments)
     {
-        this.log(i_Marker ,$LogLevelDebug ,i_Message ,i_Arguments ,null);
+        this.log(i_Marker ,LoggerSync.$LogLevelDebug ,i_Message ,i_Arguments ,null);
     }
     
     
@@ -2186,7 +1640,7 @@ public class Logger
      */
     public void debug(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
-        this.log(i_Marker ,$LogLevelDebug ,i_Message ,null ,i_Throwable);
+        this.log(i_Marker ,LoggerSync.$LogLevelDebug ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -2202,7 +1656,7 @@ public class Logger
      */
     public void trace(final String i_Message)
     {
-        this.log(null ,$LogLevelTrace ,i_Message ,null ,null);
+        this.log(null ,LoggerSync.$LogLevelTrace ,i_Message ,null ,null);
     }
     
     
@@ -2219,7 +1673,7 @@ public class Logger
      */
     public void trace(final String i_Message ,final String i_Argument)
     {
-        this.log(null ,$LogLevelTrace ,i_Message ,new Object[] {i_Argument} ,null);
+        this.log(null ,LoggerSync.$LogLevelTrace ,i_Message ,new Object[] {i_Argument} ,null);
     }
     
     
@@ -2237,7 +1691,7 @@ public class Logger
     {
         if ( i_Message != null )
         {
-            this.log(null ,$LogLevelTrace ,i_Message.toString() ,null ,null);
+            this.log(null ,LoggerSync.$LogLevelTrace ,i_Message.toString() ,null ,null);
         }
     }
     
@@ -2255,7 +1709,7 @@ public class Logger
      */
     public void trace(final String i_Message, final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelTrace ,i_Message ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelTrace ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -2271,7 +1725,7 @@ public class Logger
      */
     public void trace(final Throwable i_Throwable)
     {
-        this.log(null ,$LogLevelTrace ,"" ,null ,i_Throwable);
+        this.log(null ,LoggerSync.$LogLevelTrace ,"" ,null ,i_Throwable);
     }
     
     
@@ -2289,7 +1743,7 @@ public class Logger
      */
     public void trace(final Object i_Marker ,String i_Message, final Object ... i_Arguments)
     {
-        this.log(i_Marker ,$LogLevelTrace ,i_Message ,i_Arguments ,null);
+        this.log(i_Marker ,LoggerSync.$LogLevelTrace ,i_Message ,i_Arguments ,null);
     }
     
     
@@ -2307,7 +1761,7 @@ public class Logger
      */
     public void trace(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
-        this.log(i_Marker ,$LogLevelTrace ,i_Message ,null ,i_Throwable);
+        this.log(i_Marker ,LoggerSync.$LogLevelTrace ,i_Message ,null ,i_Throwable);
     }
     
     
@@ -2340,7 +1794,7 @@ public class Logger
      */
     public int getLogType()
     {
-        return $LogType;
+        return LoggerSync.$LogType;
     }
 
 
@@ -2350,7 +1804,7 @@ public class Logger
      */
     public int getLogVersion()
     {
-        return $LogVersion;
+        return LoggerSync.$LogVersion;
     }
     
 }
