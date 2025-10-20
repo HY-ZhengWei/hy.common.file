@@ -1,6 +1,7 @@
 package org.hy.common.ftp;
 
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -31,15 +33,16 @@ import org.hy.common.ftp.event.FTPListener;
  * FTP操作的辅助类
  *
  * @author   ZhengWei(HY)
- * @version  V1.0  2012-06-04
- *           V2.0  2020-05-20  添加：1. 支持文件流的上传
+ * @version  v1.0  2012-06-04
+ *           v2.0  2020-05-20  添加：1. 支持文件流的上传
  *                             添加：2. 支持追加模式（断点续传）
  *                             添加：3. FileDataPacket 文件的数据包的上传（默认开启断点续传）
  *                             添加：4. 创建FTP目录。可连续创建多级目录
  *                             添加：5. 支持中文目录及中文文件
+ *           v3.0  2025-10-20  添加：实现 Closeable 接口
  * 
  */
-public final class FTPHelp
+public final class FTPHelp implements Closeable
 {
     /** 缓存大小 */
     private static final int $BufferSize     = 4 * 1024;
@@ -117,7 +120,7 @@ public final class FTPHelp
             this.ftpClient.setConnectTimeout(              this.ftpInfo.getConnectTimeout());
             this.ftpClient.setControlKeepAliveReplyTimeout(this.ftpInfo.getControlKeepAliveReplyTimeoutDuration());
             this.ftpClient.setControlKeepAliveTimeout(     this.ftpInfo.getControlKeepAliveTimeoutDuration());
-            this.ftpClient.setDataTimeout(                 this.ftpInfo.getDataTimeoutMillis());
+            this.ftpClient.setDataTimeout(                 Duration.ofMillis(this.ftpInfo.getDataTimeoutMillis()));
             
             this.ftpClient.connect(this.ftpInfo.getIp()   ,this.ftpInfo.getPort());
             this.ftpClient.login(  this.ftpInfo.getUser() ,this.ftpInfo.getPassword());
@@ -165,7 +168,7 @@ public final class FTPHelp
     /**
      * 关闭与 FTP 服务间的连接服务
      */
-    public void close()
+    public void close() throws IOException
     {
         if ( this.ftpClient != null )
         {
@@ -174,9 +177,9 @@ public final class FTPHelp
                 this.ftpClient.logout();
                 this.ftpClient.disconnect();
             }
-            catch (IOException e)
+            catch (IOException exce)
             {
-                e.printStackTrace();
+                throw exce;
             }
             finally
             {

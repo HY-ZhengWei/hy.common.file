@@ -16,6 +16,7 @@ import org.hy.common.Help;
  * @author   ZhengWei(HY)
  * @version  V1.0  2012-03-27
  *           V2.0  2020-05-28  添加：继承 FTPClient 父类
+ *           V3.0  2025-10-19  修正：读取文件的超时时长的设置
  */
 public class FTPInfo extends FTPClient implements Cloneable
 {
@@ -51,9 +52,6 @@ public class FTPInfo extends FTPClient implements Cloneable
     
     /** 安全接口 */
     private FTPSecurity      security;
-    
-    /** 读取文件的超时时长 */
-    private int              dataTimeout;
     
     
     
@@ -269,12 +267,11 @@ public class FTPInfo extends FTPClient implements Cloneable
     /**
      * 设置：读取文件的超时时长
      * 
-     * @param dataTimeout
+     * @param i_DataTimeout
      */
-    @SuppressWarnings("deprecation")
-    public void setDataTimeoutMillis(int dataTimeout)
+    public void setDataTimeoutMillis(int i_DataTimeout)
     {
-        super.setDataTimeout(this.dataTimeout);
+        super.setDataTimeout(Duration.ofMillis(i_DataTimeout));
     }
     
     
