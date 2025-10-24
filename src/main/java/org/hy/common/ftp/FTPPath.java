@@ -25,6 +25,9 @@ public class FTPPath implements Serializable
     /** 路径名称（全路径） */
     private String   pathName;
     
+    /** 路径最末端的名称 */
+    private String   simpleName;
+    
     /** 路径类型 */
     private PathType pathType;
     
@@ -36,10 +39,11 @@ public class FTPPath implements Serializable
     }
     
     
-    public FTPPath(String i_PathName ,PathType i_PathType)
+    public FTPPath(String i_PathName ,String i_SimpleName ,PathType i_PathType)
     {
-        this.pathName = i_PathName;
-        this.pathType = i_PathType;
+        this.pathName   = i_PathName;
+        this.simpleName = i_SimpleName;
+        this.pathType   = i_PathType;
     }
 
     
@@ -80,6 +84,26 @@ public class FTPPath implements Serializable
     public void setPathType(PathType i_PathType)
     {
         this.pathType = i_PathType;
+    }
+
+    
+    /**
+     * 获取：路径最末端的名称
+     */
+    public String getSimpleName()
+    {
+        return simpleName;
+    }
+
+    
+    /**
+     * 设置：路径最末端的名称
+     * 
+     * @param i_SimpleName 路径最末端的名称
+     */
+    public void setSimpleName(String i_SimpleName)
+    {
+        this.simpleName = i_SimpleName;
     }
 
 

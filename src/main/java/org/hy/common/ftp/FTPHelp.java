@@ -342,13 +342,13 @@ public final class FTPHelp implements Closeable
             {
                 if ( v_FtpFile.isFile() )
                 {
-                    v_Ret.add(new FTPPath(v_Folder + v_FtpFile.getName() ,PathType.File));
+                    v_Ret.add(new FTPPath(v_Folder + v_FtpFile.getName() ,v_FtpFile.getName() ,PathType.File));
                 }
                 else if ( v_FtpFile.isDirectory() )
                 {
                     if ( i_HaveDirectory )
                     {
-                        v_Ret.add(new FTPPath(v_Folder + v_FtpFile.getName() ,PathType.Directory));
+                        v_Ret.add(new FTPPath(v_Folder + v_FtpFile.getName() ,v_FtpFile.getName() ,PathType.Directory));
                     }
                     
                     List<FTPPath> v_Childs = getFiles(v_Folder + v_FtpFile.getName() ,i_HaveDirectory);
