@@ -10,6 +10,7 @@ import org.hy.common.ftp.FTPHelp;
 import org.hy.common.ftp.FTPInfo;
 import org.hy.common.ftp.FTPPath;
 import org.hy.common.ftp.enums.PathType;
+import org.junit.Test;
 
 
 
@@ -24,22 +25,28 @@ import org.hy.common.ftp.enums.PathType;
 public class FTPHelpTest
 {
     
-    // @Test
+    @Test
     public void test_getPathType()
     {
         FTPInfo v_FTPInfo = new FTPInfo();
         
-        v_FTPInfo.setIp("127.0.0.1");
+        v_FTPInfo.setIp("11.0.106.98");
         v_FTPInfo.setPort(21);
         v_FTPInfo.setUser("iot202498");
-        v_FTPInfo.setPassword("ftp");
+        v_FTPInfo.setPassword("iot24A008@LAB.cn");
         v_FTPInfo.setLocalPassiveMode(true);
         
         try (FTPHelp v_FTPHelp = new FTPHelp(v_FTPInfo))
         {
             v_FTPHelp.connect();
             
-            PathType v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/1.0.0");
+            PathType v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/1.0.0/");
+            System.out.println(v_PathType.getComment());
+            
+            v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/testDir");
+            System.out.println(v_PathType.getComment());
+            
+            v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/testFile");
             System.out.println(v_PathType.getComment());
             
             v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/1.0.0/hy.common.callflow-1.0.0.jar");

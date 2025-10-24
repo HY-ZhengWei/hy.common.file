@@ -231,23 +231,22 @@ public final class FTPHelp implements Closeable
         try
         {
             FTPFile [] v_FtpFiles = this.ftpClient.listFiles(i_Path);
-            if ( Help.isNull(v_FtpFiles) ) 
+            FTPFile    v_FTPFile  = null;
+            if ( v_FtpFiles == null )
             {
-                return PathType.NotExist;
+                v_FTPFile = ftpClient.mlistFile(i_Path);
             }
-            
-            FTPFile v_FTPFile = null;
-            if ( v_FtpFiles != null && v_FtpFiles.length >= 2 )
+            else if ( Help.isNull(v_FtpFiles) ) 
             {
                 return PathType.Directory;
             }
-            else if ( v_FtpFiles != null && v_FtpFiles.length == 1 )
+            else if ( v_FtpFiles.length >= 2 )
             {
-                v_FTPFile = v_FtpFiles[0];
+                return PathType.Directory;
             }
             else
             {
-                v_FTPFile = ftpClient.mlistFile(i_Path);
+                v_FTPFile = v_FtpFiles[0];
             }
             
             if ( v_FTPFile == null )
