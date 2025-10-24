@@ -30,10 +30,10 @@ public class FTPHelpTest
     {
         FTPInfo v_FTPInfo = new FTPInfo();
         
-        v_FTPInfo.setIp("11.0.106.98");
+        v_FTPInfo.setIp("127.0.0.1");
         v_FTPInfo.setPort(21);
         v_FTPInfo.setUser("iot202498");
-        v_FTPInfo.setPassword("iot24A008@LAB.cn");
+        v_FTPInfo.setPassword("ftp");
         v_FTPInfo.setLocalPassiveMode(true);
         
         try (FTPHelp v_FTPHelp = new FTPHelp(v_FTPInfo))
