@@ -2,9 +2,14 @@ package org.hy.common.ftp.junit;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
+import org.hy.common.Help;
 import org.hy.common.StringHelp;
 import org.hy.common.ftp.FTPHelp;
 import org.hy.common.ftp.FTPInfo;
+import org.hy.common.ftp.FTPPath;
+import org.hy.common.ftp.enums.PathType;
 
 
 
@@ -18,14 +23,72 @@ import org.hy.common.ftp.FTPInfo;
  */
 public class FTPHelpTest
 {
-
+    
+    // @Test
+    public void test_getPathType()
+    {
+        FTPInfo v_FTPInfo = new FTPInfo();
+        
+        v_FTPInfo.setIp("127.0.0.1");
+        v_FTPInfo.setPort(21);
+        v_FTPInfo.setUser("iot202498");
+        v_FTPInfo.setPassword("ftp");
+        v_FTPInfo.setLocalPassiveMode(true);
+        
+        try (FTPHelp v_FTPHelp = new FTPHelp(v_FTPInfo))
+        {
+            v_FTPHelp.connect();
+            
+            PathType v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/1.0.0");
+            System.out.println(v_PathType.getComment());
+            
+            v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/1.0.0/hy.common.callflow-1.0.0.jar");
+            System.out.println(v_PathType.getComment());
+        }
+        catch (Exception exce)
+        {
+            exce.printStackTrace();
+        }
+    }
+    
+    
+    
+    // @Test
+    public void test_getFiles()
+    {
+        FTPInfo v_FTPInfo = new FTPInfo();
+        
+        v_FTPInfo.setIp("127.0.0.1");
+        v_FTPInfo.setPort(21);
+        v_FTPInfo.setUser("iot202498");
+        v_FTPInfo.setPassword("ftp");
+        v_FTPInfo.setLocalPassiveMode(true);
+        
+        try (FTPHelp v_FTPHelp = new FTPHelp(v_FTPInfo))
+        {
+            v_FTPHelp.connect();
+            
+            List<FTPPath> v_Files = v_FTPHelp.getFiles("/opt/ftpRoot/");
+            Help.print(v_Files);
+            
+            v_Files = v_FTPHelp.getFiles("/opt/ftpRoot/" ,true);
+            Help.print(v_Files);
+        }
+        catch (Exception exce)
+        {
+            exce.printStackTrace();
+        }
+    }
+    
+    
+    
     @SuppressWarnings("unused")
     // @Test
     public void testDownload()
     {
         FTPInfo v_FTPInfo = new FTPInfo();
         
-        v_FTPInfo.setIp("133.64.89.12");
+        v_FTPInfo.setIp("127.0.0.1");
         v_FTPInfo.setPort(21);
         v_FTPInfo.setUser("ftp");
         v_FTPInfo.setPassword("ftp");
@@ -33,7 +96,6 @@ public class FTPHelpTest
         
         try (FTPHelp v_FTPHelp = new FTPHelp(v_FTPInfo))
         {
-        
             v_FTPHelp.connect();
             
             String v_Ret          = null;
@@ -70,7 +132,7 @@ public class FTPHelpTest
     {
         FTPInfo v_FTPInfo = new FTPInfo();
         
-        v_FTPInfo.setIp("133.64.89.12");
+        v_FTPInfo.setIp("127.0.0.1");
         v_FTPInfo.setPort(21);
         v_FTPInfo.setUser("ftp");
         v_FTPInfo.setPassword("ftp");
@@ -105,7 +167,7 @@ public class FTPHelpTest
     {
         FTPInfo v_FTPInfo = new FTPInfo();
         
-        v_FTPInfo.setIp("133.64.32.46");
+        v_FTPInfo.setIp("127.0.0.1");
         v_FTPInfo.setPort(21);
         v_FTPInfo.setUser("ftp01");
         v_FTPInfo.setPassword("password01");

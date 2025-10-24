@@ -1910,7 +1910,10 @@ public final class FileHelp
                     v_Ret.add(v_File);
                 }
                 
-                v_Ret.addAll(getFiles(v_File ,i_HaveDirectory));
+                List<File> v_Childs = getFiles(v_File ,i_HaveDirectory);
+                v_Ret.addAll(v_Childs);
+                v_Childs.clear();
+                v_Childs = null;
             }
         }
         

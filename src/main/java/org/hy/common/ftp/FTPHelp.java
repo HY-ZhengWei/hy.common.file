@@ -10,20 +10,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
 import org.hy.common.ByteHelp;
 import org.hy.common.ExpireMap;
 import org.hy.common.Help;
 import org.hy.common.StringHelp;
 import org.hy.common.file.FileDataPacket;
 import org.hy.common.file.FileHelp;
+import org.hy.common.ftp.enums.PathType;
 import org.hy.common.ftp.event.DefaultFTPEvent;
 import org.hy.common.ftp.event.FTPEvent;
 import org.hy.common.ftp.event.FTPListener;
+import org.hy.common.xml.log.Logger;
 
 
 
@@ -40,10 +45,17 @@ import org.hy.common.ftp.event.FTPListener;
  *                             添加：4. 创建FTP目录。可连续创建多级目录
  *                             添加：5. 支持中文目录及中文文件
  *           v3.0  2025-10-20  添加：实现 Closeable 接口
+ *           v3.1  2025-10-24  添加：获取路径类型
+ *                             优化：用Logger输出日志
+ *                             优化：提高性能，短时间内不重复创建相同的目录
+ *                             添加：递归的获取目录所有文件及子目录中的文件
  * 
  */
 public final class FTPHelp implements Closeable
 {
+    
+    private static final Logger                            $Logger      = new Logger(FTPHelp.class);
+    
     /** 缓存大小 */
     private static final int $BufferSize     = 4 * 1024;
     
@@ -65,6 +77,12 @@ public final class FTPHelp implements Closeable
     /** 数据包的超时时长（单位：秒） */
     private long                       dataPacketTimeOut = 10 * 60;
     
+    /** 创建目录的缓存。预防短时间内重复创建同一目录，提高性能。Map.key是目录路径，Map.value是之前makeDirectory()方法的返回值 */
+    private ExpireMap<String ,Integer> makeDirCache;
+    
+    /** 创建目录的缓存时长（单位：秒） */
+    private int                        makeDirCacheTimeLen;
+    
     
     
     /**
@@ -74,8 +92,9 @@ public final class FTPHelp implements Closeable
      */
     public FTPHelp(FTPInfo i_FTPInfo)
     {
-        this.ftpInfo  = i_FTPInfo;
-        this.dataSafe = false;
+        this.ftpInfo             = i_FTPInfo;
+        this.dataSafe            = false;
+        this.makeDirCacheTimeLen = 60;
     }
     
     
@@ -101,7 +120,9 @@ public final class FTPHelp implements Closeable
     {
         if ( this.ftpInfo == null )
         {
-            return "Fpt info is null.";
+            String v_Msg = "Fpt info is null.";
+            $Logger.warn(v_Msg);
+            return v_Msg;
         }
         
         try
@@ -111,9 +132,7 @@ public final class FTPHelp implements Closeable
                 this.close();
             }
             
-            
             this.ftpClient = new FTPClient();
-            
             
             this.ftpClient.setProxy(                       this.ftpInfo.getProxy());
             this.ftpClient.setDefaultTimeout(              this.ftpInfo.getDefaultTimeout());
@@ -141,14 +160,13 @@ public final class FTPHelp implements Closeable
             this.ftpClient.setSendBufferSize(              this.ftpInfo.getSendBufferSize());
             this.ftpClient.setSendDataSocketBufferSize(    this.ftpInfo.getSendDataSocketBufferSize());
             
-            
             this.ftpClient.setStrictMultilineParsing(      this.ftpInfo.isStrictMultilineParsing());
             this.ftpClient.setStrictReplyParsing(          this.ftpInfo.isStrictReplyParsing());
             this.ftpClient.setUseEPSVwithIPv4(             this.ftpInfo.isUseEPSVwithIPv4());
             this.ftpClient.setRemoteVerificationEnabled(   this.ftpInfo.isRemoteVerificationEnabled());
             
             this.ftpClient.setListHiddenFiles(             this.ftpInfo.getListHiddenFiles());
-            this.ftpClient.setControlEncoding(             this.ftpInfo.getControlEncoding());
+            this.ftpClient.setControlEncoding(             this.ftpInfo.getControlEncoding());   // 设置编码（解决中文路径问题）
             this.ftpClient.setAutodetectUTF8(              this.ftpInfo.getAutodetectUTF8());
             this.ftpClient.setCharset(                     this.ftpInfo.getCharset());
             this.ftpClient.changeWorkingDirectory(         this.ftpInfo.getInitPath());
@@ -156,7 +174,7 @@ public final class FTPHelp implements Closeable
         catch (Exception exce)
         {
             this.ftpClient = null;
-            exce.printStackTrace();
+            $Logger.error(exce);
             return exce.getMessage();
         }
         
@@ -179,6 +197,7 @@ public final class FTPHelp implements Closeable
             }
             catch (IOException exce)
             {
+                $Logger.error(exce);
                 throw exce;
             }
             finally
@@ -186,6 +205,166 @@ public final class FTPHelp implements Closeable
                 this.ftpClient = null;
             }
         }
+    }
+    
+    
+    
+    /**
+     * 获取路径类型
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2025-10-24
+     * @version     v1.0
+     *
+     * @param i_Path  路径
+     * @return        返回 NULL 表示异常
+     */
+    public PathType getPathType(String i_Path)
+    {
+        if ( this.ftpClient == null )
+        {
+            String v_Msg = "Ftp Client is not connect.";
+            $Logger.warn(v_Msg);
+            return null;
+        }
+        
+        try
+        {
+            FTPFile [] v_FtpFiles = this.ftpClient.listFiles(i_Path);
+            if ( Help.isNull(v_FtpFiles) ) 
+            {
+                return PathType.NotExist;
+            }
+            
+            FTPFile v_FTPFile = null;
+            if ( v_FtpFiles != null && v_FtpFiles.length >= 2 )
+            {
+                return PathType.Directory;
+            }
+            else if ( v_FtpFiles != null && v_FtpFiles.length == 1 )
+            {
+                v_FTPFile = v_FtpFiles[0];
+            }
+            else
+            {
+                v_FTPFile = ftpClient.mlistFile(i_Path);
+            }
+            
+            if ( v_FTPFile == null )
+            {
+                return PathType.NotExist;
+            }
+            else if ( v_FTPFile.isDirectory() )
+            {
+                return PathType.Directory;
+            }
+            else if ( v_FTPFile.isFile() )
+            {
+                return PathType.File;
+            }
+            else if ( v_FTPFile.isSymbolicLink() )
+            {
+                return PathType.SymbolicLink;
+            }
+            else
+            {
+                return PathType.NotExist; // 其他类型，视为不存在
+            }
+        }
+        catch (Exception exce)
+        {
+            $Logger.error(exce);
+        }
+        
+        return null;
+    }
+    
+    
+    
+    /**
+     * 递归的获取目录所有文件及子目录中的文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2025-10-24
+     * @version     v1.0
+     *
+     * @param i_Folder  目录
+     * @return
+     */
+    public List<FTPPath> getFiles(String i_Folder)
+    {
+        return this.getFiles(i_Folder ,false);
+    }
+    
+    
+    
+    /**
+     * 递归的获取目录所有文件及子目录中的文件
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2025-10-24
+     * @version     v1.0
+     *
+     * @param i_Folder         目录
+     * @param i_HaveDirectory  是否包括目录
+     * @return
+     */
+    public List<FTPPath> getFiles(String i_Folder ,boolean i_HaveDirectory)
+    {
+        List<FTPPath> v_Ret = new ArrayList<FTPPath>();
+        
+        if ( i_Folder == null )
+        {
+            return v_Ret;
+        }
+        
+        if ( this.ftpClient == null )
+        {
+            String v_Msg = "Ftp Client is not connect.";
+            $Logger.warn(v_Msg);
+            return v_Ret;
+        }
+        
+        try
+        {
+            String v_Folder = i_Folder.trim();
+            if ( !v_Folder.endsWith("/") )
+            {
+                v_Folder += "/";
+            }
+            
+            FTPFile [] v_FtpFiles = ftpClient.listFiles(v_Folder);
+            if ( Help.isNull(v_FtpFiles) )
+            {
+                return v_Ret;
+            }
+            
+            for (FTPFile v_FtpFile : v_FtpFiles)
+            {
+                if ( v_FtpFile.isFile() )
+                {
+                    v_Ret.add(new FTPPath(v_Folder + v_FtpFile.getName() ,PathType.File));
+                }
+                else if ( v_FtpFile.isDirectory() )
+                {
+                    if ( i_HaveDirectory )
+                    {
+                        v_Ret.add(new FTPPath(v_Folder + v_FtpFile.getName() ,PathType.Directory));
+                    }
+                    
+                    List<FTPPath> v_Childs = getFiles(v_Folder + v_FtpFile.getName() ,i_HaveDirectory);
+                    v_Ret.addAll(v_Childs);
+                    v_Childs.clear();
+                    v_Childs = null;
+                }
+            }
+        }
+        catch (Exception exce)
+        {
+            $Logger.error("遍历[" + i_Folder + "]时异常" ,exce);
+        }
+        
+        return v_Ret;
     }
     
     
@@ -216,9 +395,10 @@ public final class FTPHelp implements Closeable
     {
         if ( this.ftpClient == null )
         {
-            return "Ftp Client is not connect.";
+            String v_Msg = "Ftp Client is not connect.";
+            $Logger.warn(v_Msg);
+            return v_Msg;
         }
-        
         
         InputStream       v_Input          = null;
         DataInputStream   v_DataInput      = null;
@@ -276,10 +456,11 @@ public final class FTPHelp implements Closeable
             
             v_Event.setSucceedFinish();
         }
-        catch (Exception e)
+        catch (Exception exce)
         {
             v_Event.setEndTime();
-            return e.toString();
+            $Logger.error(exce);
+            return exce.toString();
         }
         finally
         {
@@ -362,7 +543,9 @@ public final class FTPHelp implements Closeable
     {
         if ( this.ftpClient == null )
         {
-            return "Ftp Client is not connect.";
+            String v_Msg = "Ftp Client is not connect.";
+            $Logger.warn(v_Msg);
+            return v_Msg;
         }
         
         
@@ -415,10 +598,11 @@ public final class FTPHelp implements Closeable
             
             v_Event.setSucceedFinish();
         }
-        catch (Exception e)
+        catch (Exception exce)
         {
             v_Event.setEndTime();
-            return e.toString();
+            $Logger.error(exce);
+            return exce.toString();
         }
         finally
         {
@@ -629,9 +813,10 @@ public final class FTPHelp implements Closeable
     {
         if ( this.ftpClient == null )
         {
-            return "Ftp Client is not connect.";
+            String v_Msg = "Ftp Client is not connect.";
+            $Logger.warn(v_Msg);
+            return v_Msg;
         }
-        
         
         DataInputStream v_DataInput  = null;
         OutputStream    v_Output     = null;
@@ -700,7 +885,6 @@ public final class FTPHelp implements Closeable
             
             v_Event.setSucceedFinish();
             
-            
 //          下面注解的代码，可直接上传文件，不用读写数据流。
 //          boolean v_Ret = this.ftpClient.storeFile(i_RemoteFullName ,v_Input);
 //
@@ -713,11 +897,11 @@ public final class FTPHelp implements Closeable
 //              System.out.println("upload is faild.");
 //          }
         }
-        catch (Exception e)
+        catch (Exception exce)
         {
-            e.printStackTrace();
             v_Event.setEndTime();
-            return e.toString();
+            $Logger.error(exce);
+            return exce.toString();
         }
         finally
         {
@@ -751,6 +935,7 @@ public final class FTPHelp implements Closeable
      * @author      ZhengWei(HY)
      * @createDate  2020-05-20
      * @version     v1.0
+     *              v2.0  2025-10-24  优化：提高性能，短时间内不重复创建相同的目录
      *
      * @param i_DirFullName   目录的全路径名称
      * @return                返回值表示创建的目录数量
@@ -764,35 +949,54 @@ public final class FTPHelp implements Closeable
         
         if ( this.ftpClient == null )
         {
+            String v_Msg = "Ftp Client is not connect.";
+            $Logger.warn(v_Msg);
             return -99;
         }
         
         try
         {
-            String []     v_DirFullNameArr = i_DirFullName.trim().split("/");
-            StringBuilder v_DirBuffer      = new StringBuilder();
-            int           v_CreateCount    = 0;
-            
-            for (String v_DirName : v_DirFullNameArr)
+            String v_DirFullName = i_DirFullName.trim();
+            synchronized ( this )
             {
-                if ( Help.isNull(v_DirName) )
+                // 提高性能，短时间内不重复创建相同的目录
+                if ( this.makeDirCache == null )
                 {
-                    continue;
+                    this.makeDirCache = new ExpireMap<String ,Integer>();
                 }
                 
-                v_DirBuffer.append("/").append(new String(v_DirName.getBytes("GBK") ,"ISO-8859-1"));
-                
-                if ( this.ftpClient.makeDirectory(v_DirBuffer.toString()) )
+                Integer v_RetOld = this.makeDirCache.get(v_DirFullName);
+                if ( v_RetOld != null )
                 {
-                    v_CreateCount++;
+                    return v_RetOld;
                 }
-            }
             
-            return v_CreateCount;
+                String []     v_DirFullNameArr = v_DirFullName.split("/");
+                StringBuilder v_DirBuffer      = new StringBuilder();
+                int           v_CreateCount    = 0;
+                
+                for (String v_DirName : v_DirFullNameArr)
+                {
+                    if ( Help.isNull(v_DirName) )
+                    {
+                        continue;
+                    }
+                    
+                    v_DirBuffer.append("/").append(new String(v_DirName.getBytes("GBK") ,"ISO-8859-1"));
+                    
+                    if ( this.ftpClient.makeDirectory(v_DirBuffer.toString()) )
+                    {
+                        v_CreateCount++;
+                    }
+                }
+                
+                this.makeDirCache.put(v_DirFullName ,v_CreateCount ,this.makeDirCacheTimeLen);
+                return v_CreateCount;
+            }
         }
         catch (Exception exce)
         {
-            exce.printStackTrace();
+            $Logger.error(exce);
         }
         
         return -1;
@@ -810,9 +1014,10 @@ public final class FTPHelp implements Closeable
     {
         if ( this.ftpClient == null )
         {
-            return "Ftp Client is not connect.";
+            String v_Msg = "Ftp Client is not connect.";
+            $Logger.warn(v_Msg);
+            return v_Msg;
         }
-        
         
         try
         {
@@ -820,11 +1025,14 @@ public final class FTPHelp implements Closeable
             
             if ( !v_Ret )
             {
-                return "Delete file is faild.";
+                String v_Msg = "Delete file is faild.";
+                $Logger.warn(v_Msg);
+                return v_Msg;
             }
         }
         catch (Exception exce)
         {
+            $Logger.error(exce);
             return exce.toString();
         }
         
@@ -978,16 +1186,46 @@ public final class FTPHelp implements Closeable
     
     
     
+    /**
+     * 获取：数据安全性。如果为真，将对上传的文件进行数据加密
+     */
     public boolean isDataSafe()
     {
         return dataSafe;
     }
 
 
-
-    public void setDataSafe(boolean dataSafe)
+    
+    /**
+     * 设置：数据安全性。如果为真，将对上传的文件进行数据加密
+     * 
+     * @param i_DataSafe 数据安全性。如果为真，将对上传的文件进行数据加密
+     */
+    public void setDataSafe(boolean i_DataSafe)
     {
-        this.dataSafe = dataSafe;
+        this.dataSafe = i_DataSafe;
+    }
+
+
+
+    /**
+     * 获取：创建目录的缓存时长（单位：秒）
+     */
+    public int getMakeDirCacheTimeLen()
+    {
+        return makeDirCacheTimeLen;
+    }
+
+
+    
+    /**
+     * 设置：创建目录的缓存时长（单位：秒）
+     * 
+     * @param i_MakeDirCacheTimeLen 创建目录的缓存时长（单位：秒）
+     */
+    public void setMakeDirCacheTimeLen(int i_MakeDirCacheTimeLen)
+    {
+        this.makeDirCacheTimeLen = i_MakeDirCacheTimeLen;
     }
 
 
