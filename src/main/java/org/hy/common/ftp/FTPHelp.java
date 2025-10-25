@@ -152,6 +152,8 @@ public final class FTPHelp implements Closeable
             {
                 this.ftpClient.enterRemotePassiveMode();
             }
+            
+            // 设置文件传输模式为二进制（避免内容乱码，不影响文件名，但建议设置）
             this.ftpClient.setFileType(FTPClient.BINARY_FILE_TYPE);
             
             this.ftpClient.setBufferSize(                  this.ftpInfo.getBufferSize());
@@ -420,7 +422,7 @@ public final class FTPHelp implements Closeable
         
         try
         {
-            v_Input          = this.ftpClient.retrieveFileStream(new String(i_RemoteFullName.getBytes("GBK") ,"ISO-8859-1"));
+            v_Input          = this.ftpClient.retrieveFileStream(new String(i_RemoteFullName.getBytes(this.ftpClient.getControlEncoding()) ,"ISO-8859-1"));
             v_DataInput      = new DataInputStream(v_Input);
             v_SaveFile       = new File(i_SaveFullName);
             v_SaveFileOutput = new FileOutputStream(v_SaveFile);
@@ -568,7 +570,7 @@ public final class FTPHelp implements Closeable
         
         try
         {
-            v_Input          = this.ftpClient.retrieveFileStream(new String(i_RemoteFullName.getBytes("GBK") ,"ISO-8859-1"));
+            v_Input          = this.ftpClient.retrieveFileStream(new String(i_RemoteFullName.getBytes(this.ftpClient.getControlEncoding()) ,"ISO-8859-1"));
             v_DataInput      = new DataInputStream(v_Input);
             byte [] v_Buffer = new byte[$BufferSize];
             int     v_RSize  = 0;
@@ -850,11 +852,11 @@ public final class FTPHelp implements Closeable
             
             if ( i_IsAppend )
             {
-                v_Output = this.ftpClient.appendFileStream(new String(i_RemoteFullName.getBytes("GBK") ,"ISO-8859-1"));
+                v_Output = this.ftpClient.appendFileStream(new String(i_RemoteFullName.getBytes(this.ftpClient.getControlEncoding()) ,"ISO-8859-1"));
             }
             else
             {
-                v_Output = this.ftpClient.storeFileStream(new String(i_RemoteFullName.getBytes("GBK") ,"ISO-8859-1"));
+                v_Output = this.ftpClient.storeFileStream( new String(i_RemoteFullName.getBytes(this.ftpClient.getControlEncoding()) ,"ISO-8859-1"));
             }
             
             v_IsContinue = this.fireFTPBeforeListener(v_Event);
@@ -990,7 +992,7 @@ public final class FTPHelp implements Closeable
                         continue;
                     }
                     
-                    v_DirBuffer.append("/").append(new String(v_DirName.getBytes("GBK") ,"ISO-8859-1"));
+                    v_DirBuffer.append("/").append(new String(v_DirName.getBytes(this.ftpClient.getControlEncoding()) ,"ISO-8859-1"));
                     
                     if ( this.ftpClient.makeDirectory(v_DirBuffer.toString()) )
                     {
@@ -1029,7 +1031,7 @@ public final class FTPHelp implements Closeable
         
         try
         {
-            boolean v_Ret = this.ftpClient.deleteFile(new String(i_RemoteFullName.getBytes("GBK") ,"ISO-8859-1"));
+            boolean v_Ret = this.ftpClient.deleteFile(new String(i_RemoteFullName.getBytes(this.ftpClient.getControlEncoding()) ,"ISO-8859-1"));
             
             if ( !v_Ret )
             {

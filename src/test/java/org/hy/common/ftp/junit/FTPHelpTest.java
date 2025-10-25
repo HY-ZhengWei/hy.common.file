@@ -26,6 +26,32 @@ public class FTPHelpTest
 {
     
     @Test
+    public void test_UpChinese()
+    {
+        FTPInfo v_FTPInfo = new FTPInfo();
+        
+        v_FTPInfo.setIp("127.0.0.1");
+        v_FTPInfo.setPort(21);
+        v_FTPInfo.setUser("iot202498");
+        v_FTPInfo.setPassword("ftp");
+        v_FTPInfo.setLocalPassiveMode(true);
+        v_FTPInfo.setControlEncoding("UTF-8");
+        
+        try (FTPHelp v_FTPHelp = new FTPHelp(v_FTPInfo))
+        {
+            v_FTPHelp.connect();
+            
+            v_FTPHelp.upload("D:/中文测试.txt" ,"/opt/ftpRoot/创建目录/中文测试.txt");
+        }
+        catch (Exception exce)
+        {
+            exce.printStackTrace();
+        }
+    }
+    
+    
+    
+    // @Test
     public void test_getPathType()
     {
         FTPInfo v_FTPInfo = new FTPInfo();
@@ -40,7 +66,10 @@ public class FTPHelpTest
         {
             v_FTPHelp.connect();
             
-            PathType v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/1.0.0/");
+            PathType v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot");
+            System.out.println("目录，有子文件 = " + v_PathType.getComment());
+            
+            v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/1.0.0/");
             System.out.println("目录，有子文件 = " + v_PathType.getComment());
             
             v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/testDir");
@@ -49,7 +78,7 @@ public class FTPHelpTest
             v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/我是一个不存在的目录");
             System.out.println("目录，不存在的 = " + v_PathType.getComment());
             
-            v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/testFile");
+            v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/Install_USB_Win11.zip");
             System.out.println("文件，是存在的 = " + v_PathType.getComment());
             
             v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/我是一个不存在的假文件.txt");
