@@ -234,11 +234,20 @@ public final class FTPHelp implements Closeable
             FTPFile    v_FTPFile  = null;
             if ( v_FtpFiles == null )
             {
-                v_FTPFile = ftpClient.mlistFile(i_Path);
+                v_FTPFile = this.ftpClient.mlistFile(i_Path);
             }
             else if ( Help.isNull(v_FtpFiles) ) 
             {
-                return PathType.Directory;
+                String v_Status = this.ftpClient.getStatus(i_Path);
+                v_Status = StringHelp.replaceAll(v_Status ,new String[]{"\r\n" ,"213-Status follows:" ,"213 End of status"} ,StringHelp.$ReplaceNil);
+                if ( !Help.isNull(v_Status) )
+                {
+                    return PathType.Directory;
+                }
+                else
+                {
+                    return PathType.NotExist;
+                }
             }
             else if ( v_FtpFiles.length >= 2 )
             {

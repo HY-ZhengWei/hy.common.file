@@ -41,16 +41,22 @@ public class FTPHelpTest
             v_FTPHelp.connect();
             
             PathType v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/1.0.0/");
-            System.out.println(v_PathType.getComment());
+            System.out.println("目录，有子文件 = " + v_PathType.getComment());
             
             v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/testDir");
-            System.out.println(v_PathType.getComment());
+            System.out.println("目录，但无文件 = " + v_PathType.getComment());
+            
+            v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/我是一个不存在的目录");
+            System.out.println("目录，不存在的 = " + v_PathType.getComment());
             
             v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/testFile");
-            System.out.println(v_PathType.getComment());
+            System.out.println("文件，是存在的 = " + v_PathType.getComment());
+            
+            v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/我是一个不存在的假文件.txt");
+            System.out.println("文件，不存在的 = " + v_PathType.getComment());
             
             v_PathType = v_FTPHelp.getPathType("/opt/ftpRoot/1.0.0/hy.common.callflow-1.0.0.jar");
-            System.out.println(v_PathType.getComment());
+            System.out.println("文件，是存在的 = " + v_PathType.getComment());
         }
         catch (Exception exce)
         {
