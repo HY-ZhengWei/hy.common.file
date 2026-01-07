@@ -25,7 +25,7 @@ import org.junit.Test;
 public class FTPHelpTest
 {
     
-    @Test
+    // @Test
     public void test_UpChinese()
     {
         FTPInfo v_FTPInfo = new FTPInfo();

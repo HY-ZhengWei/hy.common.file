@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.hy.common.Counter;
 import org.hy.common.Date;
 import org.hy.common.Help;
+import org.hy.common.Max;
 import org.hy.common.PartitionMap;
 import org.hy.common.StringHelp;
 import org.hy.common.TablePartition;
@@ -49,6 +50,7 @@ import org.hy.common.TablePartitionBusway;
  *              v7.0  2020-06-25  添加：无日志组件的日志输出提示
  *              v8.0  2025-09-30  修正：有日志类无日志配置时是否采用System.out
  *              v9.0  2025-10-10  移除：日志创建初始独立出来，防止并发锁的问题
+ *              v10.0 2026-01-07  添加：最大用时
  */
 public class Logger
 {
@@ -113,6 +115,16 @@ public class Logger
      *   Map.Value 是：累计用时
      */
     private Counter<String>                            methodExecSumTime;
+    
+    /**
+     * 统计方法执行最大用时
+     * 
+     * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
+     * 
+     *   Map.Key   是：方法名称 + 线程号
+     *   Map.Value 是：累计用时
+     */
+    private Max<String>                                methodExecMaxTime;
     
     /**
      * 用于统计方法执行累计用时的方法最后执行行号，计算线程、方法、行号三者的关系。
@@ -450,6 +462,7 @@ public class Logger
         this.requestCount      = new Counter<String>();
         this.requestTime       = new ConcurrentHashMap<String ,Long>();
         this.methodExecSumTime = new Counter<String>();
+        this.methodExecMaxTime = new Max<String>();
         this.methodExecLines   = new ConcurrentHashMap<String ,Integer>();
         this.methodExecLastime = new ConcurrentHashMap<String ,Long>();
         this.addLogger();
@@ -616,6 +629,11 @@ public class Logger
             this.methodExecSumTime.set(v_Key ,0L);
         }
         
+        for (String v_Key : this.methodExecMaxTime.keySet())
+        {
+            this.methodExecMaxTime.set(v_Key ,0L);
+        }
+        
         if ( this.execptionLog != null )
         {
             for (String v_Key : this.execptionLog.keySet())
@@ -694,7 +712,9 @@ public class Logger
                 // 防止系统时间出现紊乱、回退等问题
                 if ( v_LastTime != null && v_LastTime.longValue() <= v_NowTime )
                 {
-                    this.methodExecSumTime.put(v_StackTrace.getMethodName() ,v_NowTime - v_LastTime.longValue());
+                    long v_Time = v_NowTime - v_LastTime.longValue();
+                    this.methodExecSumTime.put(v_StackTrace.getMethodName() ,v_Time);
+                    this.methodExecMaxTime.put(v_StackTrace.getMethodName() ,v_Time);
                 }
             }
             
@@ -759,6 +779,21 @@ public class Logger
     public Counter<String> getMethodExecSumTimes()
     {
         return methodExecSumTime;
+    }
+    
+    
+    
+    /**
+     * 统计方法执行最大用时
+     * 
+     * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
+     * 
+     *   Map.Key   是：方法名称 + 线程号
+     *   Map.Value 是：累计用时
+     */
+    public Max<String> getMethodExecMaxTimes()
+    {
+        return methodExecMaxTime;
     }
     
     
