@@ -774,7 +774,7 @@ public class Logger
                         this.methodExec.put(v_StackTrace.getMethodName() ,v_MethodExec);
                     }
                     
-                    v_MethodExec.setExecAvgTime(v_ExecSumTime / v_ExecSumCount * 1.0D);
+                    v_MethodExec.setExecAvgTime(v_ExecSumTime * 1.0D / v_ExecSumCount);
                     if ( v_ExecSumCount >= 2 )
                     {
                         // 离散度n = (离散度n-1 + (Xn - AVGn-1) * (Xn - AVGn)) / (n - 1)
