@@ -733,12 +733,19 @@ public class Logger
             String             v_MThreadID   = v_StackTrace.getMethodName() + Thread.currentThread().getId();
             LoggerMethodThread v_MExecThread = this.methodExecThread.get(v_MThreadID);
             long               v_NowTime     = Date.getNowTime().getTime();
-            if ( v_MExecThread == null )
+            if ( v_MExecThread == null || v_MExecThread.getLineNumber() == null )
             {
                 // 新的开始。即方法内首次 "日志" 输出 
                 v_MExecThread = new LoggerMethodThread();
                 v_MExecThread.setExecStartTime(v_NowTime);
                 this.methodExecCount.put(v_StackTrace.getMethodName() ,1L);
+                
+                LoggerMethod v_MethodExec = this.methodExec.get(v_StackTrace.getMethodName());
+                if ( v_MethodExec != null )
+                {
+                    v_MethodExec.setExecAvgTimeOld(v_MethodExec.getExecAvgTime());
+                    v_MethodExec.setDispersionOld( v_MethodExec.getDispersion());
+                }
             }
             else if ( v_StackTrace.getLineNumber() > v_MExecThread.getLineNumber() )
             {
@@ -751,23 +758,23 @@ public class Logger
                 if ( v_MExecThread.getExecLastTime() != null && v_MExecThread.getExecLastTime().longValue() <= v_NowTime )
                 {
                     long v_TimeLen = v_NowTime - v_MExecThread.getExecLastTime().longValue();
-                    this.methodExecSumTime.put(v_StackTrace.getMethodName() ,v_TimeLen);      // 分量累加，即每两次 "日志" 输出间的执行用时
+                    this.methodExecSumTime.put(v_StackTrace.getMethodName() ,v_TimeLen);      // 分量用时累加，即每两次 "日志" 输出间的执行用时
+                    
+                    v_MExecThread.setExecLastTime(v_NowTime);                                 // 必在上行之后执行
+                    v_TimeLen = v_MExecThread.getExecTimeLen();                               // 方法级的执行用时。不受方法内多次 "日志" 输出的影响，是首次日志输出到最后日志输出间的总用时的最大用时
                     this.methodExecMaxTime.put(v_StackTrace.getMethodName() ,v_MExecThread.getExecTimeLen());
                     
                     // 计算平均用时、及它的方差--离散度
                     long         v_ExecSumTime  = this.methodExecSumTime.get(v_StackTrace.getMethodName());
                     long         v_ExecSumCount = this.methodExecCount  .get(v_StackTrace.getMethodName());
-                    LoggerMethod v_MethodExec   = this.methodExec.get(v_StackTrace.getMethodName());
+                    LoggerMethod v_MethodExec   = this.methodExec       .get(v_StackTrace.getMethodName());
                     if ( v_MethodExec == null )
                     {
                         v_MethodExec = new LoggerMethod();
                         this.methodExec.put(v_StackTrace.getMethodName() ,v_MethodExec);
                     }
                     
-                    v_MethodExec.setExecAvgTimeOld(v_MethodExec.getExecAvgTimeOld());
                     v_MethodExec.setExecAvgTime(v_ExecSumTime / v_ExecSumCount * 1.0D);
-                    v_MethodExec.setDispersionOld(v_MethodExec.getDispersion());
-                    
                     if ( v_ExecSumCount >= 2 )
                     {
                         // 离散度n = (离散度n-1 + (Xn - AVGn-1) * (Xn - AVGn)) / (n - 1)
@@ -782,6 +789,13 @@ public class Logger
                 // 线程号被复用时
                 v_MExecThread.setExecStartTime(v_NowTime);
                 this.methodExecCount.put(v_StackTrace.getMethodName() ,1L);
+                
+                LoggerMethod v_MethodExec = this.methodExec.get(v_StackTrace.getMethodName());
+                if ( v_MethodExec != null )
+                {
+                    v_MethodExec.setExecAvgTimeOld(v_MethodExec.getExecAvgTime());
+                    v_MethodExec.setDispersionOld( v_MethodExec.getDispersion());
+                }
             }
             
             v_MExecThread.setLineNumber(v_StackTrace.getLineNumber());
