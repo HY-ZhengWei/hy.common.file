@@ -51,6 +51,9 @@ import org.hy.common.TablePartitionBusway;
  *              v8.0  2025-09-30  修正：有日志类无日志配置时是否采用System.out
  *              v9.0  2025-10-10  移除：日志创建初始独立出来，防止并发锁的问题
  *              v10.0 2026-01-07  添加：最大用时
+ *              v11.0 2026-01-17  添加：独立计算平均用时，并有要保存它
+ *                                添加：独立统计方法的执行次数，并有要保存它
+ *                                添加：离散度的计算（建议人：程志华）
  */
 public class Logger
 {
@@ -107,48 +110,58 @@ public class Logger
     private TablePartitionBusway<String ,LogException> execptionLog;
     
     /**
+     * 统计方法的执行次数（包括成功及异常情况）。
+     *    与 requestCount 区别是，它以一个方法为统计主体，无任此方法中有多少次 "日志" 均按 1 统计。
+     *    而 requestCount 是以 "日志" 输出次数统计的。
+     * 
+     * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
+     * 
+     *   Map.Key   是：方法名称
+     *   Map.Value 是：累计用时
+     */
+    private Counter<String>                            methodExecCount;
+    
+    /**
      * 统计方法执行累计用时
      * 
      * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
      * 
-     *   Map.Key   是：方法名称 + 线程号
+     *   Map.Key   是：方法名称
      *   Map.Value 是：累计用时
      */
     private Counter<String>                            methodExecSumTime;
     
     /**
-     * 统计方法执行最大用时
+     * 统计方法执行最大用时。
+     * 
+     *   注：不受方法内多次 "日志" 输出的影响，是首次日志输出到最后日志输出间的总用时的最大用时
      * 
      * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
      * 
-     *   Map.Key   是：方法名称 + 线程号
+     *   Map.Key   是：方法名称
      *   Map.Value 是：累计用时
      */
     private Max<String>                                methodExecMaxTime;
     
-    /**
-     * 用于统计方法执行累计用时的方法最后执行行号，计算线程、方法、行号三者的关系。
+    /**  
+     * 方法名称粒度的统计（非数据流累加的数据）。
      * 
      * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
      * 
-     *   Map.Key   是：方法名称 + 线程号
-     *   Map.Value 是：代码行号
-     * 
-     * 仅限内部使用
+     *   Map.Key   是：方法名称
      */
-    private Map<String ,Integer>                       methodExecLines;
+    private Map<String ,LoggerMethod>                  methodExec;
     
     /**
-     * 用于统计方法执行累计用时的方法最后执行时间
+     * 方法名称 + 线程号粒度的统计（非数据流累加的数据）。
      * 
      * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
      * 
-     *   Map.Key   是：方法名称 + 线程号
-     *   Map.Value 是：最后执行时间
+     *   Map.Key  是：方法名称 + 线程号
      * 
      * 仅限内部使用
      */
-    private Map<String ,Long>                          methodExecLastime;
+    private Map<String ,LoggerMethodThread>            methodExecThread;
     
     
     
@@ -459,12 +472,13 @@ public class Logger
      */
     public Logger(String i_ClassName ,Boolean i_IsPrintln)
     {
-        this.requestCount      = new Counter<String>();
-        this.requestTime       = new ConcurrentHashMap<String ,Long>();
-        this.methodExecSumTime = new Counter<String>();
-        this.methodExecMaxTime = new Max<String>();
-        this.methodExecLines   = new ConcurrentHashMap<String ,Integer>();
-        this.methodExecLastime = new ConcurrentHashMap<String ,Long>();
+        this.requestCount         = new Counter<String>();
+        this.requestTime          = new ConcurrentHashMap<String ,Long>();
+        this.methodExecCount      = new Counter<String>();
+        this.methodExecSumTime    = new Counter<String>();
+        this.methodExec           = new ConcurrentHashMap<String ,LoggerMethod>();
+        this.methodExecMaxTime    = new Max<String>();
+        this.methodExecThread     = new ConcurrentHashMap<String ,LoggerMethodThread>();
         this.addLogger();
         
         LoggerSync.getInstance().init(this ,i_ClassName ,i_IsPrintln);
@@ -624,6 +638,11 @@ public class Logger
             this.requestTime.put(v_Key ,0L);
         }
         
+        for (String v_Key : this.methodExecCount.keySet())
+        {
+            this.methodExecCount.set(v_Key ,0L);
+        }
+        
         for (String v_Key : this.methodExecSumTime.keySet())
         {
             this.methodExecSumTime.set(v_Key ,0L);
@@ -632,6 +651,16 @@ public class Logger
         for (String v_Key : this.methodExecMaxTime.keySet())
         {
             this.methodExecMaxTime.set(v_Key ,0L);
+        }
+        
+        for (LoggerMethod v_Item : this.methodExec.values())
+        {
+            v_Item.reset();
+        }
+        
+        for (LoggerMethodThread v_Item : this.methodExecThread.values())
+        {
+            v_Item.reset();
         }
         
         if ( this.execptionLog != null )
@@ -701,25 +730,63 @@ public class Logger
             }
             
             // 下面代码的功能是：通过方法内两次及以上的多次日志输出，尝试计算出方法执行用时
-            String  v_MethodThreadID = v_StackTrace.getMethodName() + Thread.currentThread().getId();
-            Integer v_LastLine       = this.methodExecLines.get(v_MethodThreadID);
-            long    v_NowTime        = Date.getNowTime().getTime();
-            
-            if ( v_LastLine != null && v_StackTrace.getLineNumber() > v_LastLine )
+            String             v_MThreadID   = v_StackTrace.getMethodName() + Thread.currentThread().getId();
+            LoggerMethodThread v_MExecThread = this.methodExecThread.get(v_MThreadID);
+            long               v_NowTime     = Date.getNowTime().getTime();
+            if ( v_MExecThread == null )
             {
-                Long v_LastTime = this.methodExecLastime.get(v_MethodThreadID);
+                // 新的开始。即方法内首次 "日志" 输出 
+                v_MExecThread = new LoggerMethodThread();
+                v_MExecThread.setExecStartTime(v_NowTime);
+                this.methodExecCount.put(v_StackTrace.getMethodName() ,1L);
+            }
+            else if ( v_StackTrace.getLineNumber() > v_MExecThread.getLineNumber() )
+            {
+                // 二次及以上的 "日志" 输出，才能统计用时时长等指标
+                // 计算上次与本次的时间差，所在要统计时间，只有要有两行日志。
+                // 首个日志时 v_LastTime 定为空
+                // 其后的日志 用当前时间 - v_LastTime 即为用时时长  
                 
                 // 防止系统时间出现紊乱、回退等问题
-                if ( v_LastTime != null && v_LastTime.longValue() <= v_NowTime )
+                if ( v_MExecThread.getExecLastTime() != null && v_MExecThread.getExecLastTime().longValue() <= v_NowTime )
                 {
-                    long v_Time = v_NowTime - v_LastTime.longValue();
-                    this.methodExecSumTime.put(v_StackTrace.getMethodName() ,v_Time);
-                    this.methodExecMaxTime.put(v_StackTrace.getMethodName() ,v_Time);
+                    long v_TimeLen = v_NowTime - v_MExecThread.getExecLastTime().longValue();
+                    this.methodExecSumTime.put(v_StackTrace.getMethodName() ,v_TimeLen);      // 分量累加，即每两次 "日志" 输出间的执行用时
+                    this.methodExecMaxTime.put(v_StackTrace.getMethodName() ,v_MExecThread.getExecTimeLen());
+                    
+                    // 计算平均用时、及它的方差--离散度
+                    long         v_ExecSumTime  = this.methodExecSumTime.get(v_StackTrace.getMethodName());
+                    long         v_ExecSumCount = this.methodExecCount  .get(v_StackTrace.getMethodName());
+                    LoggerMethod v_MethodExec   = this.methodExec.get(v_StackTrace.getMethodName());
+                    if ( v_MethodExec == null )
+                    {
+                        v_MethodExec = new LoggerMethod();
+                        this.methodExec.put(v_StackTrace.getMethodName() ,v_MethodExec);
+                    }
+                    
+                    v_MethodExec.setExecAvgTimeOld(v_MethodExec.getExecAvgTimeOld());
+                    v_MethodExec.setExecAvgTime(v_ExecSumTime / v_ExecSumCount * 1.0D);
+                    v_MethodExec.setDispersionOld(v_MethodExec.getDispersion());
+                    
+                    if ( v_ExecSumCount >= 2 )
+                    {
+                        // 离散度n = (离散度n-1 + (Xn - AVGn-1) * (Xn - AVGn)) / (n - 1)
+                        double v_Dispersion = Help.round((v_MethodExec.getDispersionOld() + (v_TimeLen - v_MethodExec.getExecAvgTimeOld()) * (v_TimeLen - v_MethodExec.getExecAvgTime())) / (v_ExecSumCount - 1.0) ,2);
+                        v_MethodExec.setDispersion(v_Dispersion);
+                    }
                 }
             }
+            else
+            {
+                // 新的开始。即方法内首次 "日志" 输出 
+                // 线程号被复用时
+                v_MExecThread.setExecStartTime(v_NowTime);
+                this.methodExecCount.put(v_StackTrace.getMethodName() ,1L);
+            }
             
-            this.methodExecLines  .put(v_MethodThreadID ,v_StackTrace.getLineNumber());
-            this.methodExecLastime.put(v_MethodThreadID ,v_NowTime);
+            v_MExecThread.setLineNumber(v_StackTrace.getLineNumber());
+            v_MExecThread.setExecLastTime(v_NowTime);
+            this.methodExecThread.put(v_MThreadID ,v_MExecThread);
         }
     }
     
@@ -769,11 +836,28 @@ public class Logger
     
     
     /**
+     * 统计方法的执行次数（包括成功及异常情况）。
+     *    与 requestCount 区别是，它以一个方法为统计主体，无任此方法中有多少次 "日志" 均按 1 统计。
+     *    而 requestCount 是以 "日志" 输出次数统计的。
+     *    
+     * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
+     * 
+     *   Map.Key   是：方法名称
+     *   Map.Value 是：累计用时
+     */
+    public Counter<String> getMethodExecCount()
+    {
+        return methodExecCount;
+    }
+    
+    
+    
+    /**
      * 统计方法执行累计用时
      * 
      * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
      * 
-     *   Map.Key   是：方法名称 + 线程号
+     *   Map.Key   是：方法名称
      *   Map.Value 是：累计用时
      */
     public Counter<String> getMethodExecSumTimes()
@@ -784,11 +868,27 @@ public class Logger
     
     
     /**
-     * 统计方法执行最大用时
+     * 获取：方法级的统计粒度下的多项指标。
      * 
      * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
      * 
-     *   Map.Key   是：方法名称 + 线程号
+     *   Map.Key   是：方法名称
+     */
+    public Map<String ,LoggerMethod> getMethodExecDatas()
+    {
+        return this.methodExec;
+    }
+
+
+    
+    /**
+     * 统计方法执行最大用时（包括成功及异常情况）。
+     * 
+     *   注：不受方法内多次 "日志" 输出的影响，是首次日志输出到最后日志输出间的总用时的最大用时
+     * 
+     * 无论是否对接Log4J、SLF4J、Logback，均进行日志统计。
+     * 
+     *   Map.Key   是：方法名称
      *   Map.Value 是：累计用时
      */
     public Max<String> getMethodExecMaxTimes()
