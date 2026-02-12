@@ -44,7 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.hy.common.ByteHelp;
 import org.hy.common.Date;
-import org.hy.common.ExpireMap;
+import org.hy.common.ExpireCache;
 import org.hy.common.Help;
 import org.hy.common.Return;
 import org.hy.common.StringHelp;
@@ -123,24 +123,24 @@ import net.lingala.zip4j.model.enums.EncryptionMethod;
  */
 public final class FileHelp
 {
-    private static final Logger                            $Logger = new Logger(FileHelp.class);
+    private static final Logger                              $Logger = new Logger(FileHelp.class);
     
     /** 上传中 */
-    public  static final int                               $Upload_GoOn       = 0;
+    public  static final int                                 $Upload_GoOn       = 0;
     
     /** 上传全部完成 */
-    public  static final int                               $Upload_Finish     = 1;
+    public  static final int                                 $Upload_Finish     = 1;
     
     /** 上传异常 */
-    public  static final int                               $Upload_Error      = -1;
+    public  static final int                                 $Upload_Error      = -1;
     
     /** 上传完成后，在返回 $Upload_Finish 前，做文件检查时，发现文件大小不一致等异常 */
-    public  static final int                               $Upload_ErrorCheck = -2;
+    public  static final int                                 $Upload_ErrorCheck = -2;
     
     
     
     /** 临时记录最新一次数据包信息 */
-    private static final ExpireMap<String ,FileDataPacket> $DataPackets   = new ExpireMap<String ,FileDataPacket>();
+    private static final ExpireCache<String ,FileDataPacket> $DataPackets       = new ExpireCache<String ,FileDataPacket>();
     
     
     

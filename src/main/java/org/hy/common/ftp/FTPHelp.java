@@ -19,7 +19,7 @@ import java.util.List;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.hy.common.ByteHelp;
-import org.hy.common.ExpireMap;
+import org.hy.common.ExpireCache;
 import org.hy.common.Help;
 import org.hy.common.StringHelp;
 import org.hy.common.file.FileDataPacket;
@@ -54,34 +54,34 @@ import org.hy.common.xml.log.Logger;
 public final class FTPHelp implements Closeable
 {
     
-    private static final Logger                            $Logger      = new Logger(FTPHelp.class);
+    private static final Logger                              $Logger      = new Logger(FTPHelp.class);
     
     /** 缓存大小 */
-    private static final int $BufferSize     = 4 * 1024;
+    private static final int                                 $BufferSize  = 4 * 1024;
     
     /** 临时记录最新一次数据包信息 */
-    private static final ExpireMap<String ,FileDataPacket> $DataPackets = new ExpireMap<String ,FileDataPacket>();
+    private static final ExpireCache<String ,FileDataPacket> $DataPackets = new ExpireCache<String ,FileDataPacket>();
     
     
     
-    private FTPInfo                    ftpInfo;
+    private FTPInfo                      ftpInfo;
     
-    private FTPClient                  ftpClient;
+    private FTPClient                    ftpClient;
     
     /** 数据安全性。如果为真，将对上传的文件进行数据加密 */
-    private boolean                    dataSafe;
+    private boolean                      dataSafe;
     
     /** 自定义事件的监听器集合--文件拷贝 */
-    private Collection<FTPListener>    ftpListeners;
+    private Collection<FTPListener>      ftpListeners;
     
     /** 数据包的超时时长（单位：秒） */
-    private long                       dataPacketTimeOut = 10 * 60;
+    private long                         dataPacketTimeOut = 10 * 60;
     
     /** 创建目录的缓存。预防短时间内重复创建同一目录，提高性能。Map.key是目录路径，Map.value是之前makeDirectory()方法的返回值 */
-    private ExpireMap<String ,Integer> makeDirCache;
+    private ExpireCache<String ,Integer> makeDirCache;
     
     /** 创建目录的缓存时长（单位：秒） */
-    private int                        makeDirCacheTimeLen;
+    private int                          makeDirCacheTimeLen;
     
     
     
@@ -972,7 +972,7 @@ public final class FTPHelp implements Closeable
                 // 提高性能，短时间内不重复创建相同的目录
                 if ( this.makeDirCache == null )
                 {
-                    this.makeDirCache = new ExpireMap<String ,Integer>();
+                    this.makeDirCache = new ExpireCache<String ,Integer>();
                 }
                 
                 Integer v_RetOld = this.makeDirCache.get(v_DirFullName);
