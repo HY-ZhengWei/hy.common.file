@@ -5,20 +5,26 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.drools.core.impl.InternalKnowledgeBase;
-import org.drools.core.impl.KnowledgeBaseFactory;
 import org.hy.common.Date;
 import org.hy.common.Help;
 import org.hy.common.Return;
+import org.hy.common.StringHelp;
 import org.hy.common.XJavaID;
 import org.hy.common.xml.SerializableDef;
 import org.hy.common.xml.XHttp;
 import org.hy.common.xml.log.Logger;
-import org.kie.api.io.ResourceType;
+import org.kie.api.KieBase;
+import org.kie.api.KieServices;
 import org.kie.api.runtime.StatelessKieSession;
-import org.kie.internal.builder.KnowledgeBuilder;
-import org.kie.internal.builder.KnowledgeBuilderFactory;
-import org.kie.internal.io.ResourceFactory;
+import org.kie.api.io.Resource;
+import org.kie.api.io.ResourceType;
+import org.kie.api.builder.KieFileSystem;
+import org.kie.api.builder.KieBuilder;
+import org.kie.api.builder.KieModule;
+import org.kie.api.builder.KieRepository;
+import org.kie.api.builder.Message;
+import org.kie.api.builder.ReleaseId;
+import org.kie.api.runtime.KieContainer;
 
 
 
@@ -41,19 +47,23 @@ import org.kie.internal.io.ResourceFactory;
  * @author      ZhengWei(HY)
  * @createDate  2020-05-25
  * @version     v1.0
+ *              v2.0  2026-02-27  添加：适配 Drools 8.44.2.Final
  */
 public class XRule extends SerializableDef implements XJavaID
 {
 
     private static final long serialVersionUID = 1329720425183820778L;
     
-    private static final Logger $Logger        = new Logger(XRule.class);
+    private static final Logger      $Logger        = new Logger(XRule.class);
     
     /** 正则表达式识别：package xxx.xxx; 的包信息 */
-    private static final String $REGEX_Package = "[Pp][Aa][Cc][Kk][Aa][Gg][Ee]( )+\\w+\\.\\w+[\\w\\.]*;";
+    private static final String      $REGEX_Package = "[Pp][Aa][Cc][Kk][Aa][Gg][Ee]( )+\\w+\\.\\w+[\\w\\.]*;";
     
     /** 正则表达式识别：import xxx.xxx; 的引包信息 */
-    private static final String $REGEX_Import  = "[Ii][Mm][Pp][Oo][Rr][Tt]( )+\\w+\\.\\w+[\\w\\.]*;";
+    private static final String      $REGEX_Import  = "[Ii][Mm][Pp][Oo][Rr][Tt]( )+\\w+\\.\\w+[\\w\\.]*;";
+    
+    /** Drools 8.x 核心服务实例 */
+    private static final KieServices $KieServices   = KieServices.Factory.get();
     
     
     
@@ -218,19 +228,46 @@ public class XRule extends SerializableDef implements XJavaID
             return;
         }
         
-        KnowledgeBuilder v_KBuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
-        v_KBuilder.add(ResourceFactory.newByteArrayResource(v_Response.getParamStr().getBytes()) ,ResourceType.DRL);
-        
-        if ( v_KBuilder.hasErrors() )
+        this.buildKieSession(v_Response.getParamStr() ,this.ruleRemote.getUrl());
+    }
+    
+    
+    
+    /**
+     * 核心构建方法：根据DRL文本创建KieSession（Drools 8.x 通用逻辑）
+     * 
+     * @author      ZhengWei(HY)
+     * @createDate  2026-02-27
+     * @version     v1.0
+     *
+     * @param i_DRLContent   DRL规则文本
+     * @param i_ResourceName 虚拟资源名称（用于日志和冲突区分）
+     */
+    private void buildKieSession(String i_DRLContent ,String i_ResourceName) 
+    {
+        if ( Help.isNull(i_DRLContent) )
         {
-            $Logger.error(Date.getNowTime().getFullMilli() + " XRule Build Errors: " + Help.NVL(this.comment) + "\n" + this.ruleRemote.getUrl() + "\n" + v_Response.getParamStr());
-            throw new RuntimeException("XRule Build Errors:\n" + v_KBuilder.getErrors());
+            throw new RuntimeException("DRL content is empty: " + this.ruleRemote.getUrl());
         }
-        
-        InternalKnowledgeBase v_KBase = KnowledgeBaseFactory.newKnowledgeBase();
-        v_KBase.addPackages(v_KBuilder.getKnowledgePackages());
-        
-        this.kieSession = v_KBase.newStatelessKieSession();
+        // 1. 创建KieFileSystem并写入DRL内容
+        KieFileSystem kfs = $KieServices.newKieFileSystem();
+        Resource resource = $KieServices.getResources().newByteArrayResource(i_DRLContent.getBytes()).setResourceType(ResourceType.DRL).setSourcePath(i_ResourceName);
+        kfs.write(resource);
+        // 2. 构建KieModule
+        KieBuilder kieBuilder = $KieServices.newKieBuilder(kfs);
+        kieBuilder.buildAll(); // 执行编译
+        // 3. 检查编译错误
+        if ( kieBuilder.getResults().hasMessages(Message.Level.ERROR) )
+        {
+            String errorMsg = Date.getNowTime().getFullMilli() + " XRule Build Errors: " + Help.NVL(this.comment) + "\n" + i_DRLContent;
+            $Logger.error(errorMsg + "\n" + kieBuilder.getResults().toString());
+            throw new RuntimeException(errorMsg + "\n" + kieBuilder.getResults().toString());
+        }
+        // 4. 创建KieContainer和KieSession
+        ReleaseId releaseId = kieBuilder.getKieModule().getReleaseId();
+        KieContainer kieContainer = $KieServices.newKieContainer(releaseId);
+        KieBase kieBase = kieContainer.getKieBase();
+        this.kieSession = kieBase.newStatelessKieSession();
     }
     
     
@@ -245,19 +282,7 @@ public class XRule extends SerializableDef implements XJavaID
      */
     private void initRuleInfo()
     {
-        KnowledgeBuilder v_KBuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
-        v_KBuilder.add(ResourceFactory.newByteArrayResource(this.ruleInfo.getBytes()) ,ResourceType.DRL);
-        
-        if ( v_KBuilder.hasErrors() )
-        {
-            $Logger.error(Date.getNowTime().getFullMilli() + " XRule Build Errors: " + Help.NVL(this.comment) + "\n" + this.ruleInfo);
-            throw new RuntimeException("XRule Build Errors:\n" + v_KBuilder.getErrors());
-        }
-        
-        InternalKnowledgeBase v_KBase = KnowledgeBaseFactory.newKnowledgeBase();
-        v_KBase.addPackages(v_KBuilder.getKnowledgePackages());
-        
-        this.kieSession = v_KBase.newStatelessKieSession();
+        this.buildKieSession(this.ruleInfo ,"inline-" + Help.NVL(this.xjavaID ,StringHelp.getUUID9n()) + ".drl");
     }
     
     
@@ -272,19 +297,29 @@ public class XRule extends SerializableDef implements XJavaID
      */
     private void initRuleFile()
     {
-        KnowledgeBuilder v_KBuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
-        v_KBuilder.add(ResourceFactory.newClassPathResource(this.ruleFile ,"UTF-8") ,ResourceType.DRL);
+        Resource resource = $KieServices.getResources().newClassPathResource(this.ruleFile ,"UTF-8");
+        KieFileSystem kfs = $KieServices.newKieFileSystem();
+        kfs.write(resource);
         
-        if ( v_KBuilder.hasErrors() )
-        {
-            $Logger.error(Date.getNowTime().getFullMilli() + " XRule Build Errors: " + Help.NVL(this.comment) + "\n" + this.ruleFile);
-            throw new RuntimeException("XRule Build Errors:\n" + v_KBuilder.getErrors());
+        // 构建KieModule
+        KieBuilder kieBuilder = $KieServices.newKieBuilder(kfs);
+        kieBuilder.buildAll();
+        
+        // 检查构建错误
+        if (kieBuilder.getResults().hasMessages(Message.Level.ERROR)) {
+            String errorMsg = Date.getNowTime().getFullMilli() + " XRule Build Errors: " + Help.NVL(this.comment) + "\n" + this.ruleFile;
+            $Logger.error(errorMsg + "\n" + kieBuilder.getResults().toString());
+            throw new RuntimeException(errorMsg + "\n" + kieBuilder.getResults().toString());
         }
         
-        InternalKnowledgeBase v_KBase = KnowledgeBaseFactory.newKnowledgeBase();
-        v_KBase.addPackages(v_KBuilder.getKnowledgePackages());
+        KieRepository repository = $KieServices.getRepository();
+        KieModule kieModule = repository.getDefaultReleaseId() != null 
+                ? repository.getKieModule(repository.getDefaultReleaseId())
+                : repository.getKieModule(kieBuilder.getKieModule().getReleaseId());
         
-        this.kieSession = v_KBase.newStatelessKieSession();
+        KieContainer kieContainer = $KieServices.newKieContainer(kieModule.getReleaseId());
+        KieBase kieBase = kieContainer.getKieBase();
+        this.kieSession = kieBase.newStatelessKieSession();
     }
     
     
