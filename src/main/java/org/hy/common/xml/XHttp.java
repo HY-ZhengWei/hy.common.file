@@ -63,6 +63,7 @@ import org.hy.common.xml.log.Logger;
  *           v9.0  2024-10-10  添加1：整合request()方法的冗余代码
  *                             添加2：支持自定义的请求头的传参
  *           v10.0 2025-04-03  添加1：简约的URL。简约而不简单。即是否为没有？和&的地址
+ *           v11.0 2026-05-13  添加1：支持PUT方式
  */
 public final class XHttp extends SerializableDef implements XJavaID
 {
@@ -75,6 +76,9 @@ public final class XHttp extends SerializableDef implements XJavaID
     
     /** 请求类型:post方式 */
     public static  final int    $Request_Type_Post = 2;
+    
+    /** 请求类型:put方式 */
+    public static  final int    $Request_Type_Put  = 3;
     
     /** URL转义时被排除的字符 */
     private static final String $NotInString       = "=&?";
@@ -105,7 +109,7 @@ public final class XHttp extends SerializableDef implements XJavaID
     @SuppressWarnings("unused")
     private int                        notDefaultParamValueCount;
     
-    /** 请求类型。1:get方式(默认值)  2:post方式 */
+    /** 请求类型。1:get方式(默认值)  2:post方式  3:put方式 */
     private int                        requestType;
     
     /** 请求内容类型(默认:text/html) */
@@ -976,7 +980,7 @@ public final class XHttp extends SerializableDef implements XJavaID
         {
             String v_ParamsUrl = i_UrlData.trim();
             
-            if ( this.requestType == $Request_Type_Post )
+            if ( this.requestType == $Request_Type_Post || this.requestType == $Request_Type_Put )
             {
                 String v_URLParamStr = this.getUrl();
                 
@@ -1037,7 +1041,7 @@ public final class XHttp extends SerializableDef implements XJavaID
                 
                 v_URLConn.setUseCaches(false);
                 v_URLConn.setDoOutput(true);
-                v_URLConn.setRequestMethod("POST");
+                v_URLConn.setRequestMethod(this.requestType == $Request_Type_Post ? "POST" : "PUT");
                 v_URLConn.setRequestProperty("Content-Type" ,this.getContentType() + "; charset=" + this.getCharset());
                 v_URLConn.setRequestProperty("User-Agent"   ,"Mozilla/5.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
                 v_URLConn.setRequestProperty("Cookie"       ,this.cookie.toString());
@@ -1783,7 +1787,7 @@ public final class XHttp extends SerializableDef implements XJavaID
     
     
     /**
-     * 请求类型。1:get方式(默认值)  2:post方式
+     * 请求类型。1:get方式(默认值)  2:post方式  3:put方式
      * 
      * @return
      */
@@ -1795,15 +1799,15 @@ public final class XHttp extends SerializableDef implements XJavaID
 
     
     /**
-     * 请求类型。1:get方式(默认值)  2:post方式
+     * 请求类型。1:get方式(默认值)  2:post方式   3:put方式
      * 
      * @param i_RequestType
      */
     public void setRequestType(int i_RequestType)
     {
-        if ( $Request_Type_Get != i_RequestType && $Request_Type_Post != i_RequestType )
+        if ( $Request_Type_Get != i_RequestType && $Request_Type_Post != i_RequestType && $Request_Type_Put != i_RequestType )
         {
-            throw new IllegalArgumentException("Request type is not 1:Get or 2:Post.");
+            throw new IllegalArgumentException("Request type is not 1:Get or 2:Post or 3:Put.");
         }
         
         this.requestType = i_RequestType;
