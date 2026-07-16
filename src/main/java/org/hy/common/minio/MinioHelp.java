@@ -546,15 +546,16 @@ public class MinioHelp implements XJavaID
      *
      * @param i_UserNo         用户工号
      * @param i_MinioFileName  Minio的文件名称
-     * @param i_Expiry         过期天数（最大7天，是Minio限制的）
+     * @param i_Expiry         过期时长（但会被Minio配置限制）
+     * @param i_ExpiryUnit     过期时长的类型
      * @return                 返回null表示异常
      */
-    public String share(String i_UserNo ,String i_MinioFileName ,Integer i_Expiry)
+    public String share(String i_UserNo ,String i_MinioFileName ,Integer i_Expiry ,TimeUnit i_ExpiryUnit)
     {
         String v_BucketName = this.makeBucketName(i_UserNo);
         try
         {
-            GetPresignedObjectUrlArgs v_ShareUrlArgs = GetPresignedObjectUrlArgs.builder().bucket(v_BucketName).object(i_MinioFileName).method(Method.GET).expiry(i_Expiry ,TimeUnit.DAYS).build();
+            GetPresignedObjectUrlArgs v_ShareUrlArgs = GetPresignedObjectUrlArgs.builder().bucket(v_BucketName).object(i_MinioFileName).method(Method.GET).expiry(i_Expiry ,i_ExpiryUnit).build();
             String v_ShareUrl = this.minio.getPresignedObjectUrl(v_ShareUrlArgs);
             $Logger.debug("共享Minio[{}.{}]成功[{}]" ,v_BucketName ,i_MinioFileName ,v_ShareUrl);
             return v_ShareUrl;
