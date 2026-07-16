@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.hy.common.Help;
 import org.hy.common.StringHelp;
+import org.hy.common.XJavaID;
 import org.hy.common.ftp.enums.PathType;
 import org.hy.common.xml.log.Logger;
 
@@ -45,7 +46,7 @@ import io.minio.messages.Item;
  * @createDate  2026-07-14
  * @version     v1.0
  */
-public class MinioHelp
+public class MinioHelp implements XJavaID
 {
     
     private static final Logger $Logger = new Logger(MinioHelp.class);
@@ -60,6 +61,12 @@ public class MinioHelp
     
     /** Minio客户端对象 */
     private MinioClient minio;
+    
+    /** 逻辑ID */
+    private String      xid;
+    
+    /** 注释 */
+    private String      comment;
     
     
     
@@ -189,7 +196,7 @@ public class MinioHelp
             if ( !v_Exists )
             {
                 this.minio.makeBucket(MakeBucketArgs.builder().bucket(v_BucketName).build());
-                $Logger.info("创建Minio桶[{}]成功" ,v_BucketName);
+                $Logger.debug("创建Minio桶[{}]成功" ,v_BucketName);
             }
             
             return true;
@@ -421,7 +428,7 @@ public class MinioHelp
         try ( FileInputStream v_FileInput = new FileInputStream(i_FileFullName) )
         {
             this.minio.putObject(PutObjectArgs.builder().bucket(v_BucketName).object(i_MinioFileName).stream(v_FileInput ,v_FileInput.available() ,-1).build());
-            $Logger.info("上传[{}]Minio[{}.{}]成功" ,i_FileFullName ,v_BucketName ,i_MinioFileName);
+            $Logger.debug("上传[{}]Minio[{}.{}]成功" ,i_FileFullName ,v_BucketName ,i_MinioFileName);
             return "";
         }
         catch (Exception exce)
@@ -484,7 +491,7 @@ public class MinioHelp
             {
                 v_Out.write(v_Buffer ,0 ,v_BufferSize);
             }
-            $Logger.info("下载Minio[{}.{}]成功[{}/{}]" ,v_BucketName ,i_MinioFileName ,i_SavePath ,v_SaveFileName);
+            $Logger.debug("下载Minio[{}.{}]成功[{}/{}]" ,v_BucketName ,i_MinioFileName ,i_SavePath ,v_SaveFileName);
             return "";
         }
         catch (Exception exce)
@@ -523,7 +530,7 @@ public class MinioHelp
         }
         catch (Exception exce)
         {
-            $Logger.info("查询Minio文件元信息[{}.{}]异常" ,v_BucketName ,i_MinioFileName ,exce);
+            $Logger.error("查询Minio文件元信息[{}.{}]异常" ,v_BucketName ,i_MinioFileName ,exce);
             return null;
         }
     }
@@ -549,7 +556,7 @@ public class MinioHelp
         {
             GetPresignedObjectUrlArgs v_ShareUrlArgs = GetPresignedObjectUrlArgs.builder().bucket(v_BucketName).object(i_MinioFileName).method(Method.GET).expiry(1 ,TimeUnit.DAYS).build();
             String v_ShareUrl = this.minio.getPresignedObjectUrl(v_ShareUrlArgs);
-            $Logger.info("共享Minio[{}.{}]成功[{}]" ,v_BucketName ,i_MinioFileName ,v_ShareUrl);
+            $Logger.debug("共享Minio[{}.{}]成功[{}]" ,v_BucketName ,i_MinioFileName ,v_ShareUrl);
             return v_ShareUrl;
         }
         catch (Exception exce)
@@ -578,7 +585,7 @@ public class MinioHelp
         try
         {
             this.minio.removeObject(RemoveObjectArgs.builder().bucket(v_BucketName).object(i_MinioFileName).build());
-            $Logger.info("删除Minio[{}.{}]成功" ,v_BucketName ,i_MinioFileName);
+            $Logger.debug("删除Minio[{}.{}]成功" ,v_BucketName ,i_MinioFileName);
             return true;
         }
         catch (Exception exce)
@@ -652,6 +659,54 @@ public class MinioHelp
     public void setMinio(MinioClient i_Minio)
     {
         this.minio = i_Minio;
+    }
+    
+    
+    
+    /**
+     * 设置XJava池中对象的ID标识。此方法不用用户调用设置值，是自动的。
+     * 
+     * @param i_XJavaID
+     */
+    public void setXJavaID(String i_XJavaID)
+    {
+        this.xid = i_XJavaID;
+    }
+    
+    
+    
+    /**
+     * 获取XJava池中对象的ID标识。
+     * 
+     * @return
+     */
+    public String getXJavaID()
+    {
+        return this.xid;
+    }
+    
+    
+    
+    /**
+     * 注释。可用于日志的输出等帮助性的信息
+     * 
+     * @param i_Comment
+     */
+    public void setComment(String i_Comment)
+    {
+        this.comment = i_Comment;
+    }
+    
+    
+    
+    /**
+     * 注释。可用于日志的输出等帮助性的信息
+     *
+     * @return
+     */
+    public String getComment()
+    {
+        return this.comment;
     }
     
 }

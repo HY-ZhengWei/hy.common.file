@@ -22,7 +22,7 @@ public class MinioPath implements Serializable
     
     
 
-    /** 路径名称（全路径） */
+    /** 路径名称（仅父路径） */
     private String   pathName;
     
     /** 路径最末端的名称 */
@@ -48,7 +48,7 @@ public class MinioPath implements Serializable
 
     
     /**
-     * 获取：路径名称（全路径）
+     * 获取：路径名称（仅父路径）
      */
     public String getPathName()
     {
@@ -57,9 +57,9 @@ public class MinioPath implements Serializable
 
     
     /**
-     * 设置：路径名称（全路径）
+     * 设置：路径名称（仅父路径）
      * 
-     * @param i_PathName 路径名称（全路径）
+     * @param i_PathName 路径名称（仅父路径）
      */
     public void setPathName(String i_PathName)
     {
