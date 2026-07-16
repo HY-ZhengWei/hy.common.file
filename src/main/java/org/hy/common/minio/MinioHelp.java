@@ -554,7 +554,7 @@ public class MinioHelp implements XJavaID
         String v_BucketName = this.makeBucketName(i_UserNo);
         try
         {
-            GetPresignedObjectUrlArgs v_ShareUrlArgs = GetPresignedObjectUrlArgs.builder().bucket(v_BucketName).object(i_MinioFileName).method(Method.GET).expiry(1 ,TimeUnit.DAYS).build();
+            GetPresignedObjectUrlArgs v_ShareUrlArgs = GetPresignedObjectUrlArgs.builder().bucket(v_BucketName).object(i_MinioFileName).method(Method.GET).expiry(i_Expiry ,TimeUnit.DAYS).build();
             String v_ShareUrl = this.minio.getPresignedObjectUrl(v_ShareUrlArgs);
             $Logger.debug("共享Minio[{}.{}]成功[{}]" ,v_BucketName ,i_MinioFileName ,v_ShareUrl);
             return v_ShareUrl;
