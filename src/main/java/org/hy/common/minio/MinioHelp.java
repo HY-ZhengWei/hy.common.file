@@ -225,6 +225,10 @@ public class MinioHelp
         String v_Dir = Help.NVL(i_Dir);
         if ( !Help.isNull(v_Dir) )
         {
+            if ( v_Dir.endsWith("/") )
+            {
+                v_Dir = v_Dir.substring(0 ,v_Dir.length() - 1);
+            }
             v_QueryBuilder.prefix(v_Dir);
         }
         
@@ -276,7 +280,7 @@ public class MinioHelp
                                 continue;
                             }
                         }
-                        else if ( v_LastIndex > v_DirLen )
+                        else if ( v_LastIndex >= v_DirLen )
                         {
                             v_ObjectName = v_ObjectName.substring(0 ,v_LastIndex);
                             v_LastIndex  = v_ObjectName.lastIndexOf("/");
