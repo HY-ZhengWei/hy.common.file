@@ -5,7 +5,9 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.hy.common.Help;
@@ -219,14 +221,16 @@ public class MinioHelp
         // 构建查询参数
         ListObjectsArgs.Builder v_QueryBuilder = ListObjectsArgs.builder()
                                                                 .bucket(v_BucketName)
-                                                                .recursive(i_HaveChilds); // true：递归所有子目录；false：只展示一级
-        if ( !Help.isNull(i_Dir) )
+                                                                .recursive(true); // true：递归所有子目录；false：只展示一级
+        String v_Dir = Help.NVL(i_Dir);
+        if ( !Help.isNull(v_Dir) )
         {
-            v_QueryBuilder.prefix(i_Dir);
+            v_QueryBuilder.prefix(v_Dir);
         }
         
-        ListObjectsArgs v_QueryArgs = v_QueryBuilder.build();
-        List<MinioPath> v_Ret       = null;
+        ListObjectsArgs     v_QueryArgs    = v_QueryBuilder.build();
+        List<MinioPath>     v_Ret          = null;
+        Map<String ,String> v_FilterDouble = null;   // 防止重复添加，仅在 i_HaveChilds = false 时生效
         
         try
         {
@@ -237,6 +241,12 @@ public class MinioHelp
                 return v_Ret;
             }
             
+            if ( !i_HaveChilds )
+            {
+                v_FilterDouble = new HashMap<String ,String>();
+            }
+            
+            int v_DirLen = v_Dir.length();
             for (Result<Item> v_Item : v_Files)
             {
                 Item   v_Object     = v_Item.get();
@@ -248,6 +258,39 @@ public class MinioHelp
                 // 桶下一级目录 或 桶下的一级目录中的子文件
                 if ( v_LastIndex > 0 )
                 {
+                    if ( !i_HaveChilds )
+                    {
+                        // 查桶下的所有对象
+                        if ( v_DirLen == 0 )
+                        {
+                            String [] v_Name = v_ObjectName.split("/");
+                            if ( v_Name.length >= 2 )
+                            {
+                                v_PathName = "";
+                                v_FileName = v_Name[0] + "/";
+                                if ( !v_FilterDouble.containsKey(v_PathName + v_FileName) )
+                                {
+                                    v_Ret.add(new MinioPath(v_PathName ,v_FileName ,PathType.Directory));
+                                    v_FilterDouble.put(v_PathName + v_FileName ,"");
+                                }
+                                continue;
+                            }
+                        }
+                        else if ( v_LastIndex > v_DirLen )
+                        {
+                            v_ObjectName = v_ObjectName.substring(0 ,v_LastIndex);
+                            v_LastIndex  = v_ObjectName.lastIndexOf("/");
+                            v_PathName   = v_ObjectName.substring(0 ,v_LastIndex + 1);
+                            v_FileName   = v_ObjectName.substring(v_LastIndex + 1) + "/";
+                            if ( !v_FilterDouble.containsKey(v_PathName + v_FileName) )
+                            {
+                                v_Ret.add(new MinioPath(v_PathName ,v_FileName ,PathType.Directory));
+                                v_FilterDouble.put(v_PathName + v_FileName ,"");
+                            }
+                            continue;
+                        }
+                    }
+                    
                     v_PathName = v_ObjectName.substring(0 ,v_LastIndex + 1);
                     v_FileName = v_ObjectName.substring(v_LastIndex + 1);
                     
@@ -282,6 +325,11 @@ public class MinioHelp
             $Logger.error("遍历目录Minio[{}.{}]异常" ,v_BucketName ,i_Dir ,exce);
         }
         
+        if ( v_FilterDouble != null )
+        {
+            v_FilterDouble.clear();
+            v_FilterDouble = null;
+        }
         return v_Ret;
     }
     
