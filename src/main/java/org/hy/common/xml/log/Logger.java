@@ -1096,7 +1096,7 @@ public class Logger
      * @param i_Throwable  异常对象
      * @return             返回异常发生源
      */
-    public Throwable log(final Object i_Marker ,final Level i_Level ,final String i_Message ,final Object [] i_Arguments ,final Throwable i_Throwable)
+    public <T extends Throwable> T log(final Object i_Marker ,final Level i_Level ,final String i_Message ,final Object [] i_Arguments ,final T i_Throwable)
     {
         this.request(i_Level ,getLevelName(i_Level) ,i_Message, i_Throwable);
         
@@ -1257,7 +1257,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable fatal(final String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T fatal(final String i_Message, final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelFatal ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1276,7 +1276,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable fatal(final Throwable i_Throwable)
+    public <T extends Throwable> T fatal(final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelFatal ,"" ,null ,i_Throwable);
         return i_Throwable;
@@ -1315,7 +1315,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable fatal(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T fatal(final Object i_Marker ,String i_Message, final T i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelFatal ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1387,7 +1387,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable error(final String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T error(final String i_Message, final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelError ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1406,7 +1406,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable error(final Throwable i_Throwable)
+    public <T extends Throwable> T error(final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelError ,"" ,null ,i_Throwable);
         return i_Throwable;
@@ -1444,7 +1444,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable error(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T error(final Object i_Marker ,String i_Message, final T i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelError ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1516,7 +1516,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable warn(final String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T warn(final String i_Message, final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelWarn ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1535,7 +1535,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable warn(final Throwable i_Throwable)
+    public <T extends Throwable> T warn(final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelWarn ,"" ,null ,i_Throwable);
         return i_Throwable;
@@ -1573,7 +1573,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable warn(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T warn(final Object i_Marker ,String i_Message, final T i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelWarn ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1645,7 +1645,7 @@ public class Logger
      * @param i_Message    消息
      * @param i_Throwable  异常原因
      */
-    public Throwable info(final String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T info(final String i_Message, final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelInfo ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1664,7 +1664,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable info(final Throwable i_Throwable)
+    public <T extends Throwable> T info(final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelInfo ,"" ,null ,i_Throwable);
         return i_Throwable;
@@ -1702,7 +1702,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable info(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T info(final Object i_Marker ,String i_Message, final T i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelInfo ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1774,7 +1774,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable debug(final String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T debug(final String i_Message, final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelDebug ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1793,7 +1793,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable debug(final Throwable i_Throwable)
+    public <T extends Throwable> T debug(final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelDebug ,"" ,null ,i_Throwable);
         return i_Throwable;
@@ -1832,7 +1832,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable debug(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T debug(final Object i_Marker ,String i_Message, final T i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelDebug ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1904,7 +1904,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable trace(final String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T trace(final String i_Message, final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelTrace ,i_Message ,null ,i_Throwable);
         return i_Throwable;
@@ -1923,7 +1923,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable trace(final Throwable i_Throwable)
+    public <T extends Throwable> T trace(final T i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelTrace ,"" ,null ,i_Throwable);
         return i_Throwable;
@@ -1962,7 +1962,7 @@ public class Logger
      * @param i_Throwable  异常原因
      * @return             返回异常发生源
      */
-    public Throwable trace(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public <T extends Throwable> T trace(final Object i_Marker ,String i_Message, final T i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelTrace ,i_Message ,null ,i_Throwable);
         return i_Throwable;
