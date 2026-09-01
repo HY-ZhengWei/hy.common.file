@@ -54,6 +54,7 @@ import org.hy.common.TablePartitionBusway;
  *              v11.0 2026-01-17  添加：独立计算平均用时，并有要保存它
  *                                添加：独立统计方法的执行次数，并有要保存它
  *                                添加：离散度的计算（建议人：程志华）
+ *              v12.0 2026-09-01  添加：有异常 Throwable 入参时，同时返回异常发生源。这样做可方便程序写法
  */
 public class Logger
 {
@@ -1086,14 +1087,16 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-11
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
      * @param i_Marker     标记。请按Log4J、SLF4J的Marker类型传参
      * @param i_Level      日志级别。请按Log4J、SLF4J的日志级别传参
      * @param i_Message    日志信息
      * @param i_Arguments  额外日志参数
      * @param i_Throwable  异常对象
+     * @return             返回异常发生源
      */
-    public void log(final Object i_Marker ,final Level i_Level ,final String i_Message ,final Object [] i_Arguments ,final Throwable i_Throwable)
+    public Throwable log(final Object i_Marker ,final Level i_Level ,final String i_Message ,final Object [] i_Arguments ,final Throwable i_Throwable)
     {
         this.request(i_Level ,getLevelName(i_Level) ,i_Message, i_Throwable);
         
@@ -1184,6 +1187,8 @@ public class Logger
         {
             i_Throwable.printStackTrace();
         }
+        
+        return i_Throwable;
     }
     
     
@@ -1246,13 +1251,16 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void fatal(final String i_Message, final Throwable i_Throwable)
+    public Throwable fatal(final String i_Message, final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelFatal ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1263,12 +1271,15 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Throwable
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void fatal(final Throwable i_Throwable)
+    public Throwable fatal(final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelFatal ,"" ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1297,14 +1308,17 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-10
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Marker
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Marker     异常标记
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void fatal(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public Throwable fatal(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelFatal ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1367,13 +1381,16 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void error(final String i_Message, final Throwable i_Throwable)
+    public Throwable error(final String i_Message, final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelError ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1384,12 +1401,15 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Throwable
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void error(final Throwable i_Throwable)
+    public Throwable error(final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelError ,"" ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1401,9 +1421,9 @@ public class Logger
      * @createDate  2020-06-10
      * @version     v1.0
      *
-     * @param i_Marker
-     * @param i_Message
-     * @param i_Arguments
+     * @param i_Marker     异常标记
+     * @param i_Message    异常消息
+     * @param i_Arguments  执行参数
      */
     public void error(final Object i_Marker ,String i_Message, final Object ... i_Arguments)
     {
@@ -1419,13 +1439,15 @@ public class Logger
      * @createDate  2020-06-10
      * @version     v1.0
      *
-     * @param i_Marker
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Marker     异常标记
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void error(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public Throwable error(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelError ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1488,13 +1510,16 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void warn(final String i_Message, final Throwable i_Throwable)
+    public Throwable warn(final String i_Message, final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelWarn ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1505,12 +1530,15 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Throwable
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void warn(final Throwable i_Throwable)
+    public Throwable warn(final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelWarn ,"" ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1540,13 +1568,15 @@ public class Logger
      * @createDate  2020-06-10
      * @version     v1.0
      *
-     * @param i_Marker
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Marker     异常标记
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void warn(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public Throwable warn(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelWarn ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1610,13 +1640,15 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Message    消息
+     * @param i_Throwable  异常原因
      */
-    public void info(final String i_Message, final Throwable i_Throwable)
+    public Throwable info(final String i_Message, final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelInfo ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1627,12 +1659,15 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Throwable
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void info(final Throwable i_Throwable)
+    public Throwable info(final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelInfo ,"" ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1662,13 +1697,15 @@ public class Logger
      * @createDate  2020-06-10
      * @version     v1.0
      *
-     * @param i_Marker
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Marker     异常标记
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void info(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public Throwable info(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelInfo ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1731,13 +1768,16 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void debug(final String i_Message, final Throwable i_Throwable)
+    public Throwable debug(final String i_Message, final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelDebug ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1748,12 +1788,15 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Throwable
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void debug(final Throwable i_Throwable)
+    public Throwable debug(final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelDebug ,"" ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1782,14 +1825,17 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-10
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Marker
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Marker     异常标记
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void debug(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public Throwable debug(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelDebug ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1852,13 +1898,16 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void trace(final String i_Message, final Throwable i_Throwable)
+    public Throwable trace(final String i_Message, final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelTrace ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1869,12 +1918,15 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-09
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Throwable
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void trace(final Throwable i_Throwable)
+    public Throwable trace(final Throwable i_Throwable)
     {
         this.log(null ,LoggerSync.$LogLevelTrace ,"" ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
@@ -1903,14 +1955,17 @@ public class Logger
      * @author      ZhengWei(HY)
      * @createDate  2020-06-10
      * @version     v1.0
+     *              v2.0  2026-09-01  返回异常发生源
      *
-     * @param i_Marker
-     * @param i_Message
-     * @param i_Throwable
+     * @param i_Marker     异常标记
+     * @param i_Message    异常消息
+     * @param i_Throwable  异常原因
+     * @return             返回异常发生源
      */
-    public void trace(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
+    public Throwable trace(final Object i_Marker ,String i_Message, final Throwable i_Throwable)
     {
         this.log(i_Marker ,LoggerSync.$LogLevelTrace ,i_Message ,null ,i_Throwable);
+        return i_Throwable;
     }
     
     
